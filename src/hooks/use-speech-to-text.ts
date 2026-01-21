@@ -30,13 +30,6 @@ declare global {
   }
 }
 
-export interface UseSpeechToTextOptions {
-  lang?: string;
-  continuous?: boolean;
-  onResult?: (transcript: string, isFinal: boolean) => void;
-  onError?: (error: string) => void;
-}
-
 export interface UseSpeechToTextReturn {
   isListening: boolean;
   isSupported: boolean;
@@ -45,58 +38,123 @@ export interface UseSpeechToTextReturn {
   startListening: () => void;
   stopListening: () => void;
   resetTranscript: () => void;
+  error: string | null;
+  audioLevel: number;
 }
 
-export function useSpeechToText(options: UseSpeechToTextOptions = {}): UseSpeechToTextReturn {
-  const { lang = 'en-US', continuous = true, onResult, onError } = options;
-  
+export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
   const isSupported = typeof window !== 'undefined' && 
     (!!window.SpeechRecognition || !!window.webkitSpeechRecognition);
 
-  useEffect(() => {
-    if (!isSupported) return;
+  const updateAudioLevel = useCallback(() => {
+    if (!analyserRef.current) return;
+    
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+    
+    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+    const normalized = Math.min(average / 128, 1);
+    setAudioLevel(normalized);
+    
+    if (isListening) {
+      animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+    }
+  }, [isListening]);
 
+  const startAudioAnalysis = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      
+      audioContextRef.current = new AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      
+      animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+    } catch (err) {
+      console.error('Failed to start audio analysis:', err);
+    }
+  }, [updateAudioLevel]);
+
+  const stopAudioAnalysis = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    analyserRef.current = null;
+    setAudioLevel(0);
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (!isSupported || isListening) return;
+    
+    setError(null);
+    
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognitionAPI();
     
-    recognition.continuous = continuous;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = lang;
 
     recognition.onstart = () => {
       setIsListening(true);
+      startAudioAnalysis();
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = '';
-      let interim = '';
+      let finalText = '';
+      let interimText = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        const text = result[0].transcript;
+        
         if (result.isFinal) {
-          finalTranscript += result[0].transcript;
+          finalText += text;
         } else {
-          interim += result[0].transcript;
+          interimText += text;
         }
       }
 
-      if (finalTranscript) {
-        setTranscript(prev => prev + (prev ? ' ' : '') + finalTranscript);
-        setInterimTranscript('');
-        onResult?.(finalTranscript, true);
-      } else {
-        setInterimTranscript(interim);
-        onResult?.(interim, false);
+      if (finalText) {
+        setTranscript(prev => {
+          const separator = prev && !prev.endsWith(' ') ? ' ' : '';
+          return prev + separator + finalText.trim();
+        });
       }
+      
+      setInterimTranscript(interimText);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error === 'no-speech') {
+      if (event.error === 'no-speech' || event.error === 'aborted') {
         return;
       }
       
@@ -111,48 +169,52 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}): UseSpeech
         case 'network':
           errorMessage = 'Network error. Please check your connection.';
           break;
-        case 'aborted':
-          return;
         default:
           errorMessage = `Speech recognition error: ${event.error}`;
       }
       
-      onError?.(errorMessage);
+      setError(errorMessage);
       setIsListening(false);
+      stopAudioAnalysis();
     };
 
     recognition.onend = () => {
       setIsListening(false);
       setInterimTranscript('');
+      stopAudioAnalysis();
     };
 
     recognitionRef.current = recognition;
-
-    return () => {
-      recognition.abort();
-    };
-  }, [isSupported, lang, continuous, onResult, onError]);
-
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current || isListening) return;
     
     try {
-      recognitionRef.current.start();
-    } catch (error) {
-      console.error('Failed to start speech recognition:', error);
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setError('Failed to start speech recognition');
     }
-  }, [isListening]);
+  }, [isSupported, isListening, lang, startAudioAnalysis, stopAudioAnalysis]);
 
   const stopListening = useCallback(() => {
-    if (!recognitionRef.current || !isListening) return;
+    if (!recognitionRef.current) return;
     
     recognitionRef.current.stop();
-  }, [isListening]);
+    recognitionRef.current = null;
+  }, []);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
     setInterimTranscript('');
+    setError(null);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+      stopAudioAnalysis();
+    };
+  }, [stopAudioAnalysis]);
 
   return {
     isListening,
@@ -161,6 +223,8 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}): UseSpeech
     interimTranscript,
     startListening,
     stopListening,
-    resetTranscript
+    resetTranscript,
+    error,
+    audioLevel
   };
 }

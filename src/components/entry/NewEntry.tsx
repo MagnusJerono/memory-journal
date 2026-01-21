@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
+import { AudioWaveform } from './AudioWaveform';
 
 interface NewEntryProps {
   onSave: (entry: Entry) => void;
@@ -35,19 +36,24 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
     startListening,
     stopListening,
     resetTranscript: resetSpeechTranscript,
-  } = useSpeechToText({
-    lang: 'en-US',
-    continuous: true,
-    onError: (error) => {
+    error: speechError,
+    audioLevel
+  } = useSpeechToText('en-US');
+
+  useEffect(() => {
+    if (speechError) {
       toast.error('Speech recognition error', {
-        description: error
+        description: speechError
       });
     }
-  });
+  }, [speechError]);
 
   useEffect(() => {
     if (speechTranscript) {
-      setTranscript(prev => prev + (prev ? ' ' : '') + speechTranscript);
+      setTranscript(prev => {
+        const separator = prev && !prev.endsWith(' ') ? ' ' : '';
+        return prev + separator + speechTranscript;
+      });
       resetSpeechTranscript();
     }
   }, [speechTranscript, resetSpeechTranscript]);
@@ -139,6 +145,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   };
 
   const canGenerate = transcript.trim().length >= 40;
+  const displayedTranscript = transcript + (isListening && interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '');
 
   return (
     <div className="min-h-screen">
@@ -202,7 +209,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                 ref={textareaRef}
                 id="entry-transcript"
                 placeholder="What happened? Where were you, with whom, and what made it memorable?"
-                value={transcript + (isListening && interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')}
+                value={displayedTranscript}
                 onChange={(e) => {
                   if (!isListening) {
                     setTranscript(e.target.value);
@@ -222,7 +229,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                   onClick={toggleListening}
                   className={cn(
                     "absolute right-2 top-2 transition-all",
-                    isListening && "bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse"
+                    isListening && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   )}
                 >
                   {isListening ? (
@@ -233,6 +240,17 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                 </Button>
               )}
             </div>
+            
+            {isListening && (
+              <div className="mt-3 p-3 bg-accent/5 rounded-lg border border-accent/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                  <span className="text-xs font-medium text-accent">Recording...</span>
+                </div>
+                <AudioWaveform audioLevel={audioLevel} isActive={isListening} />
+              </div>
+            )}
+            
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-muted-foreground">
                 {transcript.length < 40 
@@ -240,12 +258,6 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                   : `${transcript.length} characters`
                 }
               </p>
-              {isListening && (
-                <p className="text-xs text-accent font-medium flex items-center gap-1">
-                  <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                  Listening...
-                </p>
-              )}
             </div>
           </div>
 
