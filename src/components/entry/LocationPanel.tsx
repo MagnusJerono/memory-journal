@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { LocationSuggestion } from '@/lib/types';
+import { searchLocations, getCurrentLocation, GeocodingResult } from '@/lib/geocoding';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +16,16 @@ import {
   CheckCircle,
   Sparkle,
   CaretDown,
-  CaretUp
+  CaretUp,
+  Crosshair,
+  MagnifyingGlass,
+  Spinner,
+  GlobeHemisphereWest,
+  House
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface LocationPanelProps {
   suggestions: LocationSuggestion[] | null;
@@ -37,6 +44,16 @@ const TYPE_ICONS: Record<LocationSuggestion['type'], React.ReactNode> = {
   landmark: <MapPin weight="duotone" className="w-3.5 h-3.5" />,
   venue: <Storefront weight="duotone" className="w-3.5 h-3.5" />,
   country: <Flag weight="duotone" className="w-3.5 h-3.5" />,
+};
+
+const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
+  city: <Buildings weight="duotone" className="w-4 h-4" />,
+  neighborhood: <MapTrifold weight="duotone" className="w-4 h-4" />,
+  landmark: <MapPin weight="duotone" className="w-4 h-4" />,
+  venue: <Storefront weight="duotone" className="w-4 h-4" />,
+  country: <Flag weight="duotone" className="w-4 h-4" />,
+  region: <GlobeHemisphereWest weight="duotone" className="w-4 h-4" />,
+  address: <House weight="duotone" className="w-4 h-4" />,
 };
 
 const TYPE_LABELS: Record<LocationSuggestion['type'], string> = {
@@ -66,18 +83,124 @@ export function LocationPanel({
   const [newLocation, setNewLocation] = useState('');
   const [isExpanded, setIsExpanded] = useState(true);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleSearch = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await searchLocations(query);
+      setSearchResults(results);
+      setShowDropdown(results.length > 0);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (newLocation.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(newLocation);
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [newLocation, handleSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectResult = (result: GeocodingResult) => {
+    if (!isLocked) {
+      onAddManualLocation(result.displayName);
+      setNewLocation('');
+      setSearchResults([]);
+      setShowDropdown(false);
+      toast.success(`Added "${result.name}"`);
+    }
+  };
 
   const handleAddLocation = () => {
     if (newLocation.trim() && !isLocked) {
       onAddManualLocation(newLocation.trim());
       setNewLocation('');
+      setSearchResults([]);
+      setShowDropdown(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddLocation();
+      if (searchResults.length > 0) {
+        handleSelectResult(searchResults[0]);
+      } else {
+        handleAddLocation();
+      }
+    }
+    if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
+  };
+
+  const handleGetCurrentLocation = async () => {
+    if (isLocked || isGettingLocation) return;
+    
+    setIsGettingLocation(true);
+    try {
+      const location = await getCurrentLocation();
+      if (location) {
+        onAddManualLocation(location.displayName);
+        toast.success(`Added your current location: ${location.name}`);
+      } else {
+        toast.error('Could not determine location', {
+          description: 'Please check your browser permissions'
+        });
+      }
+    } catch {
+      toast.error('Location access denied', {
+        description: 'Enable location access in your browser settings'
+      });
+    } finally {
+      setIsGettingLocation(false);
     }
   };
 
@@ -252,26 +375,100 @@ export function LocationPanel({
               {!isLocked && (
                 <div>
                   <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
-                    Add Location Manually
+                    Add Location
                   </label>
                   <div className="flex gap-2">
-                    <Input
-                      value={newLocation}
-                      onChange={(e) => setNewLocation(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="e.g., Shibuya Crossing, Tokyo"
-                      className="flex-1"
-                    />
+                    <div className="relative flex-1">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {isSearching ? (
+                          <Spinner className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <MagnifyingGlass className="w-4 h-4" />
+                        )}
+                      </div>
+                      <Input
+                        ref={inputRef}
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => {
+                          if (searchResults.length > 0) setShowDropdown(true);
+                        }}
+                        placeholder="Search cities, landmarks, places..."
+                        className="pl-10 pr-3"
+                      />
+                      
+                      <AnimatePresence>
+                        {showDropdown && searchResults.length > 0 && (
+                          <motion.div
+                            ref={dropdownRef}
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden"
+                          >
+                            <div className="max-h-[280px] overflow-y-auto">
+                              {searchResults.map((result, idx) => (
+                                <button
+                                  key={`${result.displayName}-${idx}`}
+                                  onClick={() => handleSelectResult(result)}
+                                  className={cn(
+                                    "w-full px-3 py-2.5 flex items-start gap-3 text-left transition-colors",
+                                    "hover:bg-accent/10 focus:bg-accent/10 focus:outline-none",
+                                    idx > 0 && "border-t border-border/50"
+                                  )}
+                                >
+                                  <div className="p-1.5 rounded-md bg-muted text-muted-foreground shrink-0 mt-0.5">
+                                    {GEOCODING_TYPE_ICONS[result.type]}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-sm truncate">{result.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {result.displayName}
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0 h-5 capitalize">
+                                    {result.type}
+                                  </Badge>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="px-3 py-2 bg-muted/50 border-t border-border">
+                              <p className="text-[10px] text-muted-foreground">
+                                Powered by OpenStreetMap • Press Enter to select first result
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     <Button 
                       onClick={handleAddLocation}
                       disabled={!newLocation.trim()}
                       size="icon"
+                      variant="outline"
                     >
                       <Plus className="w-5 h-5" />
                     </Button>
+
+                    <Button
+                      onClick={handleGetCurrentLocation}
+                      disabled={isGettingLocation}
+                      size="icon"
+                      variant="outline"
+                      title="Use current location"
+                    >
+                      {isGettingLocation ? (
+                        <Spinner className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Crosshair className="w-5 h-5" />
+                      )}
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Be specific! Add neighborhood names, landmarks, or exact venues to help freshen your memory later.
+                    Search for any place worldwide or use your current location
                   </p>
                 </div>
               )}
