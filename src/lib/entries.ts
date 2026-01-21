@@ -323,6 +323,7 @@ export function createEmptyEntry(date: string): Entry {
     uncertain_claims: null,
     is_locked: false,
     is_starred: false,
+    chapter_ids: [],
     photos: [],
     created_at: now,
     updated_at: now

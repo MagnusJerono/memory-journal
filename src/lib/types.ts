@@ -5,6 +5,38 @@ export interface LocationSuggestion {
   source: 'image' | 'transcript';
 }
 
+export interface Chapter {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  icon: 'person' | 'heart' | 'star' | 'house' | 'airplane' | 'briefcase' | 'graduation' | 'baby' | 'ring' | 'custom';
+  created_at: string;
+  updated_at: string;
+}
+
+export const CHAPTER_ICONS = [
+  { value: 'person', label: 'Person', emoji: '👤' },
+  { value: 'heart', label: 'Love', emoji: '❤️' },
+  { value: 'star', label: 'Special', emoji: '⭐' },
+  { value: 'house', label: 'Home', emoji: '🏠' },
+  { value: 'airplane', label: 'Travel', emoji: '✈️' },
+  { value: 'briefcase', label: 'Work', emoji: '💼' },
+  { value: 'graduation', label: 'Education', emoji: '🎓' },
+  { value: 'baby', label: 'Family', emoji: '👶' },
+  { value: 'ring', label: 'Milestone', emoji: '💍' },
+  { value: 'custom', label: 'Custom', emoji: '📁' },
+] as const;
+
+export const CHAPTER_COLORS = [
+  { value: 'rose', label: 'Rose', color: 'oklch(0.65 0.2 350)' },
+  { value: 'amber', label: 'Amber', color: 'oklch(0.75 0.18 75)' },
+  { value: 'emerald', label: 'Emerald', color: 'oklch(0.65 0.17 160)' },
+  { value: 'sky', label: 'Sky', color: 'oklch(0.65 0.15 230)' },
+  { value: 'violet', label: 'Violet', color: 'oklch(0.60 0.2 280)' },
+  { value: 'slate', label: 'Slate', color: 'oklch(0.55 0.03 250)' },
+] as const;
+
 export interface Entry {
   id: string;
   date: string;
@@ -25,6 +57,7 @@ export interface Entry {
   uncertain_claims: string[] | null;
   is_locked: boolean;
   is_starred: boolean;
+  chapter_ids: string[];
   photos: Photo[];
   created_at: string;
   updated_at: string;

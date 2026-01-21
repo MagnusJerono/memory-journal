@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Entry, Photo, StoryTone, STORY_TONES, LocationSuggestion } from '@/lib/types';
+import { Entry, Photo, StoryTone, STORY_TONES, LocationSuggestion, Chapter, CHAPTER_ICONS } from '@/lib/types';
 import { formatDate, getEntryTitle, generateAIContent, QuestionAnswer } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,12 +52,14 @@ const SPEECH_LANGUAGES = [
 
 interface EntryDetailProps {
   entry: Entry;
+  chapters: Chapter[];
   onSave: (entry: Entry) => void;
   onDelete: () => void;
   onBack: () => void;
+  onAssignChapter: (entryId: string, chapterId: string) => void;
 }
 
-export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProps) {
+export function EntryDetail({ entry, chapters, onSave, onDelete, onBack, onAssignChapter }: EntryDetailProps) {
   const [localEntry, setLocalEntry] = useState<Entry>(entry);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [newHighlight, setNewHighlight] = useState('');
@@ -614,6 +616,36 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
                 {tags.themes.map(tag => (
                   <Badge key={tag} variant="outline">{tag}</Badge>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {chapters.length > 0 && (
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3 block">
+                Chapters
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {chapters.map(chapter => {
+                  const isAssigned = (localEntry.chapter_ids || []).includes(chapter.id);
+                  const iconEmoji = CHAPTER_ICONS.find(i => i.value === chapter.icon)?.emoji || '📁';
+                  return (
+                    <button
+                      key={chapter.id}
+                      onClick={() => onAssignChapter(localEntry.id, chapter.id)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5",
+                        isAssigned 
+                          ? "text-white shadow-sm" 
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                      )}
+                      style={isAssigned ? { backgroundColor: chapter.color } : undefined}
+                    >
+                      <span>{iconEmoji}</span>
+                      <span>{chapter.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

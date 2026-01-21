@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { Entry, View } from './lib/types';
+import { Entry, View, Chapter } from './lib/types';
 import { Timeline } from './components/timeline/Timeline';
 import { NewEntry } from './components/entry/NewEntry';
 import { EntryDetail } from './components/entry/EntryDetail';
@@ -11,6 +11,7 @@ import { useNightMode } from './hooks/use-night-mode';
 
 function App() {
   const [entries, setEntries] = useKV<Entry[]>('ziel-entries', []);
+  const [chapters, setChapters] = useKV<Chapter[]>('ziel-chapters', []);
   const [currentView, setCurrentView] = useState<View>('timeline');
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -40,7 +41,7 @@ function App() {
         updated[existing] = { ...entry, updated_at: new Date().toISOString() };
         return updated;
       }
-      return [...list, { ...entry, is_starred: entry.is_starred ?? false }];
+      return [...list, { ...entry, is_starred: entry.is_starred ?? false, chapter_ids: entry.chapter_ids ?? [] }];
     });
   };
 
@@ -61,10 +62,50 @@ function App() {
     });
   };
 
+  const handleSaveChapter = (chapter: Chapter) => {
+    setChapters((current) => {
+      const list = current || [];
+      const existing = list.findIndex(c => c.id === chapter.id);
+      if (existing >= 0) {
+        const updated = [...list];
+        updated[existing] = { ...chapter, updated_at: new Date().toISOString() };
+        return updated;
+      }
+      return [...list, chapter];
+    });
+  };
+
+  const handleDeleteChapter = (chapterId: string) => {
+    setChapters((current) => (current || []).filter(c => c.id !== chapterId));
+    setEntries((current) => {
+      const list = current || [];
+      return list.map(e => ({
+        ...e,
+        chapter_ids: (e.chapter_ids || []).filter(id => id !== chapterId)
+      }));
+    });
+  };
+
+  const handleAssignChapter = (entryId: string, chapterId: string) => {
+    setEntries((current) => {
+      const list = current || [];
+      return list.map(e => {
+        if (e.id !== entryId) return e;
+        const currentChapters = e.chapter_ids || [];
+        if (currentChapters.includes(chapterId)) {
+          return { ...e, chapter_ids: currentChapters.filter(id => id !== chapterId), updated_at: new Date().toISOString() };
+        }
+        return { ...e, chapter_ids: [...currentChapters, chapterId], updated_at: new Date().toISOString() };
+      });
+    });
+  };
+
   const entryList = (entries || []).map(e => ({
     ...e,
-    is_starred: e.is_starred ?? false
+    is_starred: e.is_starred ?? false,
+    chapter_ids: e.chapter_ids ?? []
   }));
+  const chapterList = chapters || [];
   const selectedEntry = selectedEntryId 
     ? entryList.find(e => e.id === selectedEntryId) || null
     : null;
@@ -75,12 +116,16 @@ function App() {
       {currentView === 'timeline' && (
         <Timeline
           entries={entryList}
+          chapters={chapterList}
           selectedYear={selectedYear}
           onYearChange={setSelectedYear}
           onSelectEntry={(id) => handleNavigate('entry', id)}
           onNewEntry={() => handleNavigate('new')}
           onViewYearbook={() => handleNavigate('yearbook')}
           onToggleStar={handleToggleStar}
+          onSaveChapter={handleSaveChapter}
+          onDeleteChapter={handleDeleteChapter}
+          onAssignChapter={handleAssignChapter}
           themeMode={themeMode}
           onThemeModeChange={setThemeMode}
           isDarkMode={isDarkMode}
@@ -101,9 +146,11 @@ function App() {
       {currentView === 'entry' && selectedEntry && (
         <EntryDetail
           entry={selectedEntry}
+          chapters={chapterList}
           onSave={handleSaveEntry}
           onDelete={() => handleDeleteEntry(selectedEntry.id)}
           onBack={() => handleNavigate('timeline')}
+          onAssignChapter={handleAssignChapter}
         />
       )}
 

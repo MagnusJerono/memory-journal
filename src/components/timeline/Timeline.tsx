@@ -1,22 +1,27 @@
 import { useState } from 'react';
-import { Entry, ThemeMode } from '@/lib/types';
+import { Entry, ThemeMode, Chapter } from '@/lib/types';
 import { filterEntriesByYear, getAvailableYears, getEntryTitle, formatShortDate, searchEntries } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart } from '@phosphor-icons/react';
+import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart, FolderSimple } from '@phosphor-icons/react';
 import { BrandHeader } from '@/components/BrandHeader';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { ChaptersPanel } from './ChaptersPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimelineProps {
   entries: Entry[];
+  chapters: Chapter[];
   selectedYear: number;
   onYearChange: (year: number) => void;
   onSelectEntry: (id: string) => void;
   onNewEntry: () => void;
   onViewYearbook: () => void;
   onToggleStar?: (entryId: string) => void;
+  onSaveChapter: (chapter: Chapter) => void;
+  onDeleteChapter: (chapterId: string) => void;
+  onAssignChapter: (entryId: string, chapterId: string) => void;
   themeMode: ThemeMode;
   onThemeModeChange: (mode: ThemeMode) => void;
   isDarkMode: boolean;
@@ -25,12 +30,16 @@ interface TimelineProps {
 
 export function Timeline({
   entries,
+  chapters,
   selectedYear,
   onYearChange,
   onSelectEntry,
   onNewEntry,
   onViewYearbook,
   onToggleStar,
+  onSaveChapter,
+  onDeleteChapter,
+  onAssignChapter,
   themeMode,
   onThemeModeChange,
   isDarkMode,
@@ -39,6 +48,7 @@ export function Timeline({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   
   const years = getAvailableYears(entries);
   const yearFiltered = filterEntriesByYear(entries, selectedYear);
@@ -47,6 +57,15 @@ export function Timeline({
   if (showFavoritesOnly) {
     filteredEntries = filteredEntries.filter(e => e.is_starred);
   }
+  
+  if (selectedChapterId) {
+    filteredEntries = filteredEntries.filter(e => (e.chapter_ids || []).includes(selectedChapterId));
+  }
+  
+  const entryCountByChapter: Record<string, number> = {};
+  chapters.forEach(ch => {
+    entryCountByChapter[ch.id] = yearFiltered.filter(e => (e.chapter_ids || []).includes(ch.id)).length;
+  });
   
   const starredEntries = filteredEntries.filter(e => e.is_starred);
   const otherEntries = filteredEntries.filter(e => !e.is_starred);
@@ -124,6 +143,15 @@ export function Timeline({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        <ChaptersPanel
+          chapters={chapters}
+          selectedChapterId={selectedChapterId}
+          onSelectChapter={setSelectedChapterId}
+          onSaveChapter={onSaveChapter}
+          onDeleteChapter={onDeleteChapter}
+          entryCountByChapter={entryCountByChapter}
+        />
+
         {starredCount > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
