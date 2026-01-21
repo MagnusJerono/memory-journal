@@ -6,13 +6,13 @@
     @apply border-border;
   }
   
-  body {
+  html, body, #root {
     background: transparent !important;
   }
 }
 
 :root {
-  --background: oklch(0.98 0.008 250);
+  --background: transparent;
   --foreground: oklch(0.18 0.03 280);
 
   --card: oklch(0.99 0.005 260 / 0.85);
@@ -93,6 +93,12 @@
 body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   background: transparent !important;
+  min-height: 100vh;
+}
+
+#root {
+  background: transparent !important;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -113,8 +113,8 @@ export function DreamyBackground() {
   const stars = useMemo(() => generateStars(35), []);
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-sky-100/80 via-background to-violet-50/50" />
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+      <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.88_0.06_250)] via-[oklch(0.92_0.04_280)] to-[oklch(0.95_0.03_300)]" />
 
       <div className="absolute inset-0 pointer-events-none">
         {stars.map((star) => (
@@ -245,7 +245,7 @@ export function DreamyBackground() {
         }}
       />
 
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[oklch(0.96_0.02_290)] to-transparent" />
     </div>
   );
 }

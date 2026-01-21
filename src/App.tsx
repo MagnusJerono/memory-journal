@@ -46,7 +46,7 @@ function App() {
     : null;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       <DreamyBackground />
       {currentView === 'timeline' && (
         <Timeline
