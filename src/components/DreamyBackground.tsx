@@ -102,10 +102,10 @@ function generateOrbsDark(count: number): FloatingOrb[] {
 function generateOrbsLight(count: number): FloatingOrb[] {
   const orbs: FloatingOrb[] = [];
   const colors = [
-    'oklch(0.92 0.06 280 / 0.35)',
-    'oklch(0.90 0.08 220 / 0.3)',
-    'oklch(0.88 0.10 180 / 0.25)',
-    'oklch(0.94 0.05 320 / 0.28)',
+    'oklch(0.85 0.10 230 / 0.35)',
+    'oklch(0.82 0.12 210 / 0.3)',
+    'oklch(0.88 0.08 250 / 0.28)',
+    'oklch(0.90 0.06 200 / 0.25)',
   ];
   for (let i = 0; i < count; i++) {
     orbs.push({
@@ -131,7 +131,7 @@ function generateClouds(count: number): Cloud[] {
       scale: Math.random() * 0.8 + 0.6,
       delay: Math.random() * 10,
       duration: Math.random() * 60 + 80,
-      opacity: Math.random() * 0.3 + 0.15,
+      opacity: Math.random() * 0.25 + 0.12,
     });
   }
   return clouds;
@@ -240,11 +240,11 @@ function CloudElement({ cloud }: { cloud: Cloud }) {
       }}
     >
       <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
-        <ellipse cx="60" cy="50" rx="45" ry="25" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
-        <ellipse cx="100" cy="40" rx="55" ry="30" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
-        <ellipse cx="150" cy="50" rx="40" ry="22" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
-        <ellipse cx="80" cy="35" rx="35" ry="20" fill={`oklch(1 0 0 / ${cloud.opacity * 0.8})`} />
-        <ellipse cx="130" cy="35" rx="30" ry="18" fill={`oklch(1 0 0 / ${cloud.opacity * 0.8})`} />
+        <ellipse cx="60" cy="50" rx="45" ry="25" fill={`oklch(1 0.02 220 / ${cloud.opacity})`} />
+        <ellipse cx="100" cy="40" rx="55" ry="30" fill={`oklch(1 0.02 220 / ${cloud.opacity})`} />
+        <ellipse cx="150" cy="50" rx="40" ry="22" fill={`oklch(1 0.02 220 / ${cloud.opacity})`} />
+        <ellipse cx="80" cy="35" rx="35" ry="20" fill={`oklch(1 0.02 220 / ${cloud.opacity * 0.8})`} />
+        <ellipse cx="130" cy="35" rx="30" ry="18" fill={`oklch(1 0.02 220 / ${cloud.opacity * 0.8})`} />
       </svg>
     </motion.div>
   );
@@ -397,10 +397,12 @@ function LightBackground() {
         style={{
           background: `
             linear-gradient(180deg, 
-              oklch(0.92 0.04 220) 0%,
-              oklch(0.95 0.03 230) 30%,
-              oklch(0.97 0.02 240) 60%,
-              oklch(0.98 0.01 250) 100%
+              oklch(0.78 0.10 225) 0%,
+              oklch(0.82 0.08 230) 15%,
+              oklch(0.86 0.06 235) 35%,
+              oklch(0.90 0.04 240) 55%,
+              oklch(0.94 0.02 245) 80%,
+              oklch(0.96 0.01 250) 100%
             )
           `,
         }}
@@ -410,9 +412,9 @@ function LightBackground() {
         className="absolute inset-0"
         style={{
           backgroundImage: `
-            radial-gradient(ellipse 120% 80% at 20% -20%, oklch(0.98 0.05 50 / 0.6) 0%, transparent 50%),
-            radial-gradient(ellipse 100% 60% at 80% 10%, oklch(0.95 0.06 320 / 0.3) 0%, transparent 50%),
-            radial-gradient(ellipse 80% 50% at 50% 100%, oklch(0.90 0.08 260 / 0.25) 0%, transparent 50%)
+            radial-gradient(ellipse 120% 80% at 20% -20%, oklch(0.95 0.06 60 / 0.5) 0%, transparent 50%),
+            radial-gradient(ellipse 100% 60% at 80% 5%, oklch(0.88 0.08 240 / 0.4) 0%, transparent 50%),
+            radial-gradient(ellipse 80% 50% at 50% 100%, oklch(0.85 0.10 220 / 0.3) 0%, transparent 50%)
           `,
         }}
       />
@@ -432,7 +434,7 @@ function LightBackground() {
       <motion.div
         className="absolute w-[600px] h-[600px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, oklch(0.99 0.03 60 / 0.7) 0%, oklch(0.97 0.05 50 / 0.3) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, oklch(0.98 0.04 60 / 0.6) 0%, oklch(0.95 0.05 50 / 0.25) 40%, transparent 70%)',
           filter: 'blur(40px)',
           top: '-15%',
           right: '-5%',
@@ -451,7 +453,7 @@ function LightBackground() {
       <motion.div
         className="absolute w-[500px] h-[400px] rounded-full"
         style={{
-          background: 'radial-gradient(ellipse, oklch(0.94 0.06 280 / 0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, oklch(0.82 0.12 230 / 0.3) 0%, transparent 70%)',
           filter: 'blur(60px)',
           bottom: '10%',
           left: '5%',
@@ -470,7 +472,7 @@ function LightBackground() {
       <motion.div
         className="absolute w-[400px] h-[350px] rounded-full"
         style={{
-          background: 'radial-gradient(ellipse, oklch(0.92 0.08 180 / 0.2) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, oklch(0.80 0.10 210 / 0.25) 0%, transparent 70%)',
           filter: 'blur(50px)',
           top: '40%',
           right: '10%',
@@ -490,7 +492,7 @@ function LightBackground() {
         <svg className="absolute w-full h-full" preserveAspectRatio="none">
           <defs>
             <pattern id="knot-pattern-light" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-              <circle cx="60" cy="60" r="1" fill="oklch(0.85 0.05 280 / 0.12)" />
+              <circle cx="60" cy="60" r="1" fill="oklch(0.70 0.08 230 / 0.12)" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#knot-pattern-light)" />
@@ -504,7 +506,7 @@ function LightBackground() {
         }}
       />
 
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[oklch(0.96_0.02_250)] to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[oklch(0.94_0.03_240)] to-transparent" />
     </>
   );
 }

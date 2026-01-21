@@ -4,7 +4,7 @@ import { filterEntriesByYear, getAvailableYears, getEntryTitle, formatShortDate,
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images } from '@phosphor-icons/react';
+import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart } from '@phosphor-icons/react';
 import { BrandHeader } from '@/components/BrandHeader';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,23 +38,28 @@ export function Timeline({
 }: TimelineProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   
   const years = getAvailableYears(entries);
   const yearFiltered = filterEntriesByYear(entries, selectedYear);
-  const filteredEntries = searchQuery ? searchEntries(yearFiltered, searchQuery) : yearFiltered;
+  let filteredEntries = searchQuery ? searchEntries(yearFiltered, searchQuery) : yearFiltered;
+  
+  if (showFavoritesOnly) {
+    filteredEntries = filteredEntries.filter(e => e.is_starred);
+  }
   
   const starredEntries = filteredEntries.filter(e => e.is_starred);
   const otherEntries = filteredEntries.filter(e => !e.is_starred);
   const sortedEntries = [...starredEntries, ...otherEntries];
   
   const lockedCount = filteredEntries.filter(e => e.is_locked).length;
-  const starredCount = filteredEntries.filter(e => e.is_starred).length;
+  const starredCount = yearFiltered.filter(e => e.is_starred).length;
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 bg-card/70 backdrop-blur-2xl border-b border-border/30">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <BrandHeader />
             <div className="flex items-center gap-2">
               <Button 
@@ -65,12 +70,6 @@ export function Timeline({
               >
                 {showSearch ? <X weight="bold" /> : <MagnifyingGlass weight="bold" />}
               </Button>
-              <SettingsPanel 
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
               <Button variant="outline" size="sm" onClick={onViewYearbook} className="hidden sm:flex border-border/50 bg-secondary/30 hover:bg-secondary/60">
                 <Book className="mr-2" weight="duotone" />
                 Yearbook
@@ -80,6 +79,12 @@ export function Timeline({
                 <span className="hidden sm:inline">New Memory</span>
                 <span className="sm:hidden">New</span>
               </Button>
+              <SettingsPanel 
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
             </div>
           </div>
           
@@ -119,6 +124,49 @@ export function Timeline({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {starredCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={`w-full p-4 rounded-2xl border transition-all duration-300 ${
+                showFavoritesOnly 
+                  ? 'bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' 
+                  : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-amber-400/30 hover:bg-amber-500/5'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${showFavoritesOnly ? 'bg-amber-400/30' : 'bg-amber-400/15'}`}>
+                    <Heart weight={showFavoritesOnly ? 'fill' : 'duotone'} className={`w-5 h-5 ${showFavoritesOnly ? 'text-amber-500' : 'text-amber-400/80'}`} />
+                  </div>
+                  <div className="text-left">
+                    <p className={`font-semibold ${showFavoritesOnly ? 'text-amber-600 dark:text-amber-300' : 'text-foreground'}`}>
+                      Precious Memories
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {starredCount} {starredCount === 1 ? 'moment' : 'moments'} you want to hold tight
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                    showFavoritesOnly 
+                      ? 'bg-amber-400/30 text-amber-600 dark:text-amber-300' 
+                      : 'bg-muted/50 text-muted-foreground'
+                  }`}>
+                    {showFavoritesOnly ? 'Showing favorites' : 'View all'}
+                  </span>
+                  <Star weight="fill" className="w-4 h-4 text-amber-400" />
+                </div>
+              </div>
+            </button>
+          </motion.div>
+        )}
+
         <div className="mb-8 flex items-center justify-between gap-4">
           <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
             <SelectTrigger className="w-36 bg-card/60 backdrop-blur-sm border-border/40 text-foreground">
@@ -140,7 +188,7 @@ export function Timeline({
             {!searchQuery && filteredEntries.length > 0 && (
               <>
                 <span className="font-medium">{filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}</span>
-                {starredCount > 0 && (
+                {starredCount > 0 && !showFavoritesOnly && (
                   <span className="flex items-center gap-1">
                     <Star weight="fill" className="text-amber-400" size={14} />
                     {starredCount}
@@ -157,6 +205,8 @@ export function Timeline({
         {filteredEntries.length === 0 ? (
           searchQuery ? (
             <NoResultsState query={searchQuery} onClear={() => setSearchQuery('')} />
+          ) : showFavoritesOnly ? (
+            <NoFavoritesState onShowAll={() => setShowFavoritesOnly(false)} />
           ) : (
             <EmptyState onNewEntry={onNewEntry} year={selectedYear} />
           )
@@ -381,6 +431,30 @@ function NoResultsState({ query, onClear }: { query: string; onClear: () => void
       </p>
       <Button variant="outline" onClick={onClear} className="border-border/50">
         Clear search
+      </Button>
+    </motion.div>
+  );
+}
+
+function NoFavoritesState({ onShowAll }: { onShowAll: () => void }) {
+  return (
+    <motion.div 
+      className="text-center py-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="w-24 h-24 mx-auto mb-8 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-400/30">
+        <Heart className="w-12 h-12 text-amber-400/50" weight="duotone" />
+      </div>
+      <h2 className="font-serif text-2xl font-semibold mb-3 text-foreground tracking-tight">
+        No precious memories yet
+      </h2>
+      <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+        Star your favorite memories to see them here. These are the moments worth holding tight.
+      </p>
+      <Button variant="outline" onClick={onShowAll} className="border-border/50">
+        Show all memories
       </Button>
     </motion.div>
   );

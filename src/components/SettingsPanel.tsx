@@ -1,6 +1,7 @@
 import { ThemeMode } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import {
   Sheet,
   SheetContent,
@@ -10,9 +11,24 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { GearSix, Sun, Moon, CircleHalf, User } from '@phosphor-icons/react';
+import { 
+  GearSix, 
+  Sun, 
+  Moon, 
+  CircleHalf, 
+  User, 
+  Bell, 
+  Globe, 
+  Shield, 
+  Download, 
+  Trash, 
+  SignOut,
+  Info,
+  Envelope
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useKV } from '@github/spark/hooks';
 
 interface SettingsPanelProps {
   themeMode: ThemeMode;
@@ -21,21 +37,51 @@ interface SettingsPanelProps {
   isNightTime: boolean;
 }
 
+interface UserPreferences {
+  notifications: boolean;
+  emailUpdates: boolean;
+  autoSave: boolean;
+  language: string;
+}
+
 export function SettingsPanel({ 
   themeMode, 
   onThemeModeChange, 
   isDarkMode,
   isNightTime 
 }: SettingsPanelProps) {
-  const [user, setUser] = useState<{ login: string; avatarUrl: string } | null>(null);
+  const [user, setUser] = useState<{ login: string; avatarUrl: string; email?: string } | null>(null);
+  const [preferences, setPreferences] = useKV<UserPreferences>('user-preferences', {
+    notifications: true,
+    emailUpdates: false,
+    autoSave: true,
+    language: 'en'
+  });
 
   useEffect(() => {
     window.spark.user().then((u) => {
       if (u) {
-        setUser({ login: u.login, avatarUrl: u.avatarUrl });
+        setUser({ login: u.login, avatarUrl: u.avatarUrl, email: u.email });
       }
     }).catch(() => {});
   }, []);
+
+  const updatePreference = (key: keyof UserPreferences, value: boolean | string) => {
+    setPreferences((current) => ({
+      notifications: current?.notifications ?? true,
+      emailUpdates: current?.emailUpdates ?? false,
+      autoSave: current?.autoSave ?? true,
+      language: current?.language ?? 'en',
+      [key]: value
+    }));
+  };
+
+  const currentPreferences = preferences ?? {
+    notifications: true,
+    emailUpdates: false,
+    autoSave: true,
+    language: 'en'
+  };
 
   return (
     <Sheet>
@@ -52,41 +98,147 @@ export function SettingsPanel({
               className="w-7 h-7 rounded-full ring-2 ring-border/50"
             />
           ) : (
-            <GearSix weight="duotone" className="w-5 h-5" />
+            <User weight="duotone" className="w-5 h-5" />
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="bg-card/95 backdrop-blur-xl border-border/50">
+      <SheetContent className="bg-card/95 backdrop-blur-xl border-border/50 overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-serif text-2xl">Settings</SheetTitle>
+          <SheetTitle className="font-serif text-2xl">Profile & Settings</SheetTitle>
           <SheetDescription>
-            Customize your Tightly experience
+            Manage your Tightly experience
           </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-8 space-y-8">
-          {user && (
-            <>
-              <div className="flex items-center gap-4">
+        <div className="mt-6 space-y-6">
+          <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 border border-border/30">
+            <div className="flex items-center gap-4">
+              {user?.avatarUrl ? (
                 <img 
                   src={user.avatarUrl} 
                   alt={user.login}
-                  className="w-14 h-14 rounded-full ring-2 ring-primary/30"
+                  className="w-16 h-16 rounded-full ring-3 ring-primary/30 shadow-lg"
                 />
-                <div>
-                  <p className="font-semibold text-foreground">{user.login}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <User weight="duotone" className="w-3.5 h-3.5" />
-                    Profile
-                  </p>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center ring-3 ring-border/30">
+                  <User weight="duotone" className="w-8 h-8 text-muted-foreground" />
                 </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-lg text-foreground truncate">{user?.login || 'Guest User'}</p>
+                {user?.email && (
+                  <p className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
+                    <Envelope weight="duotone" className="w-3.5 h-3.5 flex-shrink-0" />
+                    {user.email}
+                  </p>
+                )}
+                <p className="text-xs text-primary mt-1">Premium Member</p>
               </div>
-              <Separator className="bg-border/50" />
-            </>
-          )}
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <User weight="duotone" className="w-4 h-4" />
+              Account
+            </h3>
+            
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<Globe weight="duotone" className="w-4 h-4" />}
+                label="Language"
+                description="App display language"
+                action={
+                  <span className="text-sm text-muted-foreground">English</span>
+                }
+              />
+              <SettingRow 
+                icon={<Shield weight="duotone" className="w-4 h-4" />}
+                label="Privacy"
+                description="Manage your data"
+                action={
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">
+                    View
+                  </Button>
+                }
+              />
+              <SettingRow 
+                icon={<Download weight="duotone" className="w-4 h-4" />}
+                label="Export Data"
+                description="Download your memories"
+                action={
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">
+                    Export
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <Bell weight="duotone" className="w-4 h-4" />
+              Notifications
+            </h3>
+            
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<Bell weight="duotone" className="w-4 h-4" />}
+                label="Push Notifications"
+                description="Get notified about memories"
+                action={
+                  <Switch 
+                    checked={currentPreferences.notifications}
+                    onCheckedChange={(v) => updatePreference('notifications', v)}
+                  />
+                }
+              />
+              <SettingRow 
+                icon={<Envelope weight="duotone" className="w-4 h-4" />}
+                label="Email Updates"
+                description="Weekly memory digest"
+                action={
+                  <Switch 
+                    checked={currentPreferences.emailUpdates}
+                    onCheckedChange={(v) => updatePreference('emailUpdates', v)}
+                  />
+                }
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <GearSix weight="duotone" className="w-4 h-4" />
+              Preferences
+            </h3>
+            
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<GearSix weight="duotone" className="w-4 h-4" />}
+                label="Auto-save"
+                description="Save entries automatically"
+                action={
+                  <Switch 
+                    checked={currentPreferences.autoSave}
+                    onCheckedChange={(v) => updatePreference('autoSave', v)}
+                  />
+                }
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              {isDarkMode ? <Moon weight="duotone" className="w-4 h-4" /> : <Sun weight="duotone" className="w-4 h-4" />}
               Appearance
             </h3>
             
@@ -204,12 +356,74 @@ export function SettingsPanel({
 
           <Separator className="bg-border/50" />
 
-          <div className="text-xs text-muted-foreground text-center space-y-1">
-            <p className="font-medium">Tightly</p>
-            <p>Hold on to your memories</p>
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <Info weight="duotone" className="w-4 h-4" />
+              About
+            </h3>
+            
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<Info weight="duotone" className="w-4 h-4" />}
+                label="Version"
+                description="Current app version"
+                action={
+                  <span className="text-sm text-muted-foreground">1.0.0</span>
+                }
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div className="space-y-2">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              <SignOut weight="duotone" className="w-4 h-4 mr-3" />
+              Sign Out
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash weight="duotone" className="w-4 h-4 mr-3" />
+              Delete Account
+            </Button>
+          </div>
+
+          <div className="text-xs text-muted-foreground text-center space-y-1 pt-4">
+            <p className="font-serif text-sm">Tightly</p>
+            <p className="tracking-wide">Hold them tight</p>
           </div>
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function SettingRow({ 
+  icon, 
+  label, 
+  description, 
+  action 
+}: { 
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  action: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="text-muted-foreground">{icon}</div>
+        <div>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      {action}
+    </div>
   );
 }
