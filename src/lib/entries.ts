@@ -10,10 +10,16 @@ const TONE_INSTRUCTIONS: Record<Exclude<StoryTone, 'custom'>, string> = {
   humorous: `Write with a light-hearted, witty tone. Find the funny moments, use playful language, and don't take things too seriously. Add charm and humor while respecting the memory.`
 };
 
+export interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
+
 interface GenerationOptions {
   tone: StoryTone;
   customTonePrompt?: string;
   outputLanguage?: string;
+  refinementAnswers?: QuestionAnswer[];
 }
 
 function getLanguageName(code: string): string {
@@ -22,7 +28,7 @@ function getLanguageName(code: string): string {
 }
 
 function buildSystemPrompt(options: GenerationOptions): string {
-  const { tone, customTonePrompt, outputLanguage } = options;
+  const { tone, customTonePrompt, outputLanguage, refinementAnswers } = options;
   
   let toneInstructions: string;
   if (tone === 'custom' && customTonePrompt) {
@@ -35,6 +41,13 @@ function buildSystemPrompt(options: GenerationOptions): string {
 
   const languageInstruction = outputLanguage && outputLanguage !== 'en'
     ? `\n\nIMPORTANT: Write the entire output (title, highlights, story, tags) in ${getLanguageName(outputLanguage)}. The JSON keys must remain in English, but all values/content must be in ${getLanguageName(outputLanguage)}.`
+    : '';
+
+  const refinementSection = refinementAnswers && refinementAnswers.length > 0
+    ? `\n\nThe user has provided additional details in response to clarifying questions. Use this information to enrich and improve the story:
+${refinementAnswers.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n')}
+
+Incorporate these answers naturally into the story. Update tags, highlights, and reduce or remove related missing_info_questions since they've been answered.`
     : '';
 
   return `You are a memory journaling writing assistant.
@@ -67,14 +80,15 @@ Required JSON structure:
 Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
-- no invented names/places${languageInstruction}`;
+- no invented names/places${languageInstruction}${refinementSection}`;
 }
 
 export async function generateAIContent(
   entry: Entry, 
   tone: StoryTone = 'natural',
   customTonePrompt?: string,
-  outputLanguage?: string
+  outputLanguage?: string,
+  refinementAnswers?: QuestionAnswer[]
 ): Promise<AIGenerationResult> {
   const userContent = JSON.stringify({
     date: entry.date,
@@ -82,7 +96,7 @@ export async function generateAIContent(
     transcript: entry.transcript || ''
   });
 
-  const systemPrompt = buildSystemPrompt({ tone, customTonePrompt, outputLanguage });
+  const systemPrompt = buildSystemPrompt({ tone, customTonePrompt, outputLanguage, refinementAnswers });
   const fullPrompt = `${systemPrompt}
 
 User input:

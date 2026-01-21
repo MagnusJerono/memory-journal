@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
-import { formatDate, getEntryTitle, generateAIContent } from '@/lib/entries';
+import { formatDate, getEntryTitle, generateAIContent, QuestionAnswer } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   ArrowLeft, Lock, LockOpen, Sparkle, Trash, Plus, X, 
-  Spinner, Warning, Images, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple 
+  Spinner, Warning, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple 
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -29,6 +29,7 @@ import { useKV } from '@github/spark/hooks';
 import { BrandHeaderCompact } from '@/components/BrandHeader';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
+import { RefinementPanel } from './RefinementPanel';
 import { cn } from '@/lib/utils';
 
 const SPEECH_LANGUAGES = [
@@ -118,7 +119,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
     toast.success(localEntry.is_locked ? 'Entry unlocked' : 'Entry locked');
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (refinementAnswers?: QuestionAnswer[]) => {
     if (localEntry.is_locked) {
       toast.error('Entry is locked', {
         description: 'Unlock to regenerate the story.'
@@ -135,7 +136,13 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
     setIsRegenerating(true);
     try {
-      const aiResult = await generateAIContent(localEntry, storyTone || 'natural');
+      const aiResult = await generateAIContent(
+        localEntry, 
+        storyTone || 'natural',
+        undefined,
+        undefined,
+        refinementAnswers
+      );
       updateEntry({
         title_ai: aiResult.title,
         highlights_ai: aiResult.highlights,
@@ -144,13 +151,17 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
         missing_info_questions: aiResult.missing_info_questions,
         uncertain_claims: aiResult.uncertain_claims
       });
-      toast.success('Story regenerated');
+      toast.success(refinementAnswers ? 'Story improved with your answers' : 'Story regenerated');
     } catch (error) {
       console.error('Regeneration failed:', error);
       toast.error('Failed to regenerate');
     } finally {
       setIsRegenerating(false);
     }
+  };
+
+  const handleRefinementSubmit = (answers: QuestionAnswer[]) => {
+    handleRegenerate(answers);
   };
 
   const addHighlight = () => {
@@ -529,19 +540,14 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
           )}
 
           {localEntry.missing_info_questions && localEntry.missing_info_questions.length > 0 && (
-            <Card className="p-4 bg-accent/10 border-accent/20">
-              <div className="flex items-start gap-3">
-                <Warning className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" weight="fill" />
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Quick questions to make this story better</h4>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    {localEntry.missing_info_questions.map((q, i) => (
-                      <li key={i}>• {q}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </Card>
+            <RefinementPanel
+              questions={localEntry.missing_info_questions}
+              speechLanguage={speechLanguage || 'en-US'}
+              onSpeechLanguageChange={(lang) => setSpeechLanguage(lang)}
+              onSubmitAnswers={handleRefinementSubmit}
+              isRegenerating={isRegenerating}
+              isLocked={localEntry.is_locked}
+            />
           )}
 
           {localEntry.uncertain_claims && localEntry.uncertain_claims.length > 0 && (
@@ -611,7 +617,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
             )}
 
             <Button
-              onClick={handleRegenerate}
+              onClick={() => handleRegenerate()}
               disabled={localEntry.is_locked || isRegenerating}
               variant={localEntry.is_locked ? "outline" : "default"}
             >
