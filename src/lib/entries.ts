@@ -1,7 +1,7 @@
-import { Entry, AIGenerationResult, StoryTone } from './types';
+import { Entry, AIGenerationResult, StoryTone, STORY_LANGUAGES } from './types';
 import { v4 as uuid } from 'uuid';
 
-const TONE_INSTRUCTIONS: Record<StoryTone, string> = {
+const TONE_INSTRUCTIONS: Record<Exclude<StoryTone, 'custom'>, string> = {
   natural: `Write in a natural, authentic voice. Use conversational language that feels genuine and unforced, like someone sharing a meaningful memory with a close friend.`,
   casual: `Write in a relaxed, casual tone. Use informal language, contractions, and a friendly vibe - like texting a good friend about your day. Keep it light and approachable.`,
   poetic: `Write with lyrical, evocative language. Use vivid imagery, metaphors, and sensory details to paint the scene beautifully. Let the words flow with rhythm and emotion.`,
@@ -10,10 +10,36 @@ const TONE_INSTRUCTIONS: Record<StoryTone, string> = {
   humorous: `Write with a light-hearted, witty tone. Find the funny moments, use playful language, and don't take things too seriously. Add charm and humor while respecting the memory.`
 };
 
-function buildSystemPrompt(tone: StoryTone): string {
+interface GenerationOptions {
+  tone: StoryTone;
+  customTonePrompt?: string;
+  outputLanguage?: string;
+}
+
+function getLanguageName(code: string): string {
+  const lang = STORY_LANGUAGES.find(l => l.code === code);
+  return lang ? lang.label : 'English';
+}
+
+function buildSystemPrompt(options: GenerationOptions): string {
+  const { tone, customTonePrompt, outputLanguage } = options;
+  
+  let toneInstructions: string;
+  if (tone === 'custom' && customTonePrompt) {
+    toneInstructions = `Write following these custom style instructions from the user: "${customTonePrompt}"`;
+  } else if (tone !== 'custom') {
+    toneInstructions = TONE_INSTRUCTIONS[tone];
+  } else {
+    toneInstructions = TONE_INSTRUCTIONS.natural;
+  }
+
+  const languageInstruction = outputLanguage && outputLanguage !== 'en'
+    ? `\n\nIMPORTANT: Write the entire output (title, highlights, story, tags) in ${getLanguageName(outputLanguage)}. The JSON keys must remain in English, but all values/content must be in ${getLanguageName(outputLanguage)}.`
+    : '';
+
   return `You are a memory journaling writing assistant.
 
-${TONE_INSTRUCTIONS[tone]}
+${toneInstructions}
 
 Do not invent facts. Use ONLY the user-provided transcript and optional user title.
 
@@ -41,17 +67,22 @@ Required JSON structure:
 Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
-- no invented names/places`;
+- no invented names/places${languageInstruction}`;
 }
 
-export async function generateAIContent(entry: Entry, tone: StoryTone = 'natural'): Promise<AIGenerationResult> {
+export async function generateAIContent(
+  entry: Entry, 
+  tone: StoryTone = 'natural',
+  customTonePrompt?: string,
+  outputLanguage?: string
+): Promise<AIGenerationResult> {
   const userContent = JSON.stringify({
     date: entry.date,
     user_title: entry.title_user || '',
     transcript: entry.transcript || ''
   });
 
-  const systemPrompt = buildSystemPrompt(tone);
+  const systemPrompt = buildSystemPrompt({ tone, customTonePrompt, outputLanguage });
   const fullPrompt = `${systemPrompt}
 
 User input:

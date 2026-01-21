@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
+import { Entry, Photo, StoryTone, STORY_TONES, STORY_LANGUAGES } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe, PenNib } from '@phosphor-icons/react';
+import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe, PenNib, Translate } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,8 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
   const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
+  const [storyLanguage, setStoryLanguage] = useKV<string>('ziel-story-language', 'en');
+  const [customTonePrompt, setCustomTonePrompt] = useKV<string>('ziel-custom-tone', '');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -140,7 +142,13 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
       entry.transcript = transcript.trim();
       entry.photos = photos.map(p => ({ ...p, entry_id: entry.id }));
 
-      const aiResult = await generateAIContent(entry, storyTone || 'natural');
+      const currentTone = storyTone || 'natural';
+      const aiResult = await generateAIContent(
+        entry, 
+        currentTone,
+        currentTone === 'custom' ? (customTonePrompt || undefined) : undefined,
+        storyLanguage || 'en'
+      );
 
       entry.title_ai = aiResult.title;
       entry.highlights_ai = aiResult.highlights;
@@ -350,32 +358,79 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
             )}
           </div>
 
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
-              Story Tone
-            </label>
-            <div className="flex items-center gap-2">
-              <PenNib weight="duotone" className="h-4 w-4 text-muted-foreground" />
-              <Select 
-                value={storyTone || 'natural'} 
-                onValueChange={(value) => setStoryTone(value as StoryTone)}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Choose a tone" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STORY_TONES.map((tone) => (
-                    <SelectItem key={tone.value} value={tone.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{tone.flag}</span>
-                        <span className="font-medium">{tone.label}</span>
-                        <span className="text-muted-foreground text-xs">— {tone.description}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
+                Story Language
+              </label>
+              <div className="flex items-center gap-2">
+                <Translate weight="duotone" className="h-4 w-4 text-muted-foreground" />
+                <Select 
+                  value={storyLanguage || 'en'} 
+                  onValueChange={(value) => setStoryLanguage(value)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Choose a language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STORY_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <span className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
+                Story Tone
+              </label>
+              <div className="flex items-center gap-2">
+                <PenNib weight="duotone" className="h-4 w-4 text-muted-foreground" />
+                <Select 
+                  value={storyTone || 'natural'} 
+                  onValueChange={(value) => setStoryTone(value as StoryTone)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Choose a tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STORY_TONES.map((tone) => (
+                      <SelectItem key={tone.value} value={tone.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{tone.flag}</span>
+                          <span className="font-medium">{tone.label}</span>
+                          <span className="text-muted-foreground text-xs">— {tone.description}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {storyTone === 'custom' && (
+              <div className="pl-6">
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Describe your writing style
+                </label>
+                <Textarea
+                  id="custom-tone-prompt"
+                  placeholder="e.g., Write like a laid-back storyteller, use German idioms, or mimic Ernest Hemingway's style..."
+                  value={customTonePrompt || ''}
+                  onChange={(e) => setCustomTonePrompt(e.target.value)}
+                  className="min-h-[80px] text-sm resize-none"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Be specific about the voice, style, or characteristics you want.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t">

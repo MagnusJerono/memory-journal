@@ -52,7 +52,7 @@ export interface AIGenerationResult {
 
 export type View = 'timeline' | 'new' | 'entry' | 'yearbook';
 
-export type StoryTone = 'natural' | 'poetic' | 'casual' | 'journalistic' | 'humorous' | 'nostalgic';
+export type StoryTone = 'natural' | 'poetic' | 'casual' | 'journalistic' | 'humorous' | 'nostalgic' | 'custom';
 
 export const STORY_TONES: { value: StoryTone; label: string; description: string; flag: string }[] = [
   { value: 'natural', label: 'Natural', description: 'Authentic and conversational', flag: '💬' },
@@ -61,4 +61,19 @@ export const STORY_TONES: { value: StoryTone; label: string; description: string
   { value: 'nostalgic', label: 'Nostalgic', description: 'Warm and reflective', flag: '🌅' },
   { value: 'journalistic', label: 'Journalistic', description: 'Clear and factual', flag: '📰' },
   { value: 'humorous', label: 'Humorous', description: 'Light-hearted and fun', flag: '😄' },
+  { value: 'custom', label: 'Custom', description: 'Define your own style', flag: '🎨' },
+];
+
+export const STORY_LANGUAGES = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+  { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl', label: 'Polski', flag: '🇵🇱' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
