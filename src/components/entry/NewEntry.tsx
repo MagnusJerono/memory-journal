@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Entry, Photo } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner } from '@phosphor-icons/react';
+import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
+import { useSpeechToText } from '@/hooks/use-speech-to-text';
 
 interface NewEntryProps {
   onSave: (entry: Entry) => void;
@@ -24,6 +25,46 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const {
+    isListening,
+    isSupported: speechSupported,
+    transcript: speechTranscript,
+    interimTranscript,
+    startListening,
+    stopListening,
+    resetTranscript: resetSpeechTranscript,
+  } = useSpeechToText({
+    lang: 'en-US',
+    continuous: true,
+    onError: (error) => {
+      toast.error('Speech recognition error', {
+        description: error
+      });
+    }
+  });
+
+  useEffect(() => {
+    if (speechTranscript) {
+      setTranscript(prev => prev + (prev ? ' ' : '') + speechTranscript);
+      resetSpeechTranscript();
+    }
+  }, [speechTranscript, resetSpeechTranscript]);
+
+  useEffect(() => {
+    if (textareaRef.current && isListening) {
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    }
+  }, [transcript, interimTranscript, isListening]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -156,19 +197,56 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
               What happened?
             </label>
-            <Textarea
-              id="entry-transcript"
-              placeholder="What happened? Where were you, with whom, and what made it memorable?"
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-              className="min-h-[200px] text-base leading-relaxed resize-none"
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {transcript.length < 40 
-                ? `${40 - transcript.length} more characters needed`
-                : `${transcript.length} characters`
-              }
-            </p>
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                id="entry-transcript"
+                placeholder="What happened? Where were you, with whom, and what made it memorable?"
+                value={transcript + (isListening && interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')}
+                onChange={(e) => {
+                  if (!isListening) {
+                    setTranscript(e.target.value);
+                  }
+                }}
+                readOnly={isListening}
+                className={cn(
+                  "min-h-[200px] text-base leading-relaxed resize-none pr-14",
+                  isListening && "bg-accent/10 border-accent"
+                )}
+              />
+              {speechSupported && (
+                <Button
+                  type="button"
+                  variant={isListening ? "default" : "outline"}
+                  size="icon"
+                  onClick={toggleListening}
+                  className={cn(
+                    "absolute right-2 top-2 transition-all",
+                    isListening && "bg-destructive hover:bg-destructive/90 text-destructive-foreground animate-pulse"
+                  )}
+                >
+                  {isListening ? (
+                    <Stop weight="fill" className="h-5 w-5" />
+                  ) : (
+                    <Microphone weight="duotone" className="h-5 w-5" />
+                  )}
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">
+                {transcript.length < 40 
+                  ? `${40 - transcript.length} more characters needed`
+                  : `${transcript.length} characters`
+                }
+              </p>
+              {isListening && (
+                <p className="text-xs text-accent font-medium flex items-center gap-1">
+                  <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+                  Listening...
+                </p>
+              )}
+            </div>
           </div>
 
           <div>
