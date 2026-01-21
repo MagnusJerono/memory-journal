@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Entry, Photo } from '@/lib/types';
+import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe } from '@phosphor-icons/react';
+import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe, PenNib } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
+  const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -139,7 +140,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
       entry.transcript = transcript.trim();
       entry.photos = photos.map(p => ({ ...p, entry_id: entry.id }));
 
-      const aiResult = await generateAIContent(entry);
+      const aiResult = await generateAIContent(entry, storyTone || 'natural');
 
       entry.title_ai = aiResult.title;
       entry.highlights_ai = aiResult.highlights;
@@ -347,6 +348,34 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                 Add photos
               </Button>
             )}
+          </div>
+
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
+              Story Tone
+            </label>
+            <div className="flex items-center gap-2">
+              <PenNib weight="duotone" className="h-4 w-4 text-muted-foreground" />
+              <Select 
+                value={storyTone || 'natural'} 
+                onValueChange={(value) => setStoryTone(value as StoryTone)}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Choose a tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STORY_TONES.map((tone) => (
+                    <SelectItem key={tone.value} value={tone.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{tone.flag}</span>
+                        <span className="font-medium">{tone.label}</span>
+                        <span className="text-muted-foreground text-xs">— {tone.description}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="pt-4 border-t">

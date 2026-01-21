@@ -1,7 +1,19 @@
-import { Entry, AIGenerationResult } from './types';
+import { Entry, AIGenerationResult, StoryTone } from './types';
 import { v4 as uuid } from 'uuid';
 
-const AI_SYSTEM_PROMPT = `You are a memory journaling writing assistant.
+const TONE_INSTRUCTIONS: Record<StoryTone, string> = {
+  natural: `Write in a natural, authentic voice. Use conversational language that feels genuine and unforced, like someone sharing a meaningful memory with a close friend.`,
+  casual: `Write in a relaxed, casual tone. Use informal language, contractions, and a friendly vibe - like texting a good friend about your day. Keep it light and approachable.`,
+  poetic: `Write with lyrical, evocative language. Use vivid imagery, metaphors, and sensory details to paint the scene beautifully. Let the words flow with rhythm and emotion.`,
+  nostalgic: `Write with a warm, reflective tone. Capture the bittersweet feeling of looking back at cherished moments. Use gentle pacing and sentimental touches without being overly sappy.`,
+  journalistic: `Write in a clear, factual style. Present the events objectively and chronologically, focusing on the who, what, where, when, and why. Keep it informative and well-structured.`,
+  humorous: `Write with a light-hearted, witty tone. Find the funny moments, use playful language, and don't take things too seriously. Add charm and humor while respecting the memory.`
+};
+
+function buildSystemPrompt(tone: StoryTone): string {
+  return `You are a memory journaling writing assistant.
+
+${TONE_INSTRUCTIONS[tone]}
 
 Do not invent facts. Use ONLY the user-provided transcript and optional user title.
 
@@ -26,19 +38,21 @@ Required JSON structure:
   "uncertain_claims": ["0-5 strings"]
 }
 
-Style constraints:
+Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
 - no invented names/places`;
+}
 
-export async function generateAIContent(entry: Entry): Promise<AIGenerationResult> {
+export async function generateAIContent(entry: Entry, tone: StoryTone = 'natural'): Promise<AIGenerationResult> {
   const userContent = JSON.stringify({
     date: entry.date,
     user_title: entry.title_user || '',
     transcript: entry.transcript || ''
   });
 
-  const fullPrompt = `${AI_SYSTEM_PROMPT}
+  const systemPrompt = buildSystemPrompt(tone);
+  const fullPrompt = `${systemPrompt}
 
 User input:
 ${userContent}`;

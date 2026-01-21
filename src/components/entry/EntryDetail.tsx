@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Entry, Photo } from '@/lib/types';
+import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
 import { formatDate, getEntryTitle, generateAIContent } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -20,10 +21,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   ArrowLeft, Lock, LockOpen, Sparkle, Trash, Plus, X, 
-  Spinner, Warning, Images, Calendar as CalendarIcon 
+  Spinner, Warning, Images, Calendar as CalendarIcon, PenNib 
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
+import { useKV } from '@github/spark/hooks';
 
 interface EntryDetailProps {
   entry: Entry;
@@ -36,6 +38,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const [localEntry, setLocalEntry] = useState<Entry>(entry);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [newHighlight, setNewHighlight] = useState('');
+  const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateEntry = (updates: Partial<Entry>) => {
@@ -66,7 +69,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
     setIsRegenerating(true);
     try {
-      const aiResult = await generateAIContent(localEntry);
+      const aiResult = await generateAIContent(localEntry, storyTone || 'natural');
       updateEntry({
         title_ai: aiResult.title,
         highlights_ai: aiResult.highlights,
@@ -333,7 +336,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
       </main>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
@@ -357,23 +360,47 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button
-            onClick={handleRegenerate}
-            disabled={localEntry.is_locked || isRegenerating}
-            variant={localEntry.is_locked ? "outline" : "default"}
-          >
-            {isRegenerating ? (
-              <>
-                <Spinner className="mr-2 animate-spin" />
-                Regenerating...
-              </>
-            ) : (
-              <>
-                <Sparkle className="mr-2" weight="fill" />
-                {localEntry.is_locked ? 'Unlock to regenerate' : 'Regenerate'}
-              </>
+          <div className="flex items-center gap-2">
+            {!localEntry.is_locked && (
+              <Select 
+                value={storyTone || 'natural'} 
+                onValueChange={(value) => setStoryTone(value as StoryTone)}
+              >
+                <SelectTrigger className="w-[140px] h-9">
+                  <PenNib weight="duotone" className="h-4 w-4 mr-1" />
+                  <SelectValue placeholder="Tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STORY_TONES.map((tone) => (
+                    <SelectItem key={tone.value} value={tone.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{tone.flag}</span>
+                        <span>{tone.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
-          </Button>
+
+            <Button
+              onClick={handleRegenerate}
+              disabled={localEntry.is_locked || isRegenerating}
+              variant={localEntry.is_locked ? "outline" : "default"}
+            >
+              {isRegenerating ? (
+                <>
+                  <Spinner className="mr-2 animate-spin" />
+                  Regenerating...
+                </>
+              ) : (
+                <>
+                  <Sparkle className="mr-2" weight="fill" />
+                  {localEntry.is_locked ? 'Unlock to regenerate' : 'Regenerate'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </footer>
     </div>

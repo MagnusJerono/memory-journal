@@ -51,3 +51,14 @@ export interface AIGenerationResult {
 }
 
 export type View = 'timeline' | 'new' | 'entry' | 'yearbook';
+
+export type StoryTone = 'natural' | 'poetic' | 'casual' | 'journalistic' | 'humorous' | 'nostalgic';
+
+export const STORY_TONES: { value: StoryTone; label: string; description: string; flag: string }[] = [
+  { value: 'natural', label: 'Natural', description: 'Authentic and conversational', flag: '💬' },
+  { value: 'casual', label: 'Casual', description: 'Relaxed, like texting a friend', flag: '😊' },
+  { value: 'poetic', label: 'Poetic', description: 'Lyrical and evocative', flag: '✨' },
+  { value: 'nostalgic', label: 'Nostalgic', description: 'Warm and reflective', flag: '🌅' },
+  { value: 'journalistic', label: 'Journalistic', description: 'Clear and factual', flag: '📰' },
+  { value: 'humorous', label: 'Humorous', description: 'Light-hearted and fun', flag: '😄' },
+];
