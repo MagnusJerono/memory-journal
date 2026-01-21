@@ -534,17 +534,17 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
             />
             
             {photos.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="grid grid-cols-4 gap-3 mb-4">
                 {photos.map(photo => (
-                  <div key={photo.id} className="relative aspect-square group">
+                  <div key={photo.id} className="relative aspect-square group rounded-xl overflow-hidden shadow-md">
                     <img 
                       src={photo.storage_url} 
                       alt="" 
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-xl"
                     />
                     <button
                       onClick={() => removePhoto(photo.id)}
-                      className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1.5 right-1.5 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-4 h-4 text-white" />
                     </button>

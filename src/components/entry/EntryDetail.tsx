@@ -745,11 +745,11 @@ function PhotoGallery({
 }) {
   if (photos.length === 1) {
     return (
-      <div className="relative group rounded-xl overflow-hidden">
+      <div className="relative group rounded-2xl overflow-hidden shadow-lg">
         <img 
           src={photos[0].storage_url} 
           alt="" 
-          className="w-full max-h-[500px] object-cover"
+          className="w-full max-h-[500px] object-cover rounded-2xl"
         />
         {canEdit && (
           <button
@@ -765,13 +765,13 @@ function PhotoGallery({
 
   if (photos.length === 2) {
     return (
-      <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
-        {photos.map(photo => (
-          <div key={photo.id} className="relative group aspect-[4/3]">
+      <div className="grid grid-cols-2 gap-3">
+        {photos.map((photo, idx) => (
+          <div key={photo.id} className="relative group aspect-[4/3] rounded-xl overflow-hidden shadow-md">
             <img 
               src={photo.storage_url} 
               alt="" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
             />
             {canEdit && (
               <button
@@ -788,16 +788,16 @@ function PhotoGallery({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2 rounded-xl overflow-hidden">
+    <div className="grid grid-cols-3 gap-3">
       {photos.map((photo, index) => (
         <div 
           key={photo.id} 
-          className={`relative group ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
+          className={`relative group rounded-xl overflow-hidden shadow-md ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
         >
           <img 
             src={photo.storage_url} 
             alt="" 
-            className={`w-full h-full object-cover ${index === 0 ? 'aspect-square' : 'aspect-square'}`}
+            className={`w-full h-full object-cover rounded-xl ${index === 0 ? 'aspect-square' : 'aspect-square'}`}
           />
           {canEdit && (
             <button

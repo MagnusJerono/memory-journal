@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Entry, View } from './lib/types';
 import { Timeline } from './components/timeline/Timeline';
@@ -7,12 +7,22 @@ import { EntryDetail } from './components/entry/EntryDetail';
 import { YearbookView } from './components/yearbook/YearbookView';
 import { DreamyBackground } from './components/DreamyBackground';
 import { Toaster } from '@/components/ui/sonner';
+import { useNightMode } from './hooks/use-night-mode';
 
 function App() {
   const [entries, setEntries] = useKV<Entry[]>('ziel-entries', []);
   const [currentView, setCurrentView] = useState<View>('timeline');
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useNightMode();
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
 
   const handleNavigate = (view: View, entryId?: string) => {
     setCurrentView(view);
@@ -61,7 +71,7 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      <DreamyBackground />
+      <DreamyBackground isDarkMode={isDarkMode} />
       {currentView === 'timeline' && (
         <Timeline
           entries={entryList}
@@ -71,6 +81,10 @@ function App() {
           onNewEntry={() => handleNavigate('new')}
           onViewYearbook={() => handleNavigate('yearbook')}
           onToggleStar={handleToggleStar}
+          themeMode={themeMode}
+          onThemeModeChange={setThemeMode}
+          isDarkMode={isDarkMode}
+          isNightTime={isNightTime}
         />
       )}
 

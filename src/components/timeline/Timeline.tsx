@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Entry } from '@/lib/types';
+import { Entry, ThemeMode } from '@/lib/types';
 import { filterEntriesByYear, getAvailableYears, getEntryTitle, formatShortDate, searchEntries } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images } from '@phosphor-icons/react';
 import { BrandHeader } from '@/components/BrandHeader';
+import { SettingsPanel } from '@/components/SettingsPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimelineProps {
@@ -16,6 +17,10 @@ interface TimelineProps {
   onNewEntry: () => void;
   onViewYearbook: () => void;
   onToggleStar?: (entryId: string) => void;
+  themeMode: ThemeMode;
+  onThemeModeChange: (mode: ThemeMode) => void;
+  isDarkMode: boolean;
+  isNightTime: boolean;
 }
 
 export function Timeline({
@@ -25,7 +30,11 @@ export function Timeline({
   onSelectEntry,
   onNewEntry,
   onViewYearbook,
-  onToggleStar
+  onToggleStar,
+  themeMode,
+  onThemeModeChange,
+  isDarkMode,
+  isNightTime
 }: TimelineProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -56,6 +65,12 @@ export function Timeline({
               >
                 {showSearch ? <X weight="bold" /> : <MagnifyingGlass weight="bold" />}
               </Button>
+              <SettingsPanel 
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
               <Button variant="outline" size="sm" onClick={onViewYearbook} className="hidden sm:flex border-border/50 bg-secondary/30 hover:bg-secondary/60">
                 <Book className="mr-2" weight="duotone" />
                 Yearbook
@@ -187,50 +202,50 @@ function EntryCard({ entry, onClick, onToggleStar }: { entry: Entry; onClick: ()
     >
       <div className="flex flex-col sm:flex-row">
         {photoCount > 0 ? (
-          <div className="relative w-full sm:w-48 md:w-56 h-44 sm:h-auto flex-shrink-0 overflow-hidden">
+          <div className="relative w-full sm:w-48 md:w-56 flex-shrink-0 overflow-hidden sm:m-3 sm:rounded-xl">
             {photoCount === 1 && (
-              <div className="relative h-full w-full">
+              <div className="relative h-44 sm:h-36 w-full overflow-hidden sm:rounded-xl">
                 <img 
                   src={coverPhoto.storage_url} 
                   alt="" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 sm:rounded-xl"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
               </div>
             )}
             
             {photoCount === 2 && (
-              <div className="grid grid-cols-2 h-full gap-0.5">
+              <div className="grid grid-cols-2 h-44 sm:h-36 gap-1 sm:rounded-xl overflow-hidden">
                 <img 
                   src={coverPhoto.storage_url} 
                   alt="" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 sm:rounded-l-xl"
                 />
                 <img 
                   src={secondPhoto!.storage_url} 
                   alt="" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 sm:rounded-r-xl"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
               </div>
             )}
             
             {photoCount >= 3 && (
-              <div className="grid grid-cols-3 h-full gap-0.5">
-                <div className="col-span-2 row-span-1 relative">
+              <div className="grid grid-cols-3 h-44 sm:h-36 gap-1 sm:rounded-xl overflow-hidden">
+                <div className="col-span-2 row-span-1 relative overflow-hidden sm:rounded-l-xl">
                   <img 
                     src={coverPhoto.storage_url} 
                     alt="" 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
-                <div className="flex flex-col gap-0.5">
-                  <img 
-                    src={secondPhoto!.storage_url} 
-                    alt="" 
-                    className="w-full h-1/2 object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="relative h-1/2">
+                <div className="flex flex-col gap-1 overflow-hidden sm:rounded-r-xl">
+                  <div className="h-1/2 overflow-hidden sm:rounded-tr-xl">
+                    <img 
+                      src={secondPhoto!.storage_url} 
+                      alt="" 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="relative h-1/2 overflow-hidden sm:rounded-br-xl">
                     <img 
                       src={thirdPhoto!.storage_url} 
                       alt="" 
@@ -243,12 +258,11 @@ function EntryCard({ entry, onClick, onToggleStar }: { entry: Entry; onClick: ()
                     )}
                   </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
               </div>
             )}
             
             {photoCount > 1 && (
-              <div className="absolute bottom-2 left-2 sm:bottom-auto sm:top-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm">
+              <div className="absolute bottom-2 left-2 sm:bottom-2 sm:left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm">
                 <Images weight="fill" className="w-3 h-3 text-white/90" />
                 <span className="text-white/90 text-xs font-medium">{photoCount}</span>
               </div>

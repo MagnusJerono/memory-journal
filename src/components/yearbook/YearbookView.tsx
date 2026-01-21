@@ -473,7 +473,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                                     <img 
                                       src={entry.photos[0].storage_url} 
                                       alt="" 
-                                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                                      className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow-sm"
                                     />
                                   )}
                                   <div className="flex-1 min-w-0">

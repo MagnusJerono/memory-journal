@@ -167,24 +167,24 @@ function ReadOnlyPhotoGallery({ photos }: { photos: Photo[] }) {
         <img 
           src={photos[0].storage_url} 
           alt="" 
-          className="w-full max-h-[600px] object-cover"
+          className="w-full max-h-[600px] object-cover rounded-2xl"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none rounded-2xl" />
       </div>
     );
   }
 
   if (photos.length === 2) {
     return (
-      <div className="grid grid-cols-2 gap-3 rounded-2xl overflow-hidden">
-        {photos.map((photo, idx) => (
-          <div key={photo.id} className="relative aspect-[4/3] overflow-hidden rounded-xl shadow-lg">
+      <div className="grid grid-cols-2 gap-3">
+        {photos.map((photo) => (
+          <div key={photo.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
             <img 
               src={photo.storage_url} 
               alt="" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-2xl"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent pointer-events-none rounded-2xl" />
           </div>
         ))}
       </div>
@@ -196,24 +196,24 @@ function ReadOnlyPhotoGallery({ photos }: { photos: Photo[] }) {
   const remainingCount = photos.length - 5;
 
   return (
-    <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[400px] md:h-[500px] rounded-2xl overflow-hidden">
-      <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl shadow-lg">
+    <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[400px] md:h-[500px]">
+      <div className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl shadow-lg">
         <img 
           src={mainPhoto.storage_url} 
           alt="" 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-2xl"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none rounded-2xl" />
       </div>
       {sidePhotos.map((photo, idx) => (
         <div key={photo.id} className="relative overflow-hidden rounded-xl shadow-md">
           <img 
             src={photo.storage_url} 
             alt="" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-xl"
           />
           {idx === sidePhotos.length - 1 && remainingCount > 0 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
               <span className="text-white text-2xl font-bold">+{remainingCount}</span>
             </div>
           )}

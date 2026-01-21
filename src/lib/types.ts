@@ -123,3 +123,9 @@ export const STORY_LANGUAGES = [
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
   { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
+
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
+export interface UserSettings {
+  themeMode: ThemeMode;
+}

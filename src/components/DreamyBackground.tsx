@@ -32,6 +32,16 @@ interface FloatingOrb {
   duration: number;
 }
 
+interface Cloud {
+  id: number;
+  x: number;
+  y: number;
+  scale: number;
+  delay: number;
+  duration: number;
+  opacity: number;
+}
+
 function generateStars(count: number): Star[] {
   const stars: Star[] = [];
   for (let i = 0; i < count; i++) {
@@ -67,7 +77,7 @@ function generateThreads(count: number): Thread[] {
   return threads;
 }
 
-function generateOrbs(count: number): FloatingOrb[] {
+function generateOrbsDark(count: number): FloatingOrb[] {
   const orbs: FloatingOrb[] = [];
   const colors = [
     'oklch(0.75 0.12 280 / 0.25)',
@@ -87,6 +97,44 @@ function generateOrbs(count: number): FloatingOrb[] {
     });
   }
   return orbs;
+}
+
+function generateOrbsLight(count: number): FloatingOrb[] {
+  const orbs: FloatingOrb[] = [];
+  const colors = [
+    'oklch(0.92 0.06 280 / 0.35)',
+    'oklch(0.90 0.08 220 / 0.3)',
+    'oklch(0.88 0.10 180 / 0.25)',
+    'oklch(0.94 0.05 320 / 0.28)',
+  ];
+  for (let i = 0; i < count; i++) {
+    orbs.push({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 200 + 100,
+      color: colors[i % colors.length],
+      delay: Math.random() * 5,
+      duration: Math.random() * 25 + 30,
+    });
+  }
+  return orbs;
+}
+
+function generateClouds(count: number): Cloud[] {
+  const clouds: Cloud[] = [];
+  for (let i = 0; i < count; i++) {
+    clouds.push({
+      id: i,
+      x: Math.random() * 120 - 10,
+      y: Math.random() * 60,
+      scale: Math.random() * 0.8 + 0.6,
+      delay: Math.random() * 10,
+      duration: Math.random() * 60 + 80,
+      opacity: Math.random() * 0.3 + 0.15,
+    });
+  }
+  return clouds;
 }
 
 function StarElement({ star }: { star: Star }) {
@@ -172,13 +220,43 @@ function FloatingOrbElement({ orb }: { orb: FloatingOrb }) {
   );
 }
 
-export function DreamyBackground() {
+function CloudElement({ cloud }: { cloud: Cloud }) {
+  return (
+    <motion.div
+      className="absolute pointer-events-none"
+      style={{
+        left: `${cloud.x}%`,
+        top: `${cloud.y}%`,
+        transform: `scale(${cloud.scale})`,
+      }}
+      animate={{
+        x: [0, 100, 200],
+      }}
+      transition={{
+        duration: cloud.duration,
+        delay: cloud.delay,
+        repeat: Infinity,
+        ease: "linear",
+      }}
+    >
+      <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+        <ellipse cx="60" cy="50" rx="45" ry="25" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
+        <ellipse cx="100" cy="40" rx="55" ry="30" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
+        <ellipse cx="150" cy="50" rx="40" ry="22" fill={`oklch(1 0 0 / ${cloud.opacity})`} />
+        <ellipse cx="80" cy="35" rx="35" ry="20" fill={`oklch(1 0 0 / ${cloud.opacity * 0.8})`} />
+        <ellipse cx="130" cy="35" rx="30" ry="18" fill={`oklch(1 0 0 / ${cloud.opacity * 0.8})`} />
+      </svg>
+    </motion.div>
+  );
+}
+
+function DarkBackground() {
   const stars = useMemo(() => generateStars(80), []);
   const threads = useMemo(() => generateThreads(12), []);
-  const orbs = useMemo(() => generateOrbs(6), []);
+  const orbs = useMemo(() => generateOrbsDark(6), []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+    <>
       <div 
         className="absolute inset-0"
         style={{
@@ -287,11 +365,11 @@ export function DreamyBackground() {
       <div className="absolute inset-0 pointer-events-none">
         <svg className="absolute w-full h-full" preserveAspectRatio="none">
           <defs>
-            <pattern id="knot-pattern" x="0" y="0" width="150" height="150" patternUnits="userSpaceOnUse">
+            <pattern id="knot-pattern-dark" x="0" y="0" width="150" height="150" patternUnits="userSpaceOnUse">
               <circle cx="75" cy="75" r="1.5" fill="oklch(0.80 0.10 280 / 0.15)" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#knot-pattern)" />
+          <rect width="100%" height="100%" fill="url(#knot-pattern-dark)" />
         </svg>
       </div>
 
@@ -304,6 +382,149 @@ export function DreamyBackground() {
 
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[oklch(0.12_0.05_250)] to-transparent" />
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[oklch(0.30_0.08_280_/_0.5)] to-transparent" />
+    </>
+  );
+}
+
+function LightBackground() {
+  const orbs = useMemo(() => generateOrbsLight(8), []);
+  const clouds = useMemo(() => generateClouds(6), []);
+
+  return (
+    <>
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            linear-gradient(180deg, 
+              oklch(0.92 0.04 220) 0%,
+              oklch(0.95 0.03 230) 30%,
+              oklch(0.97 0.02 240) 60%,
+              oklch(0.98 0.01 250) 100%
+            )
+          `,
+        }}
+      />
+
+      <div 
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse 120% 80% at 20% -20%, oklch(0.98 0.05 50 / 0.6) 0%, transparent 50%),
+            radial-gradient(ellipse 100% 60% at 80% 10%, oklch(0.95 0.06 320 / 0.3) 0%, transparent 50%),
+            radial-gradient(ellipse 80% 50% at 50% 100%, oklch(0.90 0.08 260 / 0.25) 0%, transparent 50%)
+          `,
+        }}
+      />
+
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {clouds.map((cloud) => (
+          <CloudElement key={cloud.id} cloud={cloud} />
+        ))}
+      </div>
+
+      <div className="absolute inset-0 pointer-events-none">
+        {orbs.map((orb) => (
+          <FloatingOrbElement key={orb.id} orb={orb} />
+        ))}
+      </div>
+
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, oklch(0.99 0.03 60 / 0.7) 0%, oklch(0.97 0.05 50 / 0.3) 40%, transparent 70%)',
+          filter: 'blur(40px)',
+          top: '-15%',
+          right: '-5%',
+        }}
+        animate={{
+          scale: [1, 1.05, 1],
+          opacity: [0.8, 1, 0.8],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      <motion.div
+        className="absolute w-[500px] h-[400px] rounded-full"
+        style={{
+          background: 'radial-gradient(ellipse, oklch(0.94 0.06 280 / 0.25) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          bottom: '10%',
+          left: '5%',
+        }}
+        animate={{
+          x: [0, 30, 0],
+          y: [0, -20, 0],
+        }}
+        transition={{
+          duration: 35,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      <motion.div
+        className="absolute w-[400px] h-[350px] rounded-full"
+        style={{
+          background: 'radial-gradient(ellipse, oklch(0.92 0.08 180 / 0.2) 0%, transparent 70%)',
+          filter: 'blur(50px)',
+          top: '40%',
+          right: '10%',
+        }}
+        animate={{
+          x: [0, -25, 0],
+          y: [0, 25, 0],
+        }}
+        transition={{
+          duration: 40,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      <div className="absolute inset-0 pointer-events-none">
+        <svg className="absolute w-full h-full" preserveAspectRatio="none">
+          <defs>
+            <pattern id="knot-pattern-light" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+              <circle cx="60" cy="60" r="1" fill="oklch(0.85 0.05 280 / 0.12)" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#knot-pattern-light)" />
+        </svg>
+      </div>
+
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[oklch(0.96_0.02_250)] to-transparent" />
+    </>
+  );
+}
+
+interface DreamyBackgroundProps {
+  isDarkMode?: boolean;
+}
+
+export function DreamyBackground({ isDarkMode = false }: DreamyBackgroundProps) {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+      <motion.div
+        key={isDarkMode ? 'dark' : 'light'}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="absolute inset-0"
+      >
+        {isDarkMode ? <DarkBackground /> : <LightBackground />}
+      </motion.div>
     </div>
   );
 }
