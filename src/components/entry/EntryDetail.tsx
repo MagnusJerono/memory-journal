@@ -138,7 +138,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
   return (
     <div className="min-h-screen pb-24">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={onBack}>
@@ -339,7 +339,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border">
+      <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border shadow-lg">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <AlertDialog>
             <AlertDialogTrigger asChild>

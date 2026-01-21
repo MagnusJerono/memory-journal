@@ -5,6 +5,7 @@ import { Timeline } from './components/timeline/Timeline';
 import { NewEntry } from './components/entry/NewEntry';
 import { EntryDetail } from './components/entry/EntryDetail';
 import { YearbookView } from './components/yearbook/YearbookView';
+import { DreamyBackground } from './components/DreamyBackground';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
@@ -45,7 +46,8 @@ function App() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
+      <DreamyBackground />
       {currentView === 'timeline' && (
         <Timeline
           entries={entryList}
