@@ -105,6 +105,64 @@ export function Timeline({
             </div>
           </div>
           
+          <div className="grid grid-cols-4 gap-2 mt-4">
+            <motion.button
+              onClick={() => { setShowAllMemories(true); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
+              className={`p-2 sm:p-3 rounded-xl transition-all text-center ${
+                showAllMemories && !showFavoritesOnly && !selectedChapterId
+                  ? 'bg-primary/20 shadow-inner'
+                  : 'bg-white/20 hover:bg-white/30'
+              }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <StackSimple weight={showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'fill' : 'duotone'} className={`w-5 h-5 mx-auto mb-1 ${showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'text-primary' : isDarkMode ? 'text-white/70' : 'text-foreground/60'}`} />
+              <p className={`font-semibold text-[10px] sm:text-xs ${isDarkMode ? 'text-white/90' : 'text-foreground/80'}`}>All</p>
+              <p className={`text-[9px] sm:text-[10px] ${isDarkMode ? 'text-white/60' : 'text-foreground/50'}`}>{totalMemories}</p>
+            </motion.button>
+
+            <motion.button
+              onClick={() => { setShowFavoritesOnly(true); setShowAllMemories(true); setSelectedChapterId(null); }}
+              className={`p-2 sm:p-3 rounded-xl transition-all text-center ${
+                showFavoritesOnly
+                  ? 'bg-amber-400/30 shadow-inner'
+                  : 'bg-white/20 hover:bg-white/30'
+              }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Heart weight={showFavoritesOnly ? 'fill' : 'duotone'} className={`w-5 h-5 mx-auto mb-1 ${showFavoritesOnly ? 'text-amber-500' : isDarkMode ? 'text-white/70' : 'text-foreground/60'}`} />
+              <p className={`font-semibold text-[10px] sm:text-xs ${isDarkMode ? 'text-white/90' : 'text-foreground/80'}`}>Precious</p>
+              <p className={`text-[9px] sm:text-[10px] ${isDarkMode ? 'text-white/60' : 'text-foreground/50'}`}>{entries.filter(e => e.is_starred).length}</p>
+            </motion.button>
+
+            <motion.button
+              onClick={onViewYearbook}
+              className="p-2 sm:p-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all text-center"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <BookBookmark weight="duotone" className={`w-5 h-5 mx-auto mb-1 ${isDarkMode ? 'text-white/70' : 'text-foreground/60'}`} />
+              <p className={`font-semibold text-[10px] sm:text-xs ${isDarkMode ? 'text-white/90' : 'text-foreground/80'}`}>Chapters</p>
+              <p className={`text-[9px] sm:text-[10px] ${isDarkMode ? 'text-white/60' : 'text-foreground/50'}`}>Journal</p>
+            </motion.button>
+
+            <motion.button
+              onClick={() => { setShowAllMemories(false); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
+              className={`p-2 sm:p-3 rounded-xl transition-all text-center ${
+                !showAllMemories && !showFavoritesOnly && !selectedChapterId
+                  ? 'bg-foreground/15 shadow-inner'
+                  : 'bg-white/20 hover:bg-white/30'
+              }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Sparkle weight={!showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'fill' : 'duotone'} className={`w-5 h-5 mx-auto mb-1 ${!showAllMemories && !showFavoritesOnly && !selectedChapterId ? (isDarkMode ? 'text-white' : 'text-foreground') : isDarkMode ? 'text-white/70' : 'text-foreground/60'}`} />
+              <p className={`font-semibold text-[10px] sm:text-xs ${isDarkMode ? 'text-white/90' : 'text-foreground/80'}`}>{selectedYear}</p>
+              <p className={`text-[9px] sm:text-[10px] ${isDarkMode ? 'text-white/60' : 'text-foreground/50'}`}>Year</p>
+            </motion.button>
+          </div>
+          
           <AnimatePresence>
             {showSearch && (
               <motion.div
@@ -141,71 +199,6 @@ export function Timeline({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <motion.button
-            onClick={() => { setShowAllMemories(true); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
-            className={`p-4 rounded-2xl border transition-all text-left ${
-              showAllMemories && !showFavoritesOnly && !selectedChapterId
-                ? 'bg-gradient-to-br from-primary/20 via-primary/10 to-accent/10 border-primary/40 shadow-lg shadow-primary/10'
-                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-primary/30 hover:bg-primary/5'
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className={`p-2 rounded-xl w-fit mb-2 ${showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'bg-primary/20' : 'bg-primary/10'}`}>
-              <StackSimple weight="duotone" className={`w-5 h-5 ${showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'text-primary' : 'text-primary/70'}`} />
-            </div>
-            <p className="font-semibold text-sm">All Memories</p>
-            <p className="text-xs text-muted-foreground">{totalMemories} total</p>
-          </motion.button>
-
-          <motion.button
-            onClick={() => { setShowFavoritesOnly(true); setShowAllMemories(true); setSelectedChapterId(null); }}
-            className={`p-4 rounded-2xl border transition-all text-left ${
-              showFavoritesOnly
-                ? 'bg-gradient-to-br from-amber-500/20 via-amber-400/10 to-orange-400/10 border-amber-400/40 shadow-lg shadow-amber-500/10'
-                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-amber-400/30 hover:bg-amber-500/5'
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className={`p-2 rounded-xl w-fit mb-2 ${showFavoritesOnly ? 'bg-amber-400/20' : 'bg-amber-400/10'}`}>
-              <Heart weight={showFavoritesOnly ? 'fill' : 'duotone'} className={`w-5 h-5 ${showFavoritesOnly ? 'text-amber-500' : 'text-amber-400/70'}`} />
-            </div>
-            <p className="font-semibold text-sm">Precious</p>
-            <p className="text-xs text-muted-foreground">{entries.filter(e => e.is_starred).length} starred</p>
-          </motion.button>
-
-          <motion.button
-            onClick={onViewYearbook}
-            className="p-4 rounded-2xl border bg-card/60 backdrop-blur-sm border-border/40 hover:border-accent/40 hover:bg-accent/5 transition-all text-left"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="p-2 rounded-xl w-fit mb-2 bg-accent/10">
-              <BookBookmark weight="duotone" className="w-5 h-5 text-accent/70" />
-            </div>
-            <p className="font-semibold text-sm">Bound Chapters</p>
-            <p className="text-xs text-muted-foreground">Create journal</p>
-          </motion.button>
-
-          <motion.button
-            onClick={() => { setShowAllMemories(false); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
-            className={`p-4 rounded-2xl border transition-all text-left ${
-              !showAllMemories && !showFavoritesOnly && !selectedChapterId
-                ? 'bg-gradient-to-br from-secondary/40 via-secondary/20 to-muted/20 border-border/60 shadow-lg'
-                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-border/60 hover:bg-secondary/10'
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className={`p-2 rounded-xl w-fit mb-2 ${!showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'bg-foreground/10' : 'bg-foreground/5'}`}>
-              <Sparkle weight="duotone" className="w-5 h-5 text-foreground/60" />
-            </div>
-            <p className="font-semibold text-sm">{selectedYear}</p>
-            <p className="text-xs text-muted-foreground">This year</p>
-          </motion.button>
-        </div>
 
         <ChaptersPanel
           chapters={chapters}

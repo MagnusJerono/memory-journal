@@ -16,10 +16,10 @@ function FluffyCloudShape({ className, isDark = false }: { className?: string; i
   
   return (
     <svg 
-      viewBox="0 0 500 160" 
+      viewBox="0 0 500 220" 
       fill="none" 
       className={className}
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="none"
     >
       <defs>
         <filter id={`cloudInnerShadow-${isDark ? 'dark' : 'light'}`} x="-50%" y="-50%" width="200%" height="200%">
@@ -38,40 +38,40 @@ function FluffyCloudShape({ className, isDark = false }: { className?: string; i
         </radialGradient>
       </defs>
       
-      <ellipse cx="40" cy="135" rx="55" ry="40" fill={shadowColor} opacity="0.5" />
-      <ellipse cx="120" cy="130" rx="75" ry="50" fill={shadowColor} opacity="0.5" />
-      <ellipse cx="220" cy="125" rx="95" ry="60" fill={shadowColor} opacity="0.5" />
-      <ellipse cx="340" cy="128" rx="85" ry="55" fill={shadowColor} opacity="0.5" />
-      <ellipse cx="440" cy="132" rx="70" ry="45" fill={shadowColor} opacity="0.5" />
+      <ellipse cx="40" cy="195" rx="55" ry="40" fill={shadowColor} opacity="0.5" />
+      <ellipse cx="120" cy="190" rx="75" ry="50" fill={shadowColor} opacity="0.5" />
+      <ellipse cx="220" cy="185" rx="95" ry="60" fill={shadowColor} opacity="0.5" />
+      <ellipse cx="340" cy="188" rx="85" ry="55" fill={shadowColor} opacity="0.5" />
+      <ellipse cx="440" cy="192" rx="70" ry="45" fill={shadowColor} opacity="0.5" />
       
-      <ellipse cx="40" cy="120" rx="55" ry="42" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="120" cy="105" rx="80" ry="55" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="220" cy="95" rx="100" ry="65" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="340" cy="100" rx="90" ry="58" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="450" cy="115" rx="65" ry="48" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="40" cy="180" rx="55" ry="42" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="120" cy="165" rx="80" ry="55" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="220" cy="155" rx="100" ry="65" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="340" cy="160" rx="90" ry="58" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="450" cy="175" rx="65" ry="48" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
       
-      <ellipse cx="70" cy="75" rx="55" ry="45" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="160" cy="60" rx="70" ry="50" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="260" cy="50" rx="80" ry="55" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="360" cy="58" rx="65" ry="48" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="430" cy="80" rx="50" ry="40" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="70" cy="125" rx="55" ry="45" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="160" cy="110" rx="70" ry="50" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="260" cy="100" rx="80" ry="55" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="360" cy="108" rx="65" ry="48" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="430" cy="130" rx="50" ry="40" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
       
-      <ellipse cx="110" cy="35" rx="50" ry="38" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="200" cy="25" rx="60" ry="42" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="300" cy="28" rx="55" ry="40" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="390" cy="42" rx="45" ry="35" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="110" cy="65" rx="50" ry="38" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="200" cy="55" rx="60" ry="42" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="300" cy="58" rx="55" ry="40" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="390" cy="72" rx="45" ry="35" fill={`url(#cloudGradient-${isDark ? 'dark' : 'light'})`} />
       
-      <ellipse cx="150" cy="15" rx="40" ry="30" fill={highlightColor} opacity="0.9" />
-      <ellipse cx="250" cy="10" rx="45" ry="32" fill={highlightColor} opacity="0.9" />
-      <ellipse cx="340" cy="18" rx="38" ry="28" fill={highlightColor} opacity="0.9" />
+      <ellipse cx="150" cy="35" rx="40" ry="30" fill={highlightColor} opacity="0.9" />
+      <ellipse cx="250" cy="30" rx="45" ry="32" fill={highlightColor} opacity="0.9" />
+      <ellipse cx="340" cy="38" rx="38" ry="28" fill={highlightColor} opacity="0.9" />
       
-      <ellipse cx="100" cy="85" rx="30" ry="22" fill={innerShadowColor} opacity="0.3" />
-      <ellipse cx="200" cy="80" rx="40" ry="25" fill={innerShadowColor} opacity="0.25" />
-      <ellipse cx="320" cy="85" rx="35" ry="22" fill={innerShadowColor} opacity="0.25" />
-      <ellipse cx="400" cy="95" rx="28" ry="18" fill={innerShadowColor} opacity="0.2" />
+      <ellipse cx="100" cy="135" rx="30" ry="22" fill={innerShadowColor} opacity="0.3" />
+      <ellipse cx="200" cy="130" rx="40" ry="25" fill={innerShadowColor} opacity="0.25" />
+      <ellipse cx="320" cy="135" rx="35" ry="22" fill={innerShadowColor} opacity="0.25" />
+      <ellipse cx="400" cy="145" rx="28" ry="18" fill={innerShadowColor} opacity="0.2" />
       
-      <ellipse cx="180" cy="40" rx="25" ry="18" fill={`url(#cloudHighlight-${isDark ? 'dark' : 'light'})`} />
-      <ellipse cx="280" cy="35" rx="30" ry="20" fill={`url(#cloudHighlight-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="180" cy="70" rx="25" ry="18" fill={`url(#cloudHighlight-${isDark ? 'dark' : 'light'})`} />
+      <ellipse cx="280" cy="65" rx="30" ry="20" fill={`url(#cloudHighlight-${isDark ? 'dark' : 'light'})`} />
     </svg>
   );
 }
@@ -168,7 +168,7 @@ export function CloudHeader({ children, isDarkMode = false, className = '' }: Cl
       }}
     >
       <motion.div 
-        className="absolute inset-x-0 -top-8 -bottom-6 -left-4 -right-4"
+        className="absolute inset-x-0 -top-4 -bottom-4 -left-6 -right-6"
         style={{
           filter: isDarkMode
             ? 'drop-shadow(0 8px 24px oklch(0 0 0 / 0.5)) drop-shadow(0 2px 8px oklch(0.15 0.05 270 / 0.4))'
@@ -181,7 +181,7 @@ export function CloudHeader({ children, isDarkMode = false, className = '' }: Cl
         />
       </motion.div>
       <div 
-        className="relative z-10 px-6 py-5"
+        className="relative z-10 px-6 py-4"
       >
         {children}
       </div>
