@@ -56,6 +56,23 @@ ${toneInstructions}
 
 Do not invent facts. Use ONLY the user-provided transcript and optional user title.
 
+LOCATION RECOGNITION (IMPORTANT):
+- The transcript may come from voice input with potential speech-to-text errors for city/country names.
+- Use context clues and common sense to identify and CORRECT misspelled or phonetically similar place names.
+- Common patterns to watch for:
+  * "Pair is" or "Paris" → Paris, France
+  * "New work" or "new york" → New York
+  * "Bark alona" or "barcelona" → Barcelona, Spain
+  * "Moo nick" or "munich" → Munich, Germany
+  * "Burn" or "bern" → Bern, Switzerland
+  * "View in a" or "vienna" → Vienna, Austria
+  * "Pray" or "Prague" → Prague, Czech Republic
+  * "Toe key oh" or "tokyo" → Tokyo, Japan
+  * "Sidney" → Sydney, Australia
+  * "Deutschland", "Germany", "Allemagne" → Germany
+- If you can reasonably infer the correct place name, use it in the story and tags.
+- If a location is mentioned but unclear or ambiguous, add a clarifying question like "Which city did you visit?" or "Could you confirm the exact location?" to missing_info_questions.
+
 If key details are missing, add clarifying questions in missing_info_questions.
 
 If a statement is uncertain or implied, list it in uncertain_claims.
@@ -69,18 +86,18 @@ Required JSON structure:
   "story": "string (200-500 words)",
   "tags": {
     "people": ["0-8 strings"],
-    "places": ["0-8 strings"],
+    "places": ["0-8 strings - use proper city/country names, corrected if needed"],
     "moods": ["0-8 strings"],
     "themes": ["0-8 strings"]
   },
-  "missing_info_questions": ["0-3 strings"],
+  "missing_info_questions": ["0-3 strings - include location clarification if place names are unclear"],
   "uncertain_claims": ["0-5 strings"]
 }
 
 Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
-- no invented names/places${languageInstruction}${refinementSection}`;
+- no invented names/places (but DO correct obvious speech-to-text errors for real places)${languageInstruction}${refinementSection}`;
 }
 
 export async function generateAIContent(
