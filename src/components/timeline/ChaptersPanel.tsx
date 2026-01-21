@@ -3,7 +3,7 @@ import { Chapter, CHAPTER_ICONS, CHAPTER_COLORS } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, X, Pencil, Trash } from '@phosphor-icons/react';
+import { Plus, Pencil, Trash } from '@phosphor-icons/react';
 import { v4 as uuid } from 'uuid';
 import { motion } from 'framer-motion';
 
@@ -70,28 +70,92 @@ export function ChaptersPanel({
     return CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
   };
 
+  if (chapters.length === 0) {
+    return (
+      <div className="mb-6">
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="border-dashed text-muted-foreground hover:text-foreground">
+              <Plus className="mr-1" size={14} />
+              Create your first chapter
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingChapter ? 'Edit Chapter' : 'New Chapter'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Name</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Family, Travel, Work..."
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Description (optional)</label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What's this chapter about?"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Icon</label>
+                <div className="flex flex-wrap gap-2">
+                  {CHAPTER_ICONS.map((icon) => (
+                    <button
+                      key={icon.value}
+                      onClick={() => setSelectedIcon(icon.value)}
+                      className={`p-2 rounded-lg text-lg transition-all ${
+                        selectedIcon === icon.value
+                          ? 'bg-primary/20 ring-2 ring-primary'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      {icon.emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {CHAPTER_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setSelectedColor(color.value)}
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        selectedColor === color.value ? 'ring-2 ring-offset-2 ring-foreground' : ''
+                      }`}
+                      style={{ backgroundColor: color.color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>Cancel</Button>
+                <Button onClick={handleSave} disabled={!name.trim()}>Save</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button
-          onClick={() => onSelectChapter(null)}
-          className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            !selectedChapterId
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-card/60 text-muted-foreground hover:bg-card/80 border border-border/40'
-          }`}
-        >
-          All Memories
-        </button>
-        
         {chapters.map((chapter) => (
           <motion.button
             key={chapter.id}
-            onClick={() => onSelectChapter(chapter.id)}
+            onClick={() => onSelectChapter(selectedChapterId === chapter.id ? null : chapter.id)}
             className={`group relative flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
               selectedChapterId === chapter.id
                 ? 'text-white shadow-md'
-                : 'bg-card/60 hover:bg-card/80 border border-border/40'
+                : 'bg-card/60 hover:bg-card/80 border border-border/40 text-foreground'
             }`}
             style={{
               backgroundColor: selectedChapterId === chapter.id ? chapter.color : undefined

@@ -4,7 +4,7 @@ import { filterEntriesByYear, getAvailableYears, getEntryTitle, formatShortDate,
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart, FolderSimple } from '@phosphor-icons/react';
+import { Plus, BookBookmark, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart, StackSimple, Sparkle } from '@phosphor-icons/react';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { ChaptersPanel } from './ChaptersPanel';
@@ -49,9 +49,10 @@ export function Timeline({
   const [showSearch, setShowSearch] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [showAllMemories, setShowAllMemories] = useState(false);
   
   const years = getAvailableYears(entries);
-  const yearFiltered = filterEntriesByYear(entries, selectedYear);
+  const yearFiltered = showAllMemories ? entries : filterEntriesByYear(entries, selectedYear);
   let filteredEntries = searchQuery ? searchEntries(yearFiltered, searchQuery) : yearFiltered;
   
   if (showFavoritesOnly) {
@@ -73,6 +74,7 @@ export function Timeline({
   
   const lockedCount = filteredEntries.filter(e => e.is_locked).length;
   const starredCount = yearFiltered.filter(e => e.is_starred).length;
+  const totalMemories = entries.length;
 
   return (
     <div className="min-h-screen">
@@ -88,10 +90,6 @@ export function Timeline({
                 className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               >
                 {showSearch ? <X weight="bold" /> : <MagnifyingGlass weight="bold" />}
-              </Button>
-              <Button variant="outline" size="sm" onClick={onViewYearbook} className="hidden sm:flex border-border/50 bg-secondary/30 hover:bg-secondary/60">
-                <Book className="mr-2" weight="duotone" />
-                Yearbook
               </Button>
               <Button size="sm" onClick={onNewEntry} className="shadow-lg shadow-primary/30 bg-primary hover:bg-primary/90">
                 <Plus className="mr-2" weight="bold" />
@@ -142,70 +140,108 @@ export function Timeline({
         </CloudHeader>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <motion.button
+            onClick={() => { setShowAllMemories(true); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
+            className={`p-4 rounded-2xl border transition-all text-left ${
+              showAllMemories && !showFavoritesOnly && !selectedChapterId
+                ? 'bg-gradient-to-br from-primary/20 via-primary/10 to-accent/10 border-primary/40 shadow-lg shadow-primary/10'
+                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-primary/30 hover:bg-primary/5'
+            }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className={`p-2 rounded-xl w-fit mb-2 ${showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'bg-primary/20' : 'bg-primary/10'}`}>
+              <StackSimple weight="duotone" className={`w-5 h-5 ${showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'text-primary' : 'text-primary/70'}`} />
+            </div>
+            <p className="font-semibold text-sm">All Memories</p>
+            <p className="text-xs text-muted-foreground">{totalMemories} total</p>
+          </motion.button>
+
+          <motion.button
+            onClick={() => { setShowFavoritesOnly(true); setShowAllMemories(true); setSelectedChapterId(null); }}
+            className={`p-4 rounded-2xl border transition-all text-left ${
+              showFavoritesOnly
+                ? 'bg-gradient-to-br from-amber-500/20 via-amber-400/10 to-orange-400/10 border-amber-400/40 shadow-lg shadow-amber-500/10'
+                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-amber-400/30 hover:bg-amber-500/5'
+            }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className={`p-2 rounded-xl w-fit mb-2 ${showFavoritesOnly ? 'bg-amber-400/20' : 'bg-amber-400/10'}`}>
+              <Heart weight={showFavoritesOnly ? 'fill' : 'duotone'} className={`w-5 h-5 ${showFavoritesOnly ? 'text-amber-500' : 'text-amber-400/70'}`} />
+            </div>
+            <p className="font-semibold text-sm">Precious</p>
+            <p className="text-xs text-muted-foreground">{entries.filter(e => e.is_starred).length} starred</p>
+          </motion.button>
+
+          <motion.button
+            onClick={onViewYearbook}
+            className="p-4 rounded-2xl border bg-card/60 backdrop-blur-sm border-border/40 hover:border-accent/40 hover:bg-accent/5 transition-all text-left"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="p-2 rounded-xl w-fit mb-2 bg-accent/10">
+              <BookBookmark weight="duotone" className="w-5 h-5 text-accent/70" />
+            </div>
+            <p className="font-semibold text-sm">Bound Chapters</p>
+            <p className="text-xs text-muted-foreground">Create journal</p>
+          </motion.button>
+
+          <motion.button
+            onClick={() => { setShowAllMemories(false); setShowFavoritesOnly(false); setSelectedChapterId(null); }}
+            className={`p-4 rounded-2xl border transition-all text-left ${
+              !showAllMemories && !showFavoritesOnly && !selectedChapterId
+                ? 'bg-gradient-to-br from-secondary/40 via-secondary/20 to-muted/20 border-border/60 shadow-lg'
+                : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-border/60 hover:bg-secondary/10'
+            }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className={`p-2 rounded-xl w-fit mb-2 ${!showAllMemories && !showFavoritesOnly && !selectedChapterId ? 'bg-foreground/10' : 'bg-foreground/5'}`}>
+              <Sparkle weight="duotone" className="w-5 h-5 text-foreground/60" />
+            </div>
+            <p className="font-semibold text-sm">{selectedYear}</p>
+            <p className="text-xs text-muted-foreground">This year</p>
+          </motion.button>
+        </div>
+
         <ChaptersPanel
           chapters={chapters}
           selectedChapterId={selectedChapterId}
-          onSelectChapter={setSelectedChapterId}
+          onSelectChapter={(id) => { setSelectedChapterId(id); if (id) { setShowFavoritesOnly(false); } }}
           onSaveChapter={onSaveChapter}
           onDeleteChapter={onDeleteChapter}
           entryCountByChapter={entryCountByChapter}
         />
 
-        {starredCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`w-full p-4 rounded-2xl border transition-all duration-300 ${
-                showFavoritesOnly 
-                  ? 'bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-500/20 border-amber-400/40 shadow-lg shadow-amber-500/10' 
-                  : 'bg-card/60 backdrop-blur-sm border-border/40 hover:border-amber-400/30 hover:bg-amber-500/5'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl ${showFavoritesOnly ? 'bg-amber-400/30' : 'bg-amber-400/15'}`}>
-                    <Heart weight={showFavoritesOnly ? 'fill' : 'duotone'} className={`w-5 h-5 ${showFavoritesOnly ? 'text-amber-500' : 'text-amber-400/80'}`} />
-                  </div>
-                  <div className="text-left">
-                    <p className={`font-semibold ${showFavoritesOnly ? 'text-amber-600 dark:text-amber-300' : 'text-foreground'}`}>
-                      Precious Memories
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {starredCount} {starredCount === 1 ? 'moment' : 'moments'} you want to hold tight
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                    showFavoritesOnly 
-                      ? 'bg-amber-400/30 text-amber-600 dark:text-amber-300' 
-                      : 'bg-muted/50 text-muted-foreground'
-                  }`}>
-                    {showFavoritesOnly ? 'Showing favorites' : 'View all'}
-                  </span>
-                  <Star weight="fill" className="w-4 h-4 text-amber-400" />
-                </div>
-              </div>
-            </button>
-          </motion.div>
-        )}
-
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
-            <SelectTrigger className="w-36 bg-card/60 backdrop-blur-sm border-border/40 text-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-64 bg-popover border-border/50">
-              {years.map(year => (
-                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {!showAllMemories && (
+              <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
+                <SelectTrigger className="w-32 bg-card/60 backdrop-blur-sm border-border/40 text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 bg-popover border-border/50">
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {showAllMemories && !showFavoritesOnly && (
+              <span className="text-sm font-medium text-foreground px-3 py-1.5 bg-primary/10 rounded-lg">
+                All Years
+              </span>
+            )}
+            {showFavoritesOnly && (
+              <span className="text-sm font-medium text-amber-600 dark:text-amber-400 px-3 py-1.5 bg-amber-400/10 rounded-lg flex items-center gap-1.5">
+                <Star weight="fill" size={14} />
+                Favorites
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {searchQuery && (
@@ -216,12 +252,6 @@ export function Timeline({
             {!searchQuery && filteredEntries.length > 0 && (
               <>
                 <span className="font-medium">{filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}</span>
-                {starredCount > 0 && !showFavoritesOnly && (
-                  <span className="flex items-center gap-1">
-                    <Star weight="fill" className="text-amber-400" size={14} />
-                    {starredCount}
-                  </span>
-                )}
                 {lockedCount > 0 && (
                   <span className="opacity-70">· {lockedCount} locked</span>
                 )}

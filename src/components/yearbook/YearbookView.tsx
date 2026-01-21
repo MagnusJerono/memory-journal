@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, Spinner, Book, Calendar, X, Heart } from '@phosphor-icons/react';
+import { ArrowLeft, Download, Spinner, BookBookmark, Calendar, X, Heart } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { BrandHeaderCompact } from '@/components/BrandHeader';
 
@@ -112,10 +112,10 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
 
   const handleGeneratePDF = async () => {
     if (filteredEntries.length === 0) {
-      toast.error('Keine Einträge vorhanden', {
+      toast.error('No entries available', {
         description: includeLockedOnly 
-          ? 'Sperre zuerst einige Einträge oder deaktiviere "Nur gesperrte Einträge".'
-          : 'Füge zuerst Einträge für diesen Zeitraum hinzu.'
+          ? 'Lock some entries first or disable "Locked entries only".'
+          : 'Add some entries for this time period first.'
       });
       return;
     }
@@ -127,11 +127,11 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
     const yearLabel = mode === 'single' 
       ? selectedYear.toString()
       : mode === 'life'
-      ? 'Mein Leben'
+      ? 'My Life'
       : `${Math.min(...selectedYears)}-${Math.max(...selectedYears)}`;
 
-    toast.success(`${yearLabel} Vorschau bereit!`, {
-      description: `Theme: ${YEARBOOK_THEMES.find(t => t.value === selectedTheme)?.label}. Volle PDF-Generierung kommt bald.`
+    toast.success(`${yearLabel} preview ready!`, {
+      description: `Theme: ${YEARBOOK_THEMES.find(t => t.value === selectedTheme)?.label}. Full PDF generation coming soon.`
     });
 
     setIsGenerating(false);
@@ -139,10 +139,10 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
 
   const getYearbookTitle = () => {
     if (mode === 'life') {
-      return 'Mein Leben';
+      return 'My Life';
     }
     if (mode === 'single') {
-      return `Yearbook ${selectedYear}`;
+      return `Bound Chapters ${selectedYear}`;
     }
     const sortedYears = [...selectedYears].sort((a, b) => a - b);
     if (sortedYears.length === 2) {
@@ -160,11 +160,11 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={onBack} className="hover:bg-secondary/50">
               <ArrowLeft className="mr-2" />
-              Zurück
+              Back
             </Button>
             <BrandHeaderCompact />
           </div>
-          <span className="text-sm font-semibold text-muted-foreground tracking-wide">Yearbook</span>
+          <span className="text-sm font-semibold text-muted-foreground tracking-wide">Bound Chapters</span>
         </div>
       </header>
 
@@ -174,12 +174,12 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
             {mode === 'life' ? (
               <Heart className="w-8 h-8 text-primary" weight="duotone" />
             ) : (
-              <Book className="w-8 h-8 text-primary" weight="duotone" />
+              <BookBookmark className="w-8 h-8 text-primary" weight="duotone" />
             )}
           </div>
           <h2 className="text-3xl font-serif font-semibold mb-2">{getYearbookTitle()}</h2>
           <p className="text-muted-foreground">
-            {filteredEntries.length} {filteredEntries.length === 1 ? 'Erinnerung' : 'Erinnerungen'} enthalten
+            {filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'} included
             {mode === 'life' && yearsWithEntries.length > 0 && (
               <span className="block text-sm mt-1">
                 {Math.min(...yearsWithEntries)} – {Math.max(...yearsWithEntries)}
@@ -192,20 +192,20 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <label className="font-medium">Modus</label>
-                <p className="text-sm text-muted-foreground">Wähle den Umfang deines Journals</p>
+                <label className="font-medium">Mode</label>
+                <p className="text-sm text-muted-foreground">Choose the scope of your journal</p>
               </div>
               <Select value={mode} onValueChange={(v) => handleModeChange(v as YearbookMode)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="single">Einzelnes Jahr</SelectItem>
-                  <SelectItem value="multi">Mehrere Jahre</SelectItem>
+                  <SelectItem value="single">Single Year</SelectItem>
+                  <SelectItem value="multi">Multiple Years</SelectItem>
                   <SelectItem value="life">
                     <span className="flex items-center gap-2">
                       <Heart className="h-4 w-4" weight="fill" />
-                      Mein Leben
+                      My Life
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -217,9 +217,9 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                 <div className="flex items-center gap-3">
                   <Heart className="h-5 w-5 text-primary" weight="duotone" />
                   <div>
-                    <p className="font-medium text-sm">Alle deine Erinnerungen</p>
+                    <p className="font-medium text-sm">All your memories</p>
                     <p className="text-xs text-muted-foreground">
-                      {yearsWithEntries.length} {yearsWithEntries.length === 1 ? 'Jahr' : 'Jahre'} mit Einträgen
+                      {yearsWithEntries.length} {yearsWithEntries.length === 1 ? 'year' : 'years'} with entries
                     </p>
                   </div>
                 </div>
@@ -229,8 +229,8 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
             {mode === 'single' && (
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="font-medium">Jahr</label>
-                  <p className="text-sm text-muted-foreground">Wähle das Jahr für dein Yearbook</p>
+                  <label className="font-medium">Year</label>
+                  <p className="text-sm text-muted-foreground">Select year for your bound chapters</p>
                 </div>
                 <Select value={selectedYear.toString()} onValueChange={(v) => handleSingleYearChange(parseInt(v))}>
                   <SelectTrigger className="w-32">
@@ -249,19 +249,19 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <label className="font-medium">Jahre auswählen</label>
-                    <p className="text-sm text-muted-foreground">Kombiniere mehrere Jahre zu einem Journal</p>
+                    <label className="font-medium">Select years</label>
+                    <p className="text-sm text-muted-foreground">Combine multiple years into one journal</p>
                   </div>
                   <Select value="" onValueChange={(v) => handleAddYear(parseInt(v))}>
                     <SelectTrigger className="w-40">
                       <Calendar className="mr-2 h-4 w-4" />
-                      <span>Jahr hinzufügen</span>
+                      <span>Add year</span>
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
                       {yearsWithEntries.length > 0 ? (
                         <>
                           <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
-                            Jahre mit Einträgen
+                            Years with entries
                           </div>
                           {yearsWithEntries.map(year => (
                             <SelectItem 
@@ -276,7 +276,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                         </>
                       ) : (
                         <div className="px-2 py-4 text-sm text-center text-muted-foreground">
-                          Keine Einträge vorhanden
+                          No entries available
                         </div>
                       )}
                     </SelectContent>
@@ -309,8 +309,8 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
 
             <div className="flex items-center justify-between">
               <div>
-                <label className="font-medium">Nur gesperrte Einträge</label>
-                <p className="text-sm text-muted-foreground">Nur finalisierte Erinnerungen einschließen</p>
+                <label className="font-medium">Locked entries only</label>
+                <p className="text-sm text-muted-foreground">Include only finalized memories</p>
               </div>
               <Switch 
                 checked={includeLockedOnly}
@@ -322,7 +322,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <label className="font-medium">Theme</label>
-                  <p className="text-sm text-muted-foreground">Visueller Stil deines Yearbooks</p>
+                  <p className="text-sm text-muted-foreground">Visual style for your bound chapters</p>
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3">
@@ -378,7 +378,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
 
         {filteredEntries.length > 0 && (
           <>
-            <h3 className="font-serif text-xl font-medium mb-4">Vorschau</h3>
+            <h3 className="font-serif text-xl font-medium mb-4">Preview</h3>
 
             {(stats.topThemes.length > 0 || stats.topPlaces.length > 0) && (
               <Card 
@@ -392,7 +392,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                   className="font-serif font-medium mb-4"
                   style={{ color: currentTheme.preview.accent }}
                 >
-                  {mode === 'life' ? 'Dein Leben im Überblick' : mode === 'single' ? 'Dieses Jahr im Überblick' : 'Diese Jahre im Überblick'}
+                  {mode === 'life' ? 'Your life at a glance' : mode === 'single' ? 'This year at a glance' : 'These years at a glance'}
                 </h4>
                 <div className="grid grid-cols-2 gap-6">
                   {stats.topThemes.length > 0 && (
@@ -401,7 +401,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                         className="text-xs uppercase tracking-wide mb-2 opacity-70"
                         style={{ color: currentTheme.preview.text }}
                       >
-                        Top Themen
+                        Top Themes
                       </p>
                       <ul className="space-y-1">
                         {stats.topThemes.map(theme => (
@@ -422,7 +422,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                         className="text-xs uppercase tracking-wide mb-2 opacity-70"
                         style={{ color: currentTheme.preview.text }}
                       >
-                        Top Orte
+                        Top Places
                       </p>
                       <ul className="space-y-1">
                         {stats.topPlaces.map(place => (
@@ -525,13 +525,13 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
           <Card className="p-8 text-center">
             <p className="text-muted-foreground mb-2">
               {includeLockedOnly 
-                ? 'Keine gesperrten Einträge für diesen Zeitraum.'
-                : 'Keine Einträge für diesen Zeitraum.'}
+                ? 'No locked entries for this time period.'
+                : 'No entries for this time period.'}
             </p>
             <p className="text-sm text-muted-foreground">
               {includeLockedOnly 
-                ? 'Sperre Einträge die du einschließen möchtest, oder deaktiviere "Nur gesperrte Einträge".'
-                : 'Erstelle zuerst einige Erinnerungen!'}
+                ? 'Lock entries you want to include, or disable "Locked entries only".'
+                : 'Create some memories first!'}
             </p>
           </Card>
         )}
@@ -546,12 +546,12 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
             {isGenerating ? (
               <>
                 <Spinner className="mr-2 animate-spin" />
-                Wird generiert...
+                Generating...
               </>
             ) : (
               <>
                 <Download className="mr-2" weight="bold" />
-                PDF generieren
+                Generate PDF
               </>
             )}
           </Button>
