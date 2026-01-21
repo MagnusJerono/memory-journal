@@ -3,16 +3,16 @@ import { motion } from 'framer-motion';
 function FluffyCloudShape({ className, isDark = false }: { className?: string; isDark?: boolean }) {
   const baseColor = isDark 
     ? 'oklch(0.22 0.06 270)' 
-    : 'oklch(1 0 0)';
+    : 'oklch(0.98 0.01 220)';
   const shadowColor = isDark 
     ? 'oklch(0.12 0.04 265)' 
-    : 'oklch(0.75 0.04 225)';
+    : 'oklch(0.85 0.04 225)';
   const highlightColor = isDark
     ? 'oklch(0.32 0.07 275)'
-    : 'oklch(1 0.01 220)';
+    : 'oklch(1 0.005 220)';
   const innerShadowColor = isDark
     ? 'oklch(0.08 0.03 260)'
-    : 'oklch(0.85 0.03 230)';
+    : 'oklch(0.92 0.02 230)';
   
   return (
     <svg 
@@ -81,6 +81,8 @@ interface BrandHeaderProps {
 }
 
 export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
+  const gradientId = isDarkMode ? 'brand-gradient-dark' : 'brand-gradient-light';
+  
   return (
     <div className="flex flex-col items-start">
       <motion.div 
@@ -88,22 +90,40 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
         whileHover={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              {isDarkMode ? (
+                <>
+                  <stop offset="0%" stopColor="#e0d4f7" />
+                  <stop offset="40%" stopColor="#d4b8f0" />
+                  <stop offset="70%" stopColor="#f0d4e8" />
+                  <stop offset="100%" stopColor="#dcd0f5" />
+                </>
+              ) : (
+                <>
+                  <stop offset="0%" stopColor="#5b4ba8" />
+                  <stop offset="40%" stopColor="#6b52c0" />
+                  <stop offset="70%" stopColor="#8060c8" />
+                  <stop offset="100%" stopColor="#5f50b0" />
+                </>
+              )}
+            </linearGradient>
+          </defs>
+        </svg>
         <h1 
           className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight select-none"
           style={{
             fontFamily: "'Dancing Script', cursive",
             fontWeight: 700,
-            color: 'transparent',
-            background: isDarkMode
-              ? 'linear-gradient(135deg, oklch(0.95 0.06 280) 0%, oklch(0.90 0.12 300) 40%, oklch(0.98 0.04 320) 70%, oklch(0.92 0.08 280) 100%)'
-              : 'linear-gradient(135deg, oklch(0.38 0.20 260) 0%, oklch(0.45 0.22 280) 40%, oklch(0.52 0.18 300) 70%, oklch(0.40 0.20 270) 100%)',
+            background: `url(#${gradientId})`,
             WebkitBackgroundClip: 'text',
             backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
             letterSpacing: '-0.02em',
-            filter: isDarkMode 
-              ? 'drop-shadow(0 4px 30px oklch(0.75 0.15 280 / 0.4))'
-              : 'drop-shadow(0 4px 30px oklch(0.50 0.18 280 / 0.3))',
+            textShadow: isDarkMode
+              ? '0 4px 30px rgba(180, 140, 220, 0.4), 0 2px 10px rgba(180, 140, 220, 0.3)'
+              : '0 4px 30px rgba(91, 75, 168, 0.3), 0 2px 10px rgba(91, 75, 168, 0.2)',
           }}
         >
           Tightly
@@ -111,12 +131,10 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
         <motion.p 
           className="text-[10px] sm:text-xs font-semibold tracking-[0.25em] uppercase mt-1"
           style={{
-            color: isDarkMode 
-              ? 'oklch(0.80 0.08 280)' 
-              : 'oklch(0.45 0.12 270)',
+            color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
             textShadow: isDarkMode
-              ? '0 1px 10px oklch(0.7 0.1 280 / 0.3)'
-              : '0 1px 8px oklch(0.5 0.15 270 / 0.2)',
+              ? '0 1px 10px rgba(180, 140, 220, 0.3)'
+              : '0 1px 8px rgba(91, 75, 168, 0.2)',
           }}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,13 +197,11 @@ export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
         style={{
           fontFamily: "'Dancing Script', cursive",
           fontWeight: 700,
-          color: 'transparent',
-          background: isDarkMode
-            ? 'linear-gradient(135deg, oklch(0.95 0.06 280) 0%, oklch(0.90 0.12 300) 40%, oklch(0.98 0.04 320) 70%, oklch(0.92 0.08 280) 100%)'
-            : 'linear-gradient(135deg, oklch(0.38 0.20 260) 0%, oklch(0.45 0.22 280) 40%, oklch(0.52 0.18 300) 70%, oklch(0.40 0.20 270) 100%)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
+          letterSpacing: '-0.02em',
+          textShadow: isDarkMode
+            ? '0 2px 15px rgba(180, 140, 220, 0.3)'
+            : '0 2px 15px rgba(91, 75, 168, 0.2)',
         }}
       >
         Tightly
@@ -193,9 +209,7 @@ export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
       <p 
         className="text-[9px] font-semibold tracking-[0.2em] uppercase mt-0.5"
         style={{
-          color: isDarkMode 
-            ? 'oklch(0.80 0.08 280)' 
-            : 'oklch(0.45 0.12 270)',
+          color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
         }}
       >
         Hold them tight
