@@ -6,12 +6,29 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop } from '@phosphor-icons/react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
+import { useKV } from '@github/spark/hooks';
+
+const SPEECH_LANGUAGES = [
+  { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
+  { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
+  { code: 'it-IT', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt-BR', label: 'Português (BR)', flag: '🇧🇷' },
+  { code: 'nl-NL', label: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
+  { code: 'ja-JP', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko-KR', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh-CN', label: '中文 (简体)', flag: '🇨🇳' },
+];
 
 interface NewEntryProps {
   onSave: (entry: Entry) => void;
@@ -25,6 +42,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -38,7 +56,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
     resetTranscript: resetSpeechTranscript,
     error: speechError,
     audioLevel
-  } = useSpeechToText('en-US');
+  } = useSpeechToText(speechLanguage || 'en-US');
 
   useEffect(() => {
     if (speechError) {
@@ -248,6 +266,31 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
                   <span className="text-xs font-medium text-accent">Recording...</span>
                 </div>
                 <AudioWaveform audioLevel={audioLevel} isActive={isListening} />
+              </div>
+            )}
+
+            {speechSupported && !isListening && (
+              <div className="mt-3 flex items-center gap-2">
+                <Globe weight="duotone" className="h-4 w-4 text-muted-foreground" />
+                <Select 
+                  value={speechLanguage || 'en-US'} 
+                  onValueChange={(value) => setSpeechLanguage(value)}
+                >
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="Language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPEECH_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                        <span className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">for voice input</span>
               </div>
             )}
             
