@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images, Heart, FolderSimple } from '@phosphor-icons/react';
-import { BrandHeader } from '@/components/BrandHeader';
+import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { ChaptersPanel } from './ChaptersPanel';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,10 +76,10 @@ export function Timeline({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 bg-card/70 backdrop-blur-2xl border-b border-border/30">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <header className="sticky top-0 z-10">
+        <CloudHeader isDarkMode={isDarkMode} className="mx-auto max-w-5xl px-2 pt-2">
           <div className="flex items-center justify-between gap-4">
-            <BrandHeader />
+            <BrandHeader isDarkMode={isDarkMode} />
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
@@ -139,7 +139,7 @@ export function Timeline({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </CloudHeader>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
