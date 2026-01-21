@@ -1,3 +1,10 @@
+export interface LocationSuggestion {
+  name: string;
+  type: 'city' | 'neighborhood' | 'landmark' | 'venue' | 'country';
+  confidence: 'high' | 'medium' | 'low';
+  source: 'image' | 'transcript';
+}
+
 export interface Entry {
   id: string;
   date: string;
@@ -12,6 +19,8 @@ export interface Entry {
     moods: string[];
     themes: string[];
   } | null;
+  location_suggestions: LocationSuggestion[] | null;
+  manual_locations: string[] | null;
   missing_info_questions: string[] | null;
   uncertain_claims: string[] | null;
   is_locked: boolean;
@@ -81,6 +90,7 @@ export interface AIGenerationResult {
     moods: string[];
     themes: string[];
   };
+  location_suggestions: LocationSuggestion[];
   missing_info_questions: string[];
   uncertain_claims: string[];
 }

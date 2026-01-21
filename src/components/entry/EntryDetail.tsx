@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
+import { Entry, Photo, StoryTone, STORY_TONES, LocationSuggestion } from '@/lib/types';
 import { formatDate, getEntryTitle, generateAIContent, QuestionAnswer } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import { BrandHeaderCompact } from '@/components/BrandHeader';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
 import { RefinementPanel } from './RefinementPanel';
+import { LocationPanel } from './LocationPanel';
 import { cn } from '@/lib/utils';
 
 const SPEECH_LANGUAGES = [
@@ -61,6 +62,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
   const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
   const [isDragging, setIsDragging] = useState(false);
+  const [confirmedLocations, setConfirmedLocations] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -148,6 +150,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
         highlights_ai: aiResult.highlights,
         story_ai: aiResult.story,
         tags_ai: aiResult.tags,
+        location_suggestions: aiResult.location_suggestions,
         missing_info_questions: aiResult.missing_info_questions,
         uncertain_claims: aiResult.uncertain_claims
       });
@@ -162,6 +165,34 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
   const handleRefinementSubmit = (answers: QuestionAnswer[]) => {
     handleRegenerate(answers);
+  };
+
+  const handleAddManualLocation = (location: string) => {
+    const currentLocations = localEntry.manual_locations || [];
+    if (!currentLocations.includes(location)) {
+      updateEntry({ manual_locations: [...currentLocations, location] });
+      toast.success(`Added "${location}" to your locations`);
+    }
+  };
+
+  const handleRemoveManualLocation = (location: string) => {
+    const currentLocations = localEntry.manual_locations || [];
+    updateEntry({ manual_locations: currentLocations.filter(l => l !== location) });
+    setConfirmedLocations(prev => prev.filter(l => l !== location));
+  };
+
+  const handleConfirmSuggestion = (suggestion: LocationSuggestion) => {
+    if (!confirmedLocations.includes(suggestion.name)) {
+      setConfirmedLocations(prev => [...prev, suggestion.name]);
+      const currentLocations = localEntry.manual_locations || [];
+      if (!currentLocations.includes(suggestion.name)) {
+        updateEntry({ manual_locations: [...currentLocations, suggestion.name] });
+      }
+      toast.success(`Confirmed "${suggestion.name}"`);
+    }
+  };
+
+  const handleDismissSuggestion = (_suggestionName: string) => {
   };
 
   const addHighlight = () => {
@@ -538,6 +569,17 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
               </div>
             </div>
           )}
+
+          <LocationPanel
+            suggestions={localEntry.location_suggestions}
+            manualLocations={localEntry.manual_locations}
+            confirmedLocations={confirmedLocations}
+            onAddManualLocation={handleAddManualLocation}
+            onRemoveManualLocation={handleRemoveManualLocation}
+            onConfirmSuggestion={handleConfirmSuggestion}
+            onDismissSuggestion={handleDismissSuggestion}
+            isLocked={localEntry.is_locked}
+          />
 
           {localEntry.missing_info_questions && localEntry.missing_info_questions.length > 0 && (
             <RefinementPanel

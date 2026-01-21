@@ -206,6 +206,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
       entry.highlights_ai = aiResult.highlights;
       entry.story_ai = aiResult.story;
       entry.tags_ai = aiResult.tags;
+      entry.location_suggestions = aiResult.location_suggestions;
       entry.missing_info_questions = aiResult.missing_info_questions;
       entry.uncertain_claims = aiResult.uncertain_claims;
 

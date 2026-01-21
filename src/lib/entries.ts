@@ -1,4 +1,4 @@
-import { Entry, AIGenerationResult, StoryTone, STORY_LANGUAGES } from './types';
+import { Entry, AIGenerationResult, StoryTone, STORY_LANGUAGES, LocationSuggestion } from './types';
 import { v4 as uuid } from 'uuid';
 
 const TONE_INSTRUCTIONS: Record<Exclude<StoryTone, 'custom'>, string> = {
@@ -20,6 +20,13 @@ interface GenerationOptions {
   customTonePrompt?: string;
   outputLanguage?: string;
   refinementAnswers?: QuestionAnswer[];
+  imageAnalysis?: ImageAnalysisResult | null;
+  manualLocations?: string[];
+}
+
+export interface ImageAnalysisResult {
+  locations: LocationSuggestion[];
+  description: string;
 }
 
 function getLanguageName(code: string): string {
@@ -27,8 +34,59 @@ function getLanguageName(code: string): string {
   return lang ? lang.label : 'English';
 }
 
+export async function analyzeImagesForLocations(_photoUrls: string[]): Promise<ImageAnalysisResult> {
+  if (_photoUrls.length === 0) {
+    return { locations: [], description: '' };
+  }
+
+  const photoCount = String(_photoUrls.slice(0, 3).length);
+  
+  const promptText = `You are an expert at identifying locations from photos. Analyze the following ${photoCount} photo(s) and identify any recognizable:
+- Cities or countries (from skylines, architecture, signs, landmarks)
+- Specific neighborhoods or districts
+- Famous landmarks (buildings, monuments, bridges, parks)
+- Venues (restaurants, cafes, museums, hotels - look for names/signs)
+- Street names or distinctive architectural styles that indicate a region
+
+For each location you identify, provide:
+- The exact name (use proper capitalized names like "Eiffel Tower" not "eiffel tower")
+- The type (city, neighborhood, landmark, venue, country)
+- Your confidence level (high if clearly visible/recognizable, medium if fairly certain, low if just a guess)
+
+Be specific! Instead of just "Europe", identify "Paris, France" or "Montmartre neighborhood". 
+Look for: street signs, building names, distinctive architecture, famous landmarks, language on signs, license plates, etc.
+
+Return ONLY valid JSON in this exact format:
+{
+  "locations": [
+    { "name": "Exact Location Name", "type": "city|neighborhood|landmark|venue|country", "confidence": "high|medium|low", "source": "image" }
+  ],
+  "description": "Brief description of what you see in the photos that helped identify these locations"
+}
+
+If you cannot identify any specific locations, return empty locations array but describe what you see.`;
+
+  try {
+    const response = await window.spark.llm(promptText, 'gpt-4o', true);
+    const result = JSON.parse(response) as ImageAnalysisResult;
+    
+    if (!Array.isArray(result.locations)) {
+      result.locations = [];
+    }
+    result.locations = result.locations.map(loc => ({
+      ...loc,
+      source: 'image' as const
+    }));
+    
+    return result;
+  } catch (error) {
+    console.error('Image analysis failed:', error);
+    return { locations: [], description: '' };
+  }
+}
+
 function buildSystemPrompt(options: GenerationOptions): string {
-  const { tone, customTonePrompt, outputLanguage, refinementAnswers } = options;
+  const { tone, customTonePrompt, outputLanguage, refinementAnswers, imageAnalysis, manualLocations } = options;
   
   let toneInstructions: string;
   if (tone === 'custom' && customTonePrompt) {
@@ -50,16 +108,40 @@ ${refinementAnswers.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n')
 Incorporate these answers naturally into the story. Update tags, highlights, and reduce or remove related missing_info_questions since they've been answered.`
     : '';
 
+  let locationContext = '';
+  if (imageAnalysis && imageAnalysis.locations.length > 0) {
+    locationContext = `\n\nLOCATION HINTS FROM PHOTOS:
+The user's photos appear to show these locations:
+${imageAnalysis.locations.map(loc => `- ${loc.name} (${loc.type}, ${loc.confidence} confidence)`).join('\n')}
+Photo description: ${imageAnalysis.description}
+
+Use these location hints to enrich the story with specific place names. If the transcript mentions being somewhere but is vague, use these photo hints to add specificity.`;
+  }
+
+  if (manualLocations && manualLocations.length > 0) {
+    locationContext += `\n\nUSER-CONFIRMED LOCATIONS:
+The user has manually tagged these locations - treat them as confirmed facts:
+${manualLocations.map(loc => `- ${loc}`).join('\n')}
+
+Incorporate these locations naturally into the story and include them in the places tags.`;
+  }
+
   return `You are a memory journaling writing assistant.
 
 ${toneInstructions}
 
 Do not invent facts. Use ONLY the user-provided transcript and optional user title.
+${locationContext}
 
 LOCATION RECOGNITION (IMPORTANT):
 - The transcript may come from voice input with potential speech-to-text errors for city/country names.
 - Use context clues and common sense to identify and CORRECT misspelled or phonetically similar place names.
-- Common patterns to watch for:
+- Be SPECIFIC about locations - use exact neighborhood names, landmark names, street names when possible.
+- Examples of specific location naming:
+  * Instead of "a café in Paris" → "a café in the Marais district"
+  * Instead of "a beach in Thailand" → "Railay Beach near Krabi"
+  * Instead of "downtown" → "the Financial District" or "SoHo"
+- Common speech-to-text patterns to watch for:
   * "Pair is" or "Paris" → Paris, France
   * "New work" or "new york" → New York
   * "Bark alona" or "barcelona" → Barcelona, Spain
@@ -72,6 +154,13 @@ LOCATION RECOGNITION (IMPORTANT):
   * "Deutschland", "Germany", "Allemagne" → Germany
 - If you can reasonably infer the correct place name, use it in the story and tags.
 - If a location is mentioned but unclear or ambiguous, add a clarifying question like "Which city did you visit?" or "Could you confirm the exact location?" to missing_info_questions.
+
+LOCATION SUGGESTIONS:
+Based on the transcript (and photo analysis if provided), generate location_suggestions with specific places that might help the user remember details. Include:
+- Exact city and country names
+- Specific neighborhoods (e.g., "Shibuya, Tokyo" not just "Tokyo")
+- Landmarks that match the description
+- Venues if identifiable
 
 If key details are missing, add clarifying questions in missing_info_questions.
 
@@ -86,10 +175,13 @@ Required JSON structure:
   "story": "string (200-500 words)",
   "tags": {
     "people": ["0-8 strings"],
-    "places": ["0-8 strings - use proper city/country names, corrected if needed"],
+    "places": ["0-8 strings - use proper city/country names, neighborhoods, landmarks"],
     "moods": ["0-8 strings"],
     "themes": ["0-8 strings"]
   },
+  "location_suggestions": [
+    { "name": "Specific Location Name", "type": "city|neighborhood|landmark|venue|country", "confidence": "high|medium|low", "source": "transcript" }
+  ],
   "missing_info_questions": ["0-3 strings - include location clarification if place names are unclear"],
   "uncertain_claims": ["0-5 strings"]
 }
@@ -97,7 +189,8 @@ Required JSON structure:
 Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
-- no invented names/places (but DO correct obvious speech-to-text errors for real places)${languageInstruction}${refinementSection}`;
+- no invented names/places (but DO correct obvious speech-to-text errors for real places)
+- BE SPECIFIC with locations - use neighborhood names, landmark names, exact venue names when known${languageInstruction}${refinementSection}`;
 }
 
 export async function generateAIContent(
@@ -107,13 +200,27 @@ export async function generateAIContent(
   outputLanguage?: string,
   refinementAnswers?: QuestionAnswer[]
 ): Promise<AIGenerationResult> {
+  let imageAnalysis: ImageAnalysisResult | null = null;
+  
+  if (entry.photos && entry.photos.length > 0) {
+    const photoUrls = entry.photos.map(p => p.storage_url);
+    imageAnalysis = await analyzeImagesForLocations(photoUrls);
+  }
+
   const userContent = JSON.stringify({
     date: entry.date,
     user_title: entry.title_user || '',
     transcript: entry.transcript || ''
   });
 
-  const systemPrompt = buildSystemPrompt({ tone, customTonePrompt, outputLanguage, refinementAnswers });
+  const systemPrompt = buildSystemPrompt({ 
+    tone, 
+    customTonePrompt, 
+    outputLanguage, 
+    refinementAnswers,
+    imageAnalysis,
+    manualLocations: entry.manual_locations || undefined
+  });
   const fullPrompt = `${systemPrompt}
 
 User input:
@@ -121,6 +228,18 @@ ${userContent}`;
 
   const response = await window.spark.llm(fullPrompt, 'gpt-4o', true);
   const result = JSON.parse(response) as AIGenerationResult;
+  
+  if (imageAnalysis && imageAnalysis.locations.length > 0) {
+    if (!result.location_suggestions) {
+      result.location_suggestions = [];
+    }
+    const existingNames = new Set(result.location_suggestions.map(l => l.name.toLowerCase()));
+    imageAnalysis.locations.forEach(loc => {
+      if (!existingNames.has(loc.name.toLowerCase())) {
+        result.location_suggestions.push(loc);
+      }
+    });
+  }
   
   return validateAIResult(result);
 }
@@ -163,6 +282,13 @@ function validateAIResult(result: AIGenerationResult): AIGenerationResult {
     result.tags[k] = result.tags[k].filter(t => typeof t === 'string').slice(0, 8);
   });
 
+  if (!Array.isArray(result.location_suggestions)) {
+    result.location_suggestions = [];
+  }
+  result.location_suggestions = result.location_suggestions
+    .filter(loc => loc && typeof loc.name === 'string')
+    .slice(0, 10);
+
   if (!Array.isArray(result.missing_info_questions)) {
     result.missing_info_questions = [];
   }
@@ -191,6 +317,8 @@ export function createEmptyEntry(date: string): Entry {
     story_ai: null,
     highlights_ai: null,
     tags_ai: null,
+    location_suggestions: null,
+    manual_locations: null,
     missing_info_questions: null,
     uncertain_claims: null,
     is_locked: false,
