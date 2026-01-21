@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   ArrowLeft, Lock, LockOpen, Sparkle, Trash, Plus, X, 
-  Spinner, Warning, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple 
+  Spinner, Warning, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple,
+  Eye, PencilSimple
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -31,6 +32,7 @@ import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
 import { RefinementPanel } from './RefinementPanel';
 import { LocationPanel } from './LocationPanel';
+import { EntryReadView } from './EntryReadView';
 import { cn } from '@/lib/utils';
 
 const SPEECH_LANGUAGES = [
@@ -63,6 +65,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
   const [isDragging, setIsDragging] = useState(false);
   const [confirmedLocations, setConfirmedLocations] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'edit' | 'read'>('edit');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -296,6 +299,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
   const title = getEntryTitle(localEntry);
   const tags = localEntry.tags_ai;
+  const hasGeneratedContent = !!(localEntry.story_ai || localEntry.highlights_ai?.length);
 
   return (
     <div className="min-h-screen pb-24">
@@ -309,6 +313,34 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
             <BrandHeaderCompact />
           </div>
           <div className="flex items-center gap-4">
+            {hasGeneratedContent && (
+              <div className="flex items-center bg-muted/60 rounded-lg p-0.5">
+                <Button
+                  variant={viewMode === 'edit' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('edit')}
+                  className={cn(
+                    "h-7 px-3 text-xs font-medium transition-all",
+                    viewMode === 'edit' ? 'shadow-sm' : 'hover:bg-transparent'
+                  )}
+                >
+                  <PencilSimple weight="duotone" className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </Button>
+                <Button
+                  variant={viewMode === 'read' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('read')}
+                  className={cn(
+                    "h-7 px-3 text-xs font-medium transition-all",
+                    viewMode === 'read' ? 'shadow-sm' : 'hover:bg-transparent'
+                  )}
+                >
+                  <Eye weight="duotone" className="w-3.5 h-3.5 mr-1.5" />
+                  View
+                </Button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               {localEntry.is_locked ? (
                 <Lock className="text-accent" weight="fill" />
@@ -324,7 +356,12 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      {viewMode === 'read' && hasGeneratedContent ? (
+        <main className="max-w-3xl mx-auto px-4 py-8">
+          <EntryReadView entry={localEntry} />
+        </main>
+      ) : (
+        <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
           <CalendarIcon weight="duotone" />
           {formatDate(localEntry.date)}
@@ -609,75 +646,78 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
           )}
         </div>
       </main>
+      )}
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border shadow-lg">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                <Trash className="mr-2" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this memory?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete "{title}" and all its photos.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground">
+      {viewMode === 'edit' && (
+        <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border shadow-lg">
+          <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash className="mr-2" />
                   Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this memory?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete "{title}" and all its photos.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          <div className="flex items-center gap-2">
-            {!localEntry.is_locked && (
-              <Select 
-                value={storyTone || 'natural'} 
-                onValueChange={(value) => setStoryTone(value as StoryTone)}
-              >
-                <SelectTrigger className="w-[140px] h-9">
-                  <PenNib weight="duotone" className="h-4 w-4 mr-1" />
-                  <SelectValue placeholder="Tone" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STORY_TONES.map((tone) => (
-                    <SelectItem key={tone.value} value={tone.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{tone.flag}</span>
-                        <span>{tone.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Button
-              onClick={() => handleRegenerate()}
-              disabled={localEntry.is_locked || isRegenerating}
-              variant={localEntry.is_locked ? "outline" : "default"}
-            >
-              {isRegenerating ? (
-                <>
-                  <Spinner className="mr-2 animate-spin" />
-                  Regenerating...
-                </>
-              ) : (
-                <>
-                  <Sparkle className="mr-2" weight="fill" />
-                  {localEntry.is_locked ? 'Unlock to regenerate' : 'Regenerate'}
-                </>
+            <div className="flex items-center gap-2">
+              {!localEntry.is_locked && (
+                <Select 
+                  value={storyTone || 'natural'} 
+                  onValueChange={(value) => setStoryTone(value as StoryTone)}
+                >
+                  <SelectTrigger className="w-[140px] h-9">
+                    <PenNib weight="duotone" className="h-4 w-4 mr-1" />
+                    <SelectValue placeholder="Tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STORY_TONES.map((tone) => (
+                      <SelectItem key={tone.value} value={tone.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{tone.flag}</span>
+                          <span>{tone.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
-            </Button>
+
+              <Button
+                onClick={() => handleRegenerate()}
+                disabled={localEntry.is_locked || isRegenerating}
+                variant={localEntry.is_locked ? "outline" : "default"}
+              >
+                {isRegenerating ? (
+                  <>
+                    <Spinner className="mr-2 animate-spin" />
+                    Regenerating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkle className="mr-2" weight="fill" />
+                    {localEntry.is_locked ? 'Unlock to regenerate' : 'Regenerate'}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }
