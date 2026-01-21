@@ -196,11 +196,13 @@ export function getMonthFromDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'long' });
 }
 
-export function getAvailableYears(entries: Entry[]): number[] {
-  const years = new Set(entries.map(e => getYearFromDate(e.date)));
+export function getAvailableYears(_entries: Entry[]): number[] {
   const currentYear = new Date().getFullYear();
-  years.add(currentYear);
-  return Array.from(years).sort((a, b) => b - a);
+  const years: number[] = [];
+  for (let year = currentYear; year >= currentYear - 100; year--) {
+    years.push(year);
+  }
+  return years;
 }
 
 export function filterEntriesByYear(entries: Entry[], year: number): Entry[] {

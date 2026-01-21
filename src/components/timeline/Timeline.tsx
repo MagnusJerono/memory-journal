@@ -31,17 +31,7 @@ export function Timeline({
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold font-serif text-foreground">Ziel</h1>
-            <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <h1 className="text-2xl font-semibold font-serif text-foreground">Tightly</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onViewYearbook}>
@@ -57,20 +47,33 @@ export function Timeline({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-64">
+              {years.map(year => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filteredEntries.length > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}
+              {lockedCount > 0 && ` · ${lockedCount} locked`}
+            </span>
+          )}
+        </div>
+
         {filteredEntries.length === 0 ? (
           <EmptyState onNewEntry={onNewEntry} year={selectedYear} />
         ) : (
-          <>
-            <div className="mb-6 text-sm text-muted-foreground">
-              {filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'} in {selectedYear}
-              {lockedCount > 0 && ` · ${lockedCount} locked`}
-            </div>
-            <div className="grid gap-4">
-              {filteredEntries.map(entry => (
-                <EntryCard key={entry.id} entry={entry} onClick={() => onSelectEntry(entry.id)} />
-              ))}
-            </div>
-          </>
+          <div className="grid gap-4">
+            {filteredEntries.map(entry => (
+              <EntryCard key={entry.id} entry={entry} onClick={() => onSelectEntry(entry.id)} />
+            ))}
+          </div>
         )}
       </main>
     </div>
