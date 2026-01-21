@@ -1,9 +1,126 @@
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+
+interface Star {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  delay: number;
+  duration: number;
+  type: 'dot' | 'sparkle' | 'cross';
+}
+
+function generateStars(count: number): Star[] {
+  const stars: Star[] = [];
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 70,
+      size: Math.random() * 3 + 1,
+      delay: Math.random() * 5,
+      duration: Math.random() * 3 + 2,
+      type: Math.random() < 0.3 ? 'sparkle' : Math.random() < 0.5 ? 'cross' : 'dot',
+    });
+  }
+  return stars;
+}
+
+function StarElement({ star }: { star: Star }) {
+  if (star.type === 'sparkle') {
+    return (
+      <motion.div
+        className="absolute"
+        style={{
+          left: `${star.x}%`,
+          top: `${star.y}%`,
+          width: star.size * 3,
+          height: star.size * 3,
+        }}
+        animate={{
+          opacity: [0.2, 0.8, 0.2],
+          scale: [0.8, 1.2, 0.8],
+          rotate: [0, 180, 360],
+        }}
+        transition={{
+          duration: star.duration * 1.5,
+          delay: star.delay,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-violet-300/60">
+          <path d="M12 0L13.5 9L22 12L13.5 15L12 24L10.5 15L2 12L10.5 9L12 0Z" />
+        </svg>
+      </motion.div>
+    );
+  }
+
+  if (star.type === 'cross') {
+    return (
+      <motion.div
+        className="absolute"
+        style={{
+          left: `${star.x}%`,
+          top: `${star.y}%`,
+          width: star.size * 2,
+          height: star.size * 2,
+        }}
+        animate={{
+          opacity: [0.15, 0.6, 0.15],
+          scale: [1, 1.3, 1],
+        }}
+        transition={{
+          duration: star.duration,
+          delay: star.delay,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        <svg viewBox="0 0 16 16" fill="currentColor" className="w-full h-full text-sky-200/70">
+          <path d="M8 0L9 7L16 8L9 9L8 16L7 9L0 8L7 7L8 0Z" />
+        </svg>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      className="absolute rounded-full bg-white/60"
+      style={{
+        left: `${star.x}%`,
+        top: `${star.y}%`,
+        width: star.size,
+        height: star.size,
+        boxShadow: `0 0 ${star.size * 2}px ${star.size}px rgba(255, 255, 255, 0.3)`,
+      }}
+      animate={{
+        opacity: [0.3, 0.9, 0.3],
+        scale: [1, 1.5, 1],
+      }}
+      transition={{
+        duration: star.duration,
+        delay: star.delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
 
 export function DreamyBackground() {
+  const stars = useMemo(() => generateStars(35), []);
+
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-sky-100/80 via-background to-violet-50/50" />
+
+      <div className="absolute inset-0 pointer-events-none">
+        {stars.map((star) => (
+          <StarElement key={star.id} star={star} />
+        ))}
+      </div>
       
       <div className="absolute inset-0 opacity-40">
         <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
