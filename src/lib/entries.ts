@@ -322,6 +322,7 @@ export function createEmptyEntry(date: string): Entry {
     missing_info_questions: null,
     uncertain_claims: null,
     is_locked: false,
+    is_starred: false,
     photos: [],
     created_at: now,
     updated_at: now
@@ -368,6 +369,33 @@ export function filterEntriesByYear(entries: Entry[], year: number): Entry[] {
   return entries
     .filter(e => getYearFromDate(e.date) === year)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export function searchEntries(entries: Entry[], query: string): Entry[] {
+  if (!query.trim()) return entries;
+  
+  const normalizedQuery = query.toLowerCase().trim();
+  const queryWords = normalizedQuery.split(/\s+/);
+  
+  return entries.filter(entry => {
+    const searchableText = [
+      entry.title_user,
+      entry.title_ai,
+      entry.transcript,
+      entry.story_ai,
+      ...(entry.highlights_ai || []),
+      ...(entry.tags_ai?.people || []),
+      ...(entry.tags_ai?.places || []),
+      ...(entry.tags_ai?.moods || []),
+      ...(entry.tags_ai?.themes || []),
+      ...(entry.manual_locations || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    
+    return queryWords.every(word => searchableText.includes(word));
+  });
 }
 
 export function getEntryTitle(entry: Entry): string {

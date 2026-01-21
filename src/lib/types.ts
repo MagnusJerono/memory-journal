@@ -24,6 +24,7 @@ export interface Entry {
   missing_info_questions: string[] | null;
   uncertain_claims: string[] | null;
   is_locked: boolean;
+  is_starred: boolean;
   photos: Photo[];
   created_at: string;
   updated_at: string;

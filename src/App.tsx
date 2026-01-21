@@ -30,7 +30,7 @@ function App() {
         updated[existing] = { ...entry, updated_at: new Date().toISOString() };
         return updated;
       }
-      return [...list, entry];
+      return [...list, { ...entry, is_starred: entry.is_starred ?? false }];
     });
   };
 
@@ -40,7 +40,21 @@ function App() {
     setSelectedEntryId(null);
   };
 
-  const entryList = entries || [];
+  const handleToggleStar = (entryId: string) => {
+    setEntries((current) => {
+      const list = current || [];
+      return list.map(e => 
+        e.id === entryId 
+          ? { ...e, is_starred: !e.is_starred, updated_at: new Date().toISOString() }
+          : e
+      );
+    });
+  };
+
+  const entryList = (entries || []).map(e => ({
+    ...e,
+    is_starred: e.is_starred ?? false
+  }));
   const selectedEntry = selectedEntryId 
     ? entryList.find(e => e.id === selectedEntryId) || null
     : null;
@@ -56,6 +70,7 @@ function App() {
           onSelectEntry={(id) => handleNavigate('entry', id)}
           onNewEntry={() => handleNavigate('new')}
           onViewYearbook={() => handleNavigate('yearbook')}
+          onToggleStar={handleToggleStar}
         />
       )}
 

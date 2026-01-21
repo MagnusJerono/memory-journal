@@ -22,7 +22,7 @@ import {
 import { 
   ArrowLeft, Lock, LockOpen, Sparkle, Trash, Plus, X, 
   Spinner, Warning, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple,
-  Eye, PencilSimple
+  Eye, PencilSimple, Star
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -122,6 +122,11 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const toggleLock = () => {
     updateEntry({ is_locked: !localEntry.is_locked });
     toast.success(localEntry.is_locked ? 'Entry unlocked' : 'Entry locked');
+  };
+
+  const toggleStar = () => {
+    updateEntry({ is_starred: !localEntry.is_starred });
+    toast.success(localEntry.is_starred ? 'Removed from favorites' : 'Added to favorites');
   };
 
   const handleRegenerate = async (refinementAnswers?: QuestionAnswer[]) => {
@@ -342,6 +347,18 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
               </div>
             )}
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleStar}
+                className="h-8 w-8"
+                aria-label={localEntry.is_starred ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Star 
+                  weight={localEntry.is_starred ? 'fill' : 'regular'} 
+                  className={`w-5 h-5 transition-colors ${localEntry.is_starred ? 'text-amber-500' : 'text-muted-foreground'}`}
+                />
+              </Button>
               {localEntry.is_locked ? (
                 <Lock className="text-accent" weight="fill" />
               ) : (
