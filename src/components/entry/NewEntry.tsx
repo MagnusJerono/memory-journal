@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
 import { useKV } from '@github/spark/hooks';
+import { BrandHeaderCompact } from '@/components/BrandHeader';
 
 const SPEECH_LANGUAGES = [
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
@@ -177,13 +178,15 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-2" />
-            Back
-          </Button>
-          <h1 className="text-lg font-serif font-medium">New Memory</h1>
-          <div className="w-20" />
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ArrowLeft className="mr-2" />
+              Back
+            </Button>
+            <BrandHeaderCompact />
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">New Memory</span>
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Book, Camera } from '@phosphor-icons/react';
+import { BrandHeader } from '@/components/BrandHeader';
 
 interface TimelineProps {
   entries: Entry[];
@@ -29,10 +30,8 @@ export function Timeline({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold font-serif text-foreground">Tightly</h1>
-          </div>
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <BrandHeader />
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onViewYearbook}>
               <Book className="mr-2" weight="duotone" />

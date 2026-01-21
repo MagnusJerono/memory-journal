@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { useKV } from '@github/spark/hooks';
+import { BrandHeaderCompact } from '@/components/BrandHeader';
 
 interface EntryDetailProps {
   entry: Entry;
@@ -138,11 +139,14 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   return (
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-2" />
-            Back
-          </Button>
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ArrowLeft className="mr-2" />
+              Back
+            </Button>
+            <BrandHeaderCompact />
+          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               {localEntry.is_locked ? (

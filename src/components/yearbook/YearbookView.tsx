@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Spinner, Book, Calendar, X, Heart } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { BrandHeaderCompact } from '@/components/BrandHeader';
 
 interface YearbookViewProps {
   entries: Entry[];
@@ -155,13 +156,15 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-2" />
-            Zurück
-          </Button>
-          <h1 className="text-lg font-serif font-medium">Yearbook</h1>
-          <div className="w-20" />
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ArrowLeft className="mr-2" />
+              Zurück
+            </Button>
+            <BrandHeaderCompact />
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">Yearbook</span>
         </div>
       </header>
 
