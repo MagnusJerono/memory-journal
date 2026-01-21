@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Entry } from '@/lib/types';
+import { Entry, YearbookTheme, YEARBOOK_THEMES } from '@/lib/types';
 import { getAvailableYears, getEntryTitle, getMonthFromDate, formatShortDate, getYearFromDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, Spinner, Book, Calendar, X } from '@phosphor-icons/react';
+import { ArrowLeft, Download, Spinner, Book, Calendar, X, Heart } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 interface YearbookViewProps {
@@ -16,25 +16,28 @@ interface YearbookViewProps {
   onBack: () => void;
 }
 
-type YearbookMode = 'single' | 'multi';
+type YearbookMode = 'single' | 'multi' | 'life';
 
 export function YearbookView({ entries, selectedYear, onYearChange, onBack }: YearbookViewProps) {
   const [includeLockedOnly, setIncludeLockedOnly] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [mode, setMode] = useState<YearbookMode>('single');
   const [selectedYears, setSelectedYears] = useState<number[]>([selectedYear]);
+  const [selectedTheme, setSelectedTheme] = useState<YearbookTheme>('classic');
   
   const allYears = getAvailableYears(entries);
   const yearsWithEntries = useMemo(() => {
     const yearSet = new Set<number>();
     entries.forEach(e => yearSet.add(getYearFromDate(e.date)));
-    return allYears.filter(y => yearSet.has(y));
+    return allYears.filter(y => yearSet.has(y)).sort((a, b) => b - a);
   }, [entries, allYears]);
 
   const handleModeChange = (newMode: YearbookMode) => {
     setMode(newMode);
     if (newMode === 'single') {
       setSelectedYears([selectedYear]);
+    } else if (newMode === 'life') {
+      setSelectedYears(yearsWithEntries);
     }
   };
 
@@ -55,7 +58,7 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
     setSelectedYears([year]);
   };
 
-  const activeYears = mode === 'single' ? [selectedYear] : selectedYears;
+  const activeYears = mode === 'single' ? [selectedYear] : mode === 'life' ? yearsWithEntries : selectedYears;
 
   const filteredEntries = useMemo(() => {
     const yearEntries = entries.filter(e => activeYears.includes(getYearFromDate(e.date)));
@@ -122,16 +125,21 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
 
     const yearLabel = mode === 'single' 
       ? selectedYear.toString()
+      : mode === 'life'
+      ? 'Mein Leben'
       : `${Math.min(...selectedYears)}-${Math.max(...selectedYears)}`;
 
-    toast.success(`Yearbook ${yearLabel} Vorschau bereit!`, {
-      description: 'Volle PDF-Generierung kommt bald.'
+    toast.success(`${yearLabel} Vorschau bereit!`, {
+      description: `Theme: ${YEARBOOK_THEMES.find(t => t.value === selectedTheme)?.label}. Volle PDF-Generierung kommt bald.`
     });
 
     setIsGenerating(false);
   };
 
   const getYearbookTitle = () => {
+    if (mode === 'life') {
+      return 'Mein Leben';
+    }
     if (mode === 'single') {
       return `Yearbook ${selectedYear}`;
     }
@@ -141,6 +149,8 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
     }
     return `Journal ${sortedYears[0]} – ${sortedYears[sortedYears.length - 1]}`;
   };
+
+  const currentTheme = YEARBOOK_THEMES.find(t => t.value === selectedTheme)!;
 
   return (
     <div className="min-h-screen">
@@ -158,11 +168,20 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <Book className="w-8 h-8 text-primary" weight="duotone" />
+            {mode === 'life' ? (
+              <Heart className="w-8 h-8 text-primary" weight="duotone" />
+            ) : (
+              <Book className="w-8 h-8 text-primary" weight="duotone" />
+            )}
           </div>
           <h2 className="text-3xl font-serif font-semibold mb-2">{getYearbookTitle()}</h2>
           <p className="text-muted-foreground">
             {filteredEntries.length} {filteredEntries.length === 1 ? 'Erinnerung' : 'Erinnerungen'} enthalten
+            {mode === 'life' && yearsWithEntries.length > 0 && (
+              <span className="block text-sm mt-1">
+                {Math.min(...yearsWithEntries)} – {Math.max(...yearsWithEntries)}
+              </span>
+            )}
           </p>
         </div>
 
@@ -171,20 +190,40 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
             <div className="flex items-center justify-between">
               <div>
                 <label className="font-medium">Modus</label>
-                <p className="text-sm text-muted-foreground">Einzelnes Jahr oder mehrere Jahre kombinieren</p>
+                <p className="text-sm text-muted-foreground">Wähle den Umfang deines Journals</p>
               </div>
               <Select value={mode} onValueChange={(v) => handleModeChange(v as YearbookMode)}>
-                <SelectTrigger className="w-44">
+                <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="single">Einzelnes Jahr</SelectItem>
                   <SelectItem value="multi">Mehrere Jahre</SelectItem>
+                  <SelectItem value="life">
+                    <span className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" weight="fill" />
+                      Mein Leben
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {mode === 'single' ? (
+            {mode === 'life' && (
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-3">
+                  <Heart className="h-5 w-5 text-primary" weight="duotone" />
+                  <div>
+                    <p className="font-medium text-sm">Alle deine Erinnerungen</p>
+                    <p className="text-xs text-muted-foreground">
+                      {yearsWithEntries.length} {yearsWithEntries.length === 1 ? 'Jahr' : 'Jahre'} mit Einträgen
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {mode === 'single' && (
               <div className="flex items-center justify-between">
                 <div>
                   <label className="font-medium">Jahr</label>
@@ -201,7 +240,9 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
+            )}
+
+            {mode === 'multi' && (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -274,19 +315,60 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="font-medium">Theme</label>
-                <p className="text-sm text-muted-foreground">Visueller Stil deines Yearbooks</p>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <label className="font-medium">Theme</label>
+                  <p className="text-sm text-muted-foreground">Visueller Stil deines Yearbooks</p>
+                </div>
               </div>
-              <Select defaultValue="classic">
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="classic">Klassisch</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-5 gap-3">
+                {YEARBOOK_THEMES.map((theme) => (
+                  <button
+                    key={theme.value}
+                    onClick={() => setSelectedTheme(theme.value)}
+                    className={`group relative p-3 rounded-xl border-2 transition-all ${
+                      selectedTheme === theme.value 
+                        ? 'border-primary ring-2 ring-primary/20' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div 
+                      className="w-full aspect-[3/4] rounded-lg mb-2 overflow-hidden shadow-sm"
+                      style={{ backgroundColor: theme.preview.bg }}
+                    >
+                      <div className="h-full flex flex-col p-2">
+                        <div 
+                          className="h-1.5 w-8 rounded-full mb-1"
+                          style={{ backgroundColor: theme.preview.accent }}
+                        />
+                        <div 
+                          className="h-1 w-6 rounded-full opacity-50"
+                          style={{ backgroundColor: theme.preview.text }}
+                        />
+                        <div className="flex-1 flex items-center justify-center">
+                          <div 
+                            className="w-6 h-6 rounded"
+                            style={{ backgroundColor: theme.preview.accent, opacity: 0.3 }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <div 
+                            className="h-0.5 w-full rounded-full opacity-30"
+                            style={{ backgroundColor: theme.preview.text }}
+                          />
+                          <div 
+                            className="h-0.5 w-3/4 rounded-full opacity-20"
+                            style={{ backgroundColor: theme.preview.text }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs font-medium text-center">{theme.label}</p>
+                    <p className="text-[10px] text-muted-foreground text-center leading-tight mt-0.5">{theme.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </Card>
@@ -296,27 +378,58 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
             <h3 className="font-serif text-xl font-medium mb-4">Vorschau</h3>
 
             {(stats.topThemes.length > 0 || stats.topPlaces.length > 0) && (
-              <Card className="p-6 mb-6 bg-secondary/50">
-                <h4 className="font-serif font-medium mb-4">
-                  {mode === 'single' ? 'Dieses Jahr im Überblick' : 'Diese Jahre im Überblick'}
+              <Card 
+                className="p-6 mb-6 border-2"
+                style={{ 
+                  backgroundColor: currentTheme.preview.bg,
+                  borderColor: currentTheme.preview.accent + '40'
+                }}
+              >
+                <h4 
+                  className="font-serif font-medium mb-4"
+                  style={{ color: currentTheme.preview.accent }}
+                >
+                  {mode === 'life' ? 'Dein Leben im Überblick' : mode === 'single' ? 'Dieses Jahr im Überblick' : 'Diese Jahre im Überblick'}
                 </h4>
                 <div className="grid grid-cols-2 gap-6">
                   {stats.topThemes.length > 0 && (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Top Themen</p>
+                      <p 
+                        className="text-xs uppercase tracking-wide mb-2 opacity-70"
+                        style={{ color: currentTheme.preview.text }}
+                      >
+                        Top Themen
+                      </p>
                       <ul className="space-y-1">
                         {stats.topThemes.map(theme => (
-                          <li key={theme} className="text-sm">{theme}</li>
+                          <li 
+                            key={theme} 
+                            className="text-sm"
+                            style={{ color: currentTheme.preview.text }}
+                          >
+                            {theme}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   )}
                   {stats.topPlaces.length > 0 && (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Top Orte</p>
+                      <p 
+                        className="text-xs uppercase tracking-wide mb-2 opacity-70"
+                        style={{ color: currentTheme.preview.text }}
+                      >
+                        Top Orte
+                      </p>
                       <ul className="space-y-1">
                         {stats.topPlaces.map(place => (
-                          <li key={place} className="text-sm">{place}</li>
+                          <li 
+                            key={place} 
+                            className="text-sm"
+                            style={{ color: currentTheme.preview.text }}
+                          >
+                            {place}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -330,8 +443,14 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                 .sort(([a], [b]) => parseInt(b) - parseInt(a))
                 .map(([year, months]) => (
                   <div key={year}>
-                    {mode === 'multi' && (
-                      <h4 className="font-serif font-semibold text-2xl mb-6 text-primary border-b border-border pb-2">
+                    {(mode === 'multi' || mode === 'life') && (
+                      <h4 
+                        className="font-serif font-semibold text-2xl mb-6 border-b pb-2"
+                        style={{ 
+                          color: currentTheme.preview.accent,
+                          borderColor: currentTheme.preview.accent + '30'
+                        }}
+                      >
                         {year}
                       </h4>
                     )}
@@ -341,7 +460,11 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                           <h5 className="font-serif font-medium text-lg mb-3 text-muted-foreground">{month}</h5>
                           <div className="space-y-3">
                             {monthEntries.map(entry => (
-                              <Card key={entry.id} className="p-4">
+                              <Card 
+                                key={entry.id} 
+                                className="p-4"
+                                style={{ backgroundColor: currentTheme.preview.bg }}
+                              >
                                 <div className="flex items-start gap-4">
                                   {entry.photos[0] && (
                                     <img 
@@ -352,14 +475,32 @@ export function YearbookView({ entries, selectedYear, onYearChange, onBack }: Ye
                                   )}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-xs text-muted-foreground">{formatShortDate(entry.date)}</span>
-                                      {mode === 'multi' && (
-                                        <span className="text-xs text-muted-foreground">· {getYearFromDate(entry.date)}</span>
+                                      <span 
+                                        className="text-xs opacity-60"
+                                        style={{ color: currentTheme.preview.text }}
+                                      >
+                                        {formatShortDate(entry.date)}
+                                      </span>
+                                      {(mode === 'multi' || mode === 'life') && (
+                                        <span 
+                                          className="text-xs opacity-60"
+                                          style={{ color: currentTheme.preview.text }}
+                                        >
+                                          · {getYearFromDate(entry.date)}
+                                        </span>
                                       )}
                                     </div>
-                                    <h5 className="font-serif font-medium truncate">{getEntryTitle(entry)}</h5>
+                                    <h5 
+                                      className="font-serif font-medium truncate"
+                                      style={{ color: currentTheme.preview.text }}
+                                    >
+                                      {getEntryTitle(entry)}
+                                    </h5>
                                     {entry.highlights_ai?.[0] && (
-                                      <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                      <p 
+                                        className="text-sm line-clamp-1 mt-1 opacity-70"
+                                        style={{ color: currentTheme.preview.text }}
+                                      >
                                         {entry.highlights_ai[0]}
                                       </p>
                                     )}

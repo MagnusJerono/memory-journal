@@ -36,6 +36,41 @@ export interface Yearbook {
   created_at: string;
 }
 
+export type YearbookTheme = 'classic' | 'modern' | 'vintage' | 'minimal' | 'romantic';
+
+export const YEARBOOK_THEMES: { value: YearbookTheme; label: string; description: string; preview: { bg: string; accent: string; text: string } }[] = [
+  { 
+    value: 'classic', 
+    label: 'Klassisch', 
+    description: 'Zeitlos elegant',
+    preview: { bg: 'oklch(0.98 0.005 60)', accent: 'oklch(0.35 0.05 50)', text: 'oklch(0.25 0.02 50)' }
+  },
+  { 
+    value: 'modern', 
+    label: 'Modern', 
+    description: 'Klar und minimalistisch',
+    preview: { bg: 'oklch(1 0 0)', accent: 'oklch(0.45 0.15 260)', text: 'oklch(0.15 0 0)' }
+  },
+  { 
+    value: 'vintage', 
+    label: 'Vintage', 
+    description: 'Nostalgisch warm',
+    preview: { bg: 'oklch(0.95 0.03 80)', accent: 'oklch(0.55 0.12 45)', text: 'oklch(0.30 0.04 60)' }
+  },
+  { 
+    value: 'minimal', 
+    label: 'Minimal', 
+    description: 'Schlicht und elegant',
+    preview: { bg: 'oklch(0.99 0 0)', accent: 'oklch(0.5 0 0)', text: 'oklch(0.2 0 0)' }
+  },
+  { 
+    value: 'romantic', 
+    label: 'Romantisch', 
+    description: 'Weich und verträumt',
+    preview: { bg: 'oklch(0.97 0.02 350)', accent: 'oklch(0.65 0.15 350)', text: 'oklch(0.35 0.05 350)' }
+  },
+];
+
 export interface AIGenerationResult {
   title: string;
   highlights: string[];
