@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, StoryTone, STORY_TONES } from '@/lib/types';
 import { formatDate, getEntryTitle, generateAIContent } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
@@ -21,12 +21,30 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   ArrowLeft, Lock, LockOpen, Sparkle, Trash, Plus, X, 
-  Spinner, Warning, Images, Calendar as CalendarIcon, PenNib 
+  Spinner, Warning, Images, Calendar as CalendarIcon, PenNib, Microphone, Stop, UploadSimple 
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { useKV } from '@github/spark/hooks';
 import { BrandHeaderCompact } from '@/components/BrandHeader';
+import { useSpeechToText } from '@/hooks/use-speech-to-text';
+import { AudioWaveform } from './AudioWaveform';
+import { cn } from '@/lib/utils';
+
+const SPEECH_LANGUAGES = [
+  { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
+  { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
+  { code: 'it-IT', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt-BR', label: 'Português (BR)', flag: '🇧🇷' },
+  { code: 'nl-NL', label: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
+  { code: 'ja-JP', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko-KR', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh-CN', label: '中文 (简体)', flag: '🇨🇳' },
+];
 
 interface EntryDetailProps {
   entry: Entry;
@@ -40,7 +58,54 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [newHighlight, setNewHighlight] = useState('');
   const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
+  const [speechLanguage, setSpeechLanguage] = useKV<string>('ziel-speech-language', 'en-US');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const {
+    isListening,
+    isSupported: speechSupported,
+    transcript: speechTranscript,
+    interimTranscript,
+    startListening,
+    stopListening,
+    resetTranscript: resetSpeechTranscript,
+    error: speechError,
+    audioLevel
+  } = useSpeechToText(speechLanguage || 'en-US');
+
+  useEffect(() => {
+    if (speechError) {
+      toast.error('Speech recognition error', { description: speechError });
+    }
+  }, [speechError]);
+
+  useEffect(() => {
+    if (speechTranscript) {
+      updateEntry({ 
+        transcript: (localEntry.transcript || '') + 
+          ((localEntry.transcript && !localEntry.transcript.endsWith(' ')) ? ' ' : '') + 
+          speechTranscript 
+      });
+      resetSpeechTranscript();
+    }
+  }, [speechTranscript]);
+
+  useEffect(() => {
+    if (textareaRef.current && isListening) {
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    }
+  }, [localEntry.transcript, interimTranscript, isListening]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   const updateEntry = (updates: Partial<Entry>) => {
     const updated = { ...localEntry, ...updates, updated_at: new Date().toISOString() };
@@ -103,11 +168,28 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    processImageFiles(Array.from(files));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const processImageFiles = useCallback((files: File[]) => {
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      toast.error('No valid images', { description: 'Please drop image files only.' });
+      return;
+    }
 
     const newPhotos: Photo[] = [];
     const maxPhotos = 10 - localEntry.photos.length;
+    const filesToProcess = imageFiles.slice(0, maxPhotos);
 
-    Array.from(files).slice(0, maxPhotos).forEach(file => {
+    if (filesToProcess.length < imageFiles.length) {
+      toast.info(`Only ${maxPhotos} more photos allowed`, { description: 'Max 10 photos per memory.' });
+    }
+
+    filesToProcess.forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const url = event.target?.result as string;
@@ -117,17 +199,54 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
           storage_url: url,
           created_at: new Date().toISOString()
         });
-        if (newPhotos.length === Math.min(files.length, maxPhotos)) {
+        if (newPhotos.length === filesToProcess.length) {
           updateEntry({ photos: [...localEntry.photos, ...newPhotos] });
+          toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added`);
         }
       };
       reader.readAsDataURL(file);
     });
+  }, [localEntry.photos, localEntry.id]);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (localEntry.photos.length < 10 && !localEntry.is_locked) {
+      setIsDragging(true);
     }
-  };
+  }, [localEntry.photos.length, localEntry.is_locked]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (localEntry.is_locked) {
+      toast.error('Entry is locked', { description: 'Unlock to add photos.' });
+      return;
+    }
+
+    if (localEntry.photos.length >= 10) {
+      toast.error('Maximum photos reached', { description: 'You can add up to 10 photos.' });
+      return;
+    }
+
+    const files = Array.from(e.dataTransfer.files);
+    processImageFiles(files);
+  }, [localEntry.photos.length, localEntry.is_locked, processImageFiles]);
 
   const removePhoto = (id: string) => {
     updateEntry({ photos: localEntry.photos.filter(p => p.id !== id) });
@@ -188,16 +307,50 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
           className="hidden"
         />
 
-        {localEntry.photos.length < 10 && !localEntry.is_locked && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mb-6"
-            onClick={() => fileInputRef.current?.click()}
+        {!localEntry.is_locked && (
+          <div
+            ref={dropZoneRef}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className={cn(
+              "mb-6 transition-all duration-200 rounded-xl",
+              isDragging && "ring-2 ring-accent ring-offset-2"
+            )}
           >
-            <Images className="mr-2" weight="duotone" />
-            Add photos
-          </Button>
+            {localEntry.photos.length < 10 && (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "relative w-full border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
+                  isDragging 
+                    ? "border-accent bg-accent/10" 
+                    : "border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/30"
+                )}
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <div className={cn(
+                    "p-2 rounded-full transition-colors",
+                    isDragging ? "bg-accent/20 text-accent" : "bg-muted text-muted-foreground"
+                  )}>
+                    <UploadSimple weight="duotone" className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className={cn(
+                      "font-medium text-sm",
+                      isDragging ? "text-accent" : "text-foreground"
+                    )}>
+                      {isDragging ? "Drop photos here" : "Add photos"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Drag & drop or click to browse ({localEntry.photos.length}/10)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="space-y-8">
@@ -216,17 +369,87 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
           </div>
 
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
-              Your notes
-            </label>
-            <Textarea
-              id="detail-transcript"
-              value={localEntry.transcript || ''}
-              onChange={(e) => updateEntry({ transcript: e.target.value || null })}
-              placeholder="What happened?"
-              className="min-h-[120px] border-0 px-0 focus-visible:ring-0 resize-none"
-              disabled={localEntry.is_locked}
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Your notes
+              </label>
+              {speechSupported && !localEntry.is_locked && (
+                <div className="flex items-center gap-2">
+                  {!isListening && (
+                    <Select 
+                      value={speechLanguage || 'en-US'} 
+                      onValueChange={(value) => setSpeechLanguage(value)}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-[130px]">
+                        <SelectValue placeholder="Language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SPEECH_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                            <span className="flex items-center gap-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.label}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button
+                    type="button"
+                    variant={isListening ? "default" : "outline"}
+                    size="sm"
+                    onClick={toggleListening}
+                    className={cn(
+                      "h-7 text-xs transition-all gap-1.5",
+                      isListening && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    )}
+                  >
+                    {isListening ? (
+                      <>
+                        <Stop weight="fill" className="h-3.5 w-3.5" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Microphone weight="duotone" className="h-3.5 w-3.5" />
+                        Add by voice
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                id="detail-transcript"
+                value={(localEntry.transcript || '') + (isListening && interimTranscript ? ((localEntry.transcript && !localEntry.transcript.endsWith(' ')) ? ' ' : '') + interimTranscript : '')}
+                onChange={(e) => {
+                  if (!isListening) {
+                    updateEntry({ transcript: e.target.value || null });
+                  }
+                }}
+                readOnly={isListening}
+                placeholder="What happened?"
+                className={cn(
+                  "min-h-[120px] border-0 px-0 focus-visible:ring-0 resize-none",
+                  isListening && "bg-accent/5 border border-accent/20 px-3 rounded-lg"
+                )}
+                disabled={localEntry.is_locked}
+              />
+            </div>
+            
+            {isListening && (
+              <div className="mt-3 p-3 bg-accent/5 rounded-lg border border-accent/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                  <span className="text-xs font-medium text-accent">Recording — speak to add more details</span>
+                </div>
+                <AudioWaveform audioLevel={audioLevel} isActive={isListening} />
+              </div>
+            )}
           </div>
 
           {localEntry.highlights_ai && localEntry.highlights_ai.length > 0 && (

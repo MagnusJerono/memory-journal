@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, StoryTone, STORY_TONES, STORY_LANGUAGES } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe, PenNib, Translate } from '@phosphor-icons/react';
+import { ArrowLeft, CalendarBlank, Images, Sparkle, X, Spinner, Microphone, Stop, Globe, PenNib, Translate, UploadSimple } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
@@ -47,8 +47,10 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
   const [storyLanguage, setStoryLanguage] = useKV<string>('ziel-story-language', 'en');
   const [customTonePrompt, setCustomTonePrompt] = useKV<string>('ziel-custom-tone', '');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const {
     isListening,
@@ -97,11 +99,28 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    processImageFiles(Array.from(files));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const processImageFiles = useCallback((files: File[]) => {
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      toast.error('No valid images', { description: 'Please drop image files only.' });
+      return;
+    }
 
     const newPhotos: Photo[] = [];
     const maxPhotos = 10 - photos.length;
+    const filesToProcess = imageFiles.slice(0, maxPhotos);
 
-    Array.from(files).slice(0, maxPhotos).forEach(file => {
+    if (filesToProcess.length < imageFiles.length) {
+      toast.info(`Only ${maxPhotos} more photos allowed`, { description: 'Max 10 photos per memory.' });
+    }
+
+    filesToProcess.forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const url = event.target?.result as string;
@@ -111,17 +130,49 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
           storage_url: url,
           created_at: new Date().toISOString()
         });
-        if (newPhotos.length === Math.min(files.length, maxPhotos)) {
+        if (newPhotos.length === filesToProcess.length) {
           setPhotos(prev => [...prev, ...newPhotos]);
+          toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added`);
         }
       };
       reader.readAsDataURL(file);
     });
+  }, [photos.length]);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (photos.length < 10) {
+      setIsDragging(true);
     }
-  };
+  }, [photos.length]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (photos.length >= 10) {
+      toast.error('Maximum photos reached', { description: 'You can add up to 10 photos.' });
+      return;
+    }
+
+    const files = Array.from(e.dataTransfer.files);
+    processImageFiles(files);
+  }, [photos.length, processImageFiles]);
 
   const removePhoto = (id: string) => {
     setPhotos(prev => prev.filter(p => p.id !== id));
@@ -316,7 +367,17 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
             </div>
           </div>
 
-          <div>
+          <div
+            ref={dropZoneRef}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className={cn(
+              "transition-all duration-200 rounded-xl",
+              isDragging && "ring-2 ring-accent ring-offset-2 bg-accent/5"
+            )}
+          >
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">
               Photos ({photos.length}/10)
             </label>
@@ -350,14 +411,35 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
             )}
 
             {photos.length < 10 && (
-              <Button
-                variant="outline"
-                className="w-full border-dashed"
+              <div
                 onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "relative w-full border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
+                  isDragging 
+                    ? "border-accent bg-accent/10" 
+                    : "border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/30"
+                )}
               >
-                <Images className="mr-2" weight="duotone" />
-                Add photos
-              </Button>
+                <div className="flex flex-col items-center gap-3">
+                  <div className={cn(
+                    "p-3 rounded-full transition-colors",
+                    isDragging ? "bg-accent/20 text-accent" : "bg-muted text-muted-foreground"
+                  )}>
+                    <UploadSimple weight="duotone" className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "font-medium text-sm",
+                      isDragging ? "text-accent" : "text-foreground"
+                    )}>
+                      {isDragging ? "Drop photos here" : "Drag & drop photos"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      or click to browse
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
