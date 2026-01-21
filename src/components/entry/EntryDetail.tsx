@@ -536,22 +536,16 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
               <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3 block">
                 Highlights
               </label>
-              <ul className="space-y-2">
-                {localEntry.highlights_ai.map((highlight, index) => (
-                  <li key={index} className="flex items-start gap-2 group">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                    <span className="flex-1 text-foreground">{highlight}</span>
-                    {!localEntry.is_locked && (
-                      <button
-                        onClick={() => removeHighlight(index)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-                      >
-                        <X className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <HighlightsList 
+                highlights={localEntry.highlights_ai}
+                onUpdateHighlight={(index, value) => {
+                  const highlights = [...(localEntry.highlights_ai || [])];
+                  highlights[index] = value;
+                  updateEntry({ highlights_ai: highlights });
+                }}
+                onRemoveHighlight={removeHighlight}
+                isLocked={localEntry.is_locked}
+              />
               {!localEntry.is_locked && (
                 <div className="flex gap-2 mt-3">
                   <Input
@@ -618,14 +612,15 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
             isLocked={localEntry.is_locked}
           />
 
-          {localEntry.missing_info_questions && localEntry.missing_info_questions.length > 0 && (
+          {hasGeneratedContent && !localEntry.is_locked && (
             <RefinementPanel
-              questions={localEntry.missing_info_questions}
+              questions={localEntry.missing_info_questions || []}
               speechLanguage={speechLanguage || 'en-US'}
               onSpeechLanguageChange={(lang) => setSpeechLanguage(lang)}
               onSubmitAnswers={handleRefinementSubmit}
               isRegenerating={isRegenerating}
               isLocked={localEntry.is_locked}
+              transcript={localEntry.transcript}
             />
           )}
 
@@ -798,5 +793,99 @@ function PhotoGallery({
         </div>
       ))}
     </div>
+  );
+}
+
+function HighlightsList({
+  highlights,
+  onUpdateHighlight,
+  onRemoveHighlight,
+  isLocked
+}: {
+  highlights: string[];
+  onUpdateHighlight: (index: number, value: string) => void;
+  onRemoveHighlight: (index: number) => void;
+  isLocked: boolean;
+}) {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEditing = (index: number, currentValue: string) => {
+    if (isLocked) return;
+    setEditingIndex(index);
+    setEditValue(currentValue);
+  };
+
+  useEffect(() => {
+    if (editingIndex !== null && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingIndex]);
+
+  const saveEdit = () => {
+    if (editingIndex !== null && editValue.trim()) {
+      onUpdateHighlight(editingIndex, editValue.trim());
+    }
+    setEditingIndex(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  };
+
+  return (
+    <ul className="space-y-2">
+      {highlights.map((highlight, index) => (
+        <li key={index} className="flex items-start gap-2 group">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2.5 flex-shrink-0" />
+          {editingIndex === index ? (
+            <div className="flex-1 flex items-center gap-2">
+              <Input
+                ref={inputRef}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={saveEdit}
+                className="flex-1 h-8 text-sm"
+                maxLength={140}
+              />
+            </div>
+          ) : (
+            <>
+              <span 
+                onClick={() => startEditing(index, highlight)}
+                className={cn(
+                  "flex-1 text-foreground",
+                  !isLocked && "cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                )}
+                title={isLocked ? undefined : "Click to edit"}
+              >
+                {highlight}
+              </span>
+              {!isLocked && (
+                <button
+                  onClick={() => onRemoveHighlight(index)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+            </>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

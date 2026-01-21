@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Microphone, Stop, PaperPlaneTilt, X, ChatCircleDots, Spinner, ArrowRight } from '@phosphor-icons/react';
+import { Lightbulb, Microphone, Stop, PaperPlaneTilt, ChatCircleDots, Spinner, ArrowRight, ArrowsClockwise, Plus } from '@phosphor-icons/react';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,29 @@ const SPEECH_LANGUAGES = [
   { code: 'zh-CN', label: '中文 (简体)', flag: '🇨🇳' },
 ];
 
+const MEMORY_PROMPTS = [
+  "Who else was there with you?",
+  "What was the weather like?",
+  "What sounds do you remember hearing?",
+  "What were you wearing?",
+  "What smells come to mind?",
+  "What emotions were you feeling?",
+  "What was playing in the background (music, TV)?",
+  "What did you eat or drink?",
+  "What time of day was it?",
+  "What were you doing just before this moment?",
+  "What happened right after?",
+  "What made this moment special?",
+  "Was there anything funny that happened?",
+  "Who took the photos?",
+  "What conversations do you remember?",
+  "What surprised you?",
+  "Was there anything you were worried about?",
+  "What were you celebrating?",
+  "How did you get there?",
+  "What was the first thing you noticed?",
+];
+
 interface QuestionAnswer {
   question: string;
   answer: string;
@@ -36,6 +59,7 @@ interface RefinementPanelProps {
   onSubmitAnswers: (answers: QuestionAnswer[]) => void;
   isRegenerating: boolean;
   isLocked: boolean;
+  transcript?: string | null;
 }
 
 export function RefinementPanel({
@@ -44,11 +68,15 @@ export function RefinementPanel({
   onSpeechLanguageChange,
   onSubmitAnswers,
   isRegenerating,
-  isLocked
+  isLocked,
+  transcript
 }: RefinementPanelProps) {
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [activeRecordingIndex, setActiveRecordingIndex] = useState<number | null>(null);
+  const [extraPrompts, setExtraPrompts] = useState<string[]>([]);
+  const [usedPromptIndices, setUsedPromptIndices] = useState<Set<number>>(new Set());
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const {
@@ -101,7 +129,8 @@ export function RefinementPanel({
   };
 
   const handleSubmit = () => {
-    const answeredQuestions: QuestionAnswer[] = questions
+    const allQuestions = [...questions, ...extraPrompts];
+    const answeredQuestions: QuestionAnswer[] = allQuestions
       .map((question, index) => ({
         question,
         answer: answers[index] || ''
@@ -115,10 +144,69 @@ export function RefinementPanel({
     onSubmitAnswers(answeredQuestions);
   };
 
+  const getMorePrompts = async () => {
+    setIsLoadingMore(true);
+    
+    const availablePrompts = MEMORY_PROMPTS.filter((_, idx) => !usedPromptIndices.has(idx));
+    
+    if (availablePrompts.length >= 3) {
+      const shuffled = [...availablePrompts].sort(() => Math.random() - 0.5);
+      const newPrompts = shuffled.slice(0, 3);
+      const newIndices = newPrompts.map(p => MEMORY_PROMPTS.indexOf(p));
+      
+      setExtraPrompts(prev => [...prev, ...newPrompts]);
+      setUsedPromptIndices(prev => {
+        const updated = new Set(prev);
+        newIndices.forEach(i => updated.add(i));
+        return updated;
+      });
+      setIsLoadingMore(false);
+    } else {
+      try {
+        const contextPrompt = transcript 
+          ? `Based on this memory: "${transcript.slice(0, 500)}..."` 
+          : 'For a personal memory journal entry';
+        
+        const existingQuestionsStr = [...questions, ...extraPrompts].join(', ');
+        
+        const fullPrompt = `${contextPrompt}
+
+Generate 3 thoughtful questions to help someone recall more details about this memory. Focus on sensory details, emotions, people, and specific moments.
+
+The questions should be:
+- Personal and warm, not clinical
+- Specific enough to trigger memories
+- Different from these already asked questions: ${existingQuestionsStr}
+
+Return ONLY valid JSON in this format:
+{
+  "questions": ["Question 1?", "Question 2?", "Question 3?"]
+}`;
+        
+        const response = await window.spark.llm(fullPrompt, 'gpt-4o-mini', true);
+        const result = JSON.parse(response) as { questions: string[] };
+        
+        if (result.questions && Array.isArray(result.questions)) {
+          setExtraPrompts(prev => [...prev, ...result.questions.slice(0, 3)]);
+        }
+      } catch (error) {
+        console.error('Failed to generate more prompts:', error);
+        const fallbackPrompts = MEMORY_PROMPTS
+          .filter((_, idx) => !usedPromptIndices.has(idx))
+          .slice(0, 3);
+        if (fallbackPrompts.length > 0) {
+          setExtraPrompts(prev => [...prev, ...fallbackPrompts]);
+        }
+      }
+      setIsLoadingMore(false);
+    }
+  };
+
   const hasAnyAnswer = Object.values(answers).some(a => a.trim().length > 0);
   const answeredCount = Object.values(answers).filter(a => a.trim().length > 0).length;
+  const allQuestions = [...questions, ...extraPrompts];
 
-  if (questions.length === 0 || isLocked) {
+  if (isLocked) {
     return null;
   }
 
@@ -137,18 +225,21 @@ export function RefinementPanel({
       </div>
 
       <div className="space-y-3">
-        {questions.map((question, index) => {
+        {allQuestions.map((question, index) => {
           const isExpanded = expandedQuestion === index;
           const isRecording = isListening && activeRecordingIndex === index;
           const hasAnswer = (answers[index] || '').trim().length > 0;
           const displayValue = isRecording 
             ? (answers[index] || '') + ((answers[index] && interimTranscript) ? ' ' : '') + interimTranscript
             : (answers[index] || '');
+          const isExtraPrompt = index >= questions.length;
 
           return (
             <motion.div
-              key={index}
+              key={`${question}-${index}`}
               layout
+              initial={isExtraPrompt ? { opacity: 0, y: 10 } : false}
+              animate={{ opacity: 1, y: 0 }}
               className={cn(
                 "rounded-lg border transition-all",
                 isExpanded 
@@ -277,6 +368,29 @@ export function RefinementPanel({
             </motion.div>
           );
         })}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-accent/20">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={getMorePrompts}
+          disabled={isLoadingMore}
+          className="w-full text-xs text-muted-foreground hover:text-foreground"
+        >
+          {isLoadingMore ? (
+            <>
+              <Spinner className="mr-2 h-3.5 w-3.5 animate-spin" />
+              Getting more questions...
+            </>
+          ) : (
+            <>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Show more questions to help remember
+              <ArrowsClockwise className="ml-1.5 h-3.5 w-3.5" />
+            </>
+          )}
+        </Button>
       </div>
 
       {hasAnyAnswer && (
