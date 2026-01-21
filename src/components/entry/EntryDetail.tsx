@@ -308,10 +308,10 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
 
   return (
     <div className="min-h-screen pb-24">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-card/70 backdrop-blur-2xl border-b border-border/30">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
+            <Button variant="ghost" size="sm" onClick={onBack} className="hover:bg-secondary/50">
               <ArrowLeft className="mr-2" />
               Back
             </Button>
@@ -661,7 +661,7 @@ export function EntryDetail({ entry, onSave, onDelete, onBack }: EntryDetailProp
       )}
 
       {viewMode === 'edit' && (
-        <footer className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border shadow-lg">
+        <footer className="fixed bottom-0 left-0 right-0 bg-card/70 backdrop-blur-2xl border-t border-border/30">
           <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>

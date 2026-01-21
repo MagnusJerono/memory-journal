@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Entry } from '@/lib/types';
 import { filterEntriesByYear, getAvailableYears, getEntryTitle, formatShortDate, searchEntries } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag } from '@phosphor-icons/react';
+import { Plus, Book, Camera, Star, MagnifyingGlass, X, MapPin, Tag, Images } from '@phosphor-icons/react';
 import { BrandHeader } from '@/components/BrandHeader';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,8 +43,8 @@ export function Timeline({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      <header className="sticky top-0 z-10 bg-card/70 backdrop-blur-2xl border-b border-border/30">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <BrandHeader />
             <div className="flex items-center gap-2">
@@ -53,17 +52,17 @@ export function Timeline({
                 variant="ghost" 
                 size="icon"
                 onClick={() => setShowSearch(!showSearch)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               >
                 {showSearch ? <X weight="bold" /> : <MagnifyingGlass weight="bold" />}
               </Button>
-              <Button variant="outline" size="sm" onClick={onViewYearbook} className="hidden sm:flex">
+              <Button variant="outline" size="sm" onClick={onViewYearbook} className="hidden sm:flex border-border/50 bg-secondary/30 hover:bg-secondary/60">
                 <Book className="mr-2" weight="duotone" />
                 Yearbook
               </Button>
-              <Button size="sm" onClick={onNewEntry} className="shadow-md shadow-primary/20">
+              <Button size="sm" onClick={onNewEntry} className="shadow-lg shadow-primary/30 bg-primary hover:bg-primary/90">
                 <Plus className="mr-2" weight="bold" />
-                <span className="hidden sm:inline">New Entry</span>
+                <span className="hidden sm:inline">New Memory</span>
                 <span className="sm:hidden">New</span>
               </Button>
             </div>
@@ -78,14 +77,14 @@ export function Timeline({
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="pt-3 pb-1">
+                <div className="pt-4 pb-1">
                   <div className="relative">
                     <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" weight="bold" />
                     <Input
                       placeholder="Search memories by keywords, places, people..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-background/50 border-border/60"
+                      className="pl-10 bg-input/60 border-border/40 focus:border-primary/50"
                       autoFocus
                     />
                     {searchQuery && (
@@ -104,13 +103,13 @@ export function Timeline({
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8 flex items-center justify-between gap-4">
           <Select value={selectedYear.toString()} onValueChange={(v) => onYearChange(parseInt(v))}>
-            <SelectTrigger className="w-32 bg-card/60 backdrop-blur-sm border-border/50">
+            <SelectTrigger className="w-36 bg-card/60 backdrop-blur-sm border-border/40 text-foreground">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="max-h-64">
+            <SelectContent className="max-h-64 bg-popover border-border/50">
               {years.map(year => (
                 <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
               ))}
@@ -119,16 +118,16 @@ export function Timeline({
           
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {searchQuery && (
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
+              <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
                 {filteredEntries.length} results
               </span>
             )}
             {!searchQuery && filteredEntries.length > 0 && (
               <>
-                <span>{filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}</span>
+                <span className="font-medium">{filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}</span>
                 {starredCount > 0 && (
                   <span className="flex items-center gap-1">
-                    <Star weight="fill" className="text-amber-500" size={14} />
+                    <Star weight="fill" className="text-amber-400" size={14} />
                     {starredCount}
                   </span>
                 )}
@@ -147,13 +146,13 @@ export function Timeline({
             <EmptyState onNewEntry={onNewEntry} year={selectedYear} />
           )
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             {sortedEntries.map((entry, index) => (
               <motion.div
                 key={entry.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
+                transition={{ delay: index * 0.06, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
                 <EntryCard 
                   entry={entry} 
@@ -171,84 +170,148 @@ export function Timeline({
 
 function EntryCard({ entry, onClick, onToggleStar }: { entry: Entry; onClick: () => void; onToggleStar?: () => void }) {
   const coverPhoto = entry.photos[0];
+  const secondPhoto = entry.photos[1];
+  const thirdPhoto = entry.photos[2];
+  const photoCount = entry.photos.length;
   const title = getEntryTitle(entry);
   const firstHighlight = entry.highlights_ai?.[0];
   const location = entry.tags_ai?.places?.[0] || entry.manual_locations?.[0];
   const mood = entry.tags_ai?.moods?.[0];
 
   return (
-    <Card 
-      className={`group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-primary/15 hover:-translate-y-1 bg-card/80 backdrop-blur-md border-border/40 ${entry.is_starred ? 'ring-2 ring-amber-400/50 ring-offset-2 ring-offset-transparent' : ''}`}
+    <motion.div 
+      className={`group cursor-pointer overflow-hidden rounded-2xl transition-all duration-500 bg-card/80 backdrop-blur-xl border border-border/30 hover:border-border/60 hover:bg-card/90 ${entry.is_starred ? 'ring-2 ring-amber-400/40 ring-offset-2 ring-offset-transparent' : ''}`}
       onClick={onClick}
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <div className="flex">
-        {coverPhoto ? (
-          <div className="w-28 sm:w-36 h-28 sm:h-36 flex-shrink-0 bg-muted/30 relative overflow-hidden">
-            <img 
-              src={coverPhoto.storage_url} 
-              alt="" 
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
+      <div className="flex flex-col sm:flex-row">
+        {photoCount > 0 ? (
+          <div className="relative w-full sm:w-48 md:w-56 h-44 sm:h-auto flex-shrink-0 overflow-hidden">
+            {photoCount === 1 && (
+              <div className="relative h-full w-full">
+                <img 
+                  src={coverPhoto.storage_url} 
+                  alt="" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
+              </div>
+            )}
+            
+            {photoCount === 2 && (
+              <div className="grid grid-cols-2 h-full gap-0.5">
+                <img 
+                  src={coverPhoto.storage_url} 
+                  alt="" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <img 
+                  src={secondPhoto!.storage_url} 
+                  alt="" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
+              </div>
+            )}
+            
+            {photoCount >= 3 && (
+              <div className="grid grid-cols-3 h-full gap-0.5">
+                <div className="col-span-2 row-span-1 relative">
+                  <img 
+                    src={coverPhoto.storage_url} 
+                    alt="" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <img 
+                    src={secondPhoto!.storage_url} 
+                    alt="" 
+                    className="w-full h-1/2 object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="relative h-1/2">
+                    <img 
+                      src={thirdPhoto!.storage_url} 
+                      alt="" 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    {photoCount > 3 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-[2px]">
+                        <span className="text-white font-semibold text-sm">+{photoCount - 3}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/60 via-transparent to-transparent" />
+              </div>
+            )}
+            
+            {photoCount > 1 && (
+              <div className="absolute bottom-2 left-2 sm:bottom-auto sm:top-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm">
+                <Images weight="fill" className="w-3 h-3 text-white/90" />
+                <span className="text-white/90 text-xs font-medium">{photoCount}</span>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="w-28 sm:w-36 h-28 sm:h-36 flex-shrink-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 flex items-center justify-center relative">
-            <Camera className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_oklch(0.90_0.05_280_/_0.3)_0%,_transparent_60%)]" />
+          <div className="w-full sm:w-48 md:w-56 h-32 sm:h-auto flex-shrink-0 bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_oklch(0.75_0.12_280_/_0.2)_0%,_transparent_60%)]" />
+            <Camera className="w-12 h-12 text-muted-foreground/30" weight="duotone" />
           </div>
         )}
         
-        <div className="flex-1 p-4 flex flex-col justify-between min-w-0 relative">
+        <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between min-w-0 relative">
           {onToggleStar && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleStar();
               }}
-              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-muted/50 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary/50 transition-all duration-300 z-10"
               aria-label={entry.is_starred ? 'Remove from favorites' : 'Add to favorites'}
             >
               <Star 
                 weight={entry.is_starred ? 'fill' : 'regular'} 
-                className={`w-5 h-5 transition-colors ${entry.is_starred ? 'text-amber-500' : 'text-muted-foreground/50 hover:text-amber-400'}`}
+                className={`w-5 h-5 transition-all duration-300 ${entry.is_starred ? 'text-amber-400 scale-110' : 'text-muted-foreground/40 hover:text-amber-300'}`}
               />
             </button>
           )}
           
-          <div className="pr-8">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-xs font-semibold text-primary/80 tracking-wider uppercase">
+          <div className="pr-10">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              <span className="text-xs font-bold text-primary tracking-widest uppercase">
                 {formatShortDate(entry.date)}
               </span>
               {entry.is_locked && (
-                <span className="text-[10px] px-1.5 py-0.5 bg-accent/15 text-accent font-semibold rounded tracking-wide uppercase">
+                <span className="text-[10px] px-2 py-0.5 bg-accent/20 text-accent font-bold rounded-full tracking-wider uppercase">
                   Locked
                 </span>
               )}
             </div>
             
-            <h3 className="font-serif font-semibold text-lg sm:text-xl text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
+            <h3 className="font-serif font-bold text-xl sm:text-2xl text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-500 tracking-tight">
               {title}
             </h3>
           </div>
           
-          <div className="mt-auto pt-2 space-y-2">
+          <div className="mt-4 space-y-3">
             {firstHighlight && (
-              <p className="text-sm text-muted-foreground/90 line-clamp-1 leading-relaxed">
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                 {firstHighlight}
               </p>
             )}
             
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap pt-1">
               {location && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
-                  <MapPin weight="fill" size={12} className="text-primary/60" />
-                  <span className="truncate max-w-[120px]">{location}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground/80 font-medium">
+                  <MapPin weight="fill" size={13} className="text-primary/70" />
+                  <span className="truncate max-w-[140px]">{location}</span>
                 </span>
               )}
               {mood && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
-                  <Tag weight="fill" size={12} className="text-accent/60" />
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground/80 font-medium">
+                  <Tag weight="fill" size={13} className="text-accent/70" />
                   <span>{mood}</span>
                 </span>
               )}
@@ -256,30 +319,30 @@ function EntryCard({ entry, onClick, onToggleStar }: { entry: Entry; onClick: ()
           </div>
         </div>
       </div>
-    </Card>
+    </motion.div>
   );
 }
 
 function EmptyState({ onNewEntry, year }: { onNewEntry: () => void; year: number }) {
   return (
     <motion.div 
-      className="text-center py-16"
-      initial={{ opacity: 0, y: 20 }}
+      className="text-center py-20"
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.5 }}
     >
-      <div className="w-28 h-28 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/15 to-primary/10 flex items-center justify-center backdrop-blur-sm border border-border/30 shadow-lg shadow-primary/10 rotate-3">
-        <Camera className="w-14 h-14 text-primary/50" weight="duotone" />
+      <div className="w-32 h-32 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 via-accent/15 to-secondary/20 flex items-center justify-center backdrop-blur-sm border border-border/30 shadow-2xl shadow-primary/20 rotate-3">
+        <Camera className="w-16 h-16 text-primary/60" weight="duotone" />
       </div>
-      <h2 className="font-serif text-2xl sm:text-3xl font-semibold mb-3 text-foreground">
+      <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-4 text-foreground tracking-tight">
         No memories in {year} yet
       </h2>
-      <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed text-base">
+      <p className="text-muted-foreground mb-10 max-w-md mx-auto leading-relaxed text-base">
         Start capturing your moments. Add photos and a quick note, and let AI help you tell the story.
       </p>
-      <Button onClick={onNewEntry} size="lg" className="shadow-xl shadow-primary/25 font-medium">
+      <Button onClick={onNewEntry} size="lg" className="shadow-2xl shadow-primary/30 font-semibold text-base px-8 py-6">
         <Plus className="mr-2" weight="bold" />
-        Create your first entry
+        Create your first memory
       </Button>
     </motion.div>
   );
@@ -288,21 +351,21 @@ function EmptyState({ onNewEntry, year }: { onNewEntry: () => void; year: number
 function NoResultsState({ query, onClear }: { query: string; onClear: () => void }) {
   return (
     <motion.div 
-      className="text-center py-16"
+      className="text-center py-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
-        <MagnifyingGlass className="w-10 h-10 text-muted-foreground/40" weight="duotone" />
+      <div className="w-24 h-24 mx-auto mb-8 rounded-2xl bg-secondary/50 flex items-center justify-center border border-border/30">
+        <MagnifyingGlass className="w-12 h-12 text-muted-foreground/40" weight="duotone" />
       </div>
-      <h2 className="font-serif text-xl font-medium mb-2 text-foreground">
+      <h2 className="font-serif text-2xl font-semibold mb-3 text-foreground tracking-tight">
         No memories found
       </h2>
-      <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-        No memories match "<span className="font-medium text-foreground/80">{query}</span>". Try different keywords.
+      <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+        No memories match "<span className="font-semibold text-foreground">{query}</span>". Try different keywords.
       </p>
-      <Button variant="outline" onClick={onClear}>
+      <Button variant="outline" onClick={onClear} className="border-border/50">
         Clear search
       </Button>
     </motion.div>

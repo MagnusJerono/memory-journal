@@ -371,16 +371,16 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-card/70 backdrop-blur-2xl border-b border-border/30">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
+            <Button variant="ghost" size="sm" onClick={onBack} className="hover:bg-secondary/50">
               <ArrowLeft className="mr-2" />
               Back
             </Button>
             <BrandHeaderCompact />
           </div>
-          <span className="text-sm font-medium text-muted-foreground">New Memory</span>
+          <span className="text-sm font-semibold text-muted-foreground tracking-wide">New Memory</span>
         </div>
       </header>
 
