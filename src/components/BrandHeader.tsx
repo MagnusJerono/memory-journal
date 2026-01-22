@@ -84,9 +84,9 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
   const gradientId = isDarkMode ? 'brand-gradient-dark' : 'brand-gradient-light';
   
   return (
-    <div className="flex flex-col items-start">
+    <div className="flex flex-col items-start w-full">
       <motion.div 
-        className="relative"
+        className="relative w-full"
         whileHover={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
@@ -112,7 +112,7 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
           </defs>
         </svg>
         <h1 
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight select-none"
+          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl tracking-tight select-none whitespace-nowrap"
           style={{
             fontFamily: "'Dancing Script', cursive",
             fontWeight: 700,
@@ -120,16 +120,16 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
             WebkitBackgroundClip: 'text',
             backgroundClip: 'text',
             color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
-            letterSpacing: '-0.02em',
+            letterSpacing: '-0.01em',
             textShadow: isDarkMode
               ? '0 4px 30px rgba(180, 140, 220, 0.4), 0 2px 10px rgba(180, 140, 220, 0.3)'
               : '0 4px 30px rgba(91, 75, 168, 0.3), 0 2px 10px rgba(91, 75, 168, 0.2)',
           }}
         >
-          Tightly
+          tightly.com
         </h1>
         <motion.p 
-          className="text-[10px] sm:text-xs font-semibold tracking-[0.25em] uppercase mt-1"
+          className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-[0.25em] uppercase mt-1 md:mt-2"
           style={{
             color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
             textShadow: isDarkMode
@@ -193,21 +193,21 @@ export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
   return (
     <div className="flex flex-col">
       <h1 
-        className="text-3xl sm:text-4xl md:text-5xl tracking-tight select-none"
+        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight select-none whitespace-nowrap"
         style={{
           fontFamily: "'Dancing Script', cursive",
           fontWeight: 700,
           color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.01em',
           textShadow: isDarkMode
             ? '0 2px 15px rgba(180, 140, 220, 0.3)'
             : '0 2px 15px rgba(91, 75, 168, 0.2)',
         }}
       >
-        Tightly
+        tightly.com
       </h1>
       <p 
-        className="text-[9px] font-semibold tracking-[0.2em] uppercase mt-0.5"
+        className="text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] uppercase mt-0.5"
         style={{
           color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
         }}
