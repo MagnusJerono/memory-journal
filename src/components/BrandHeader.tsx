@@ -126,22 +126,35 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
               : '0 4px 30px rgba(91, 75, 168, 0.3), 0 2px 10px rgba(91, 75, 168, 0.2)',
           }}
         >
-          tightly.com
+          tightly
         </h1>
-        <motion.p 
-          className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-[0.25em] uppercase mt-1 md:mt-2"
-          style={{
-            color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
-            textShadow: isDarkMode
-              ? '0 1px 10px rgba(180, 140, 220, 0.3)'
-              : '0 1px 8px rgba(91, 75, 168, 0.2)',
-          }}
+        <motion.div
+          className="flex items-center gap-2 sm:gap-3 mt-2 md:mt-3"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          Hold them tight
-        </motion.p>
+          <span 
+            className="h-px w-6 sm:w-10 md:w-14"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+          <p 
+            className="text-xs sm:text-sm md:text-base font-medium tracking-[0.12em] italic"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+              textShadow: isDarkMode
+                ? '0 1px 10px rgba(180, 140, 220, 0.25)'
+                : '0 1px 8px rgba(91, 75, 168, 0.15)',
+            }}
+          >
+            Hold them tight
+          </p>
+          <span 
+            className="h-px w-6 sm:w-10 md:w-14"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -204,16 +217,27 @@ export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
             : '0 2px 15px rgba(91, 75, 168, 0.2)',
         }}
       >
-        tightly.com
+        tightly
       </h1>
-      <p 
-        className="text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] uppercase mt-0.5"
-        style={{
-          color: isDarkMode ? '#b8a4d8' : '#6b5aa0',
-        }}
-      >
-        Hold them tight
-      </p>
+      <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+        <span 
+          className="h-px w-4 sm:w-6"
+          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+        />
+        <p 
+          className="text-[10px] sm:text-xs font-medium tracking-[0.1em] italic"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+          }}
+        >
+          Hold them tight
+        </p>
+        <span 
+          className="h-px w-4 sm:w-6"
+          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+        />
+      </div>
     </div>
   );
 }
