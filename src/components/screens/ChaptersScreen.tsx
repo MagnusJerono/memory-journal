@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Chapter, Entry, AppView, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Books, CaretRight } from '@phosphor-icons/react';
+import { Plus, Books, CaretRight, PushPin, Archive } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
 
@@ -30,13 +31,15 @@ export function ChaptersScreen({
   const [selectedIcon, setSelectedIcon] = useState<ChapterIcon>('star');
   const [selectedColor, setSelectedColor] = useState('violet');
 
-  const sortedChapters = [...chapters]
+  const activeChapters = [...chapters]
     .filter(c => !c.is_archived)
     .sort((a, b) => {
       if (a.is_pinned && !b.is_pinned) return -1;
       if (!a.is_pinned && b.is_pinned) return 1;
       return a.order - b.order;
     });
+
+  const archivedChapters = chapters.filter(c => c.is_archived);
 
   const getEntryCount = (chapterId: string) => 
     entries.filter(e => e.chapter_id === chapterId && !e.is_draft).length;
@@ -84,7 +87,7 @@ export function ChaptersScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6">
-        {sortedChapters.length === 0 ? (
+        {activeChapters.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -99,48 +102,91 @@ export function ChaptersScreen({
             <p className="text-muted-foreground max-w-xs mx-auto mb-8">
               Chapters help you group memories by theme — Travel, Family, Dreams, or anything meaningful to you.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} size="lg">
-              <Plus className="mr-2" weight="bold" />
-              Create First Chapter
-            </Button>
+            <div className="flex flex-col gap-3 max-w-xs mx-auto">
+              <Button onClick={() => setIsDialogOpen(true)} size="lg" className="w-full">
+                <Plus className="mr-2" weight="bold" />
+                Create First Chapter
+              </Button>
+              <div className="text-xs text-muted-foreground">
+                <span className="font-medium">Ideas:</span> Travel Adventures, Family Moments, Work Wins, Dreams & Goals
+              </div>
+            </div>
           </motion.div>
         ) : (
-          <div className="space-y-3">
-            {sortedChapters.map((chapter, index) => (
-              <motion.button
-                key={chapter.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => onNavigate({ type: 'chapter-detail', chapterId: chapter.id })}
-                className="w-full p-4 rounded-xl bg-card/70 backdrop-blur-sm border border-border/30 hover:border-border/50 hover:bg-card/90 transition-all text-left group"
-              >
-                <div className="flex items-center gap-4">
-                  <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
-                    style={{ backgroundColor: `${chapter.color}20` }}
-                  >
-                    {getIconEmoji(chapter.icon)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
-                        {chapter.name}
-                      </h3>
-                      {chapter.is_pinned && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
-                          Pinned
-                        </span>
-                      )}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              {activeChapters.map((chapter, index) => (
+                <motion.button
+                  key={chapter.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => onNavigate({ type: 'chapter-detail', chapterId: chapter.id })}
+                  className="w-full p-4 rounded-xl bg-card/70 backdrop-blur-sm border border-border/30 hover:border-border/50 hover:bg-card/90 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+                      style={{ backgroundColor: `${chapter.color}20` }}
+                    >
+                      {getIconEmoji(chapter.icon)}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {getEntryCount(chapter.id)} {getEntryCount(chapter.id) === 1 ? 'entry' : 'entries'}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {chapter.name}
+                        </h3>
+                        {chapter.is_pinned && (
+                          <PushPin weight="fill" className="w-3.5 h-3.5 text-primary/70" />
+                        )}
+                      </div>
+                      {chapter.description && (
+                        <p className="text-xs text-muted-foreground/70 truncate mt-0.5">
+                          {chapter.description}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {getEntryCount(chapter.id)} {getEntryCount(chapter.id) === 1 ? 'memory' : 'memories'}
+                      </p>
+                    </div>
+                    <CaretRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                   </div>
-                  <CaretRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                </motion.button>
+              ))}
+            </div>
+
+            {archivedChapters.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Archive weight="duotone" className="w-3.5 h-3.5" />
+                  Archived ({archivedChapters.length})
+                </p>
+                <div className="space-y-2">
+                  {archivedChapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => onNavigate({ type: 'chapter-detail', chapterId: chapter.id })}
+                      className="w-full p-3 rounded-lg bg-muted/30 border border-border/20 hover:bg-muted/50 transition-all text-left opacity-60 hover:opacity-80"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                          style={{ backgroundColor: `${chapter.color}15` }}
+                        >
+                          {getIconEmoji(chapter.icon)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm text-foreground truncate">{chapter.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {getEntryCount(chapter.id)} memories
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              </motion.button>
-            ))}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -148,7 +194,7 @@ export function ChaptersScreen({
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New Chapter</DialogTitle>
+            <DialogTitle className="font-serif">Create Chapter</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -156,16 +202,17 @@ export function ChaptersScreen({
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Travel, Family, Work..."
+                placeholder="e.g., Travel Adventures, Family, Work..."
                 autoFocus
               />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">Description (optional)</label>
-              <Input
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What's this chapter about?"
+                placeholder="What kind of memories will you keep here?"
+                className="resize-none h-20"
               />
             </div>
             <div>
@@ -180,6 +227,7 @@ export function ChaptersScreen({
                         ? 'bg-primary/20 ring-2 ring-primary'
                         : 'bg-muted hover:bg-muted/80'
                     }`}
+                    title={icon.label}
                   >
                     {icon.emoji}
                   </button>
@@ -197,6 +245,7 @@ export function ChaptersScreen({
                       selectedColor === color.value ? 'ring-2 ring-offset-2 ring-foreground scale-110' : 'hover:scale-105'
                     }`}
                     style={{ backgroundColor: color.color }}
+                    title={color.label}
                   />
                 ))}
               </div>
@@ -206,7 +255,7 @@ export function ChaptersScreen({
                 Cancel
               </Button>
               <Button onClick={handleCreate} disabled={!name.trim()}>
-                Create
+                Create Chapter
               </Button>
             </div>
           </div>

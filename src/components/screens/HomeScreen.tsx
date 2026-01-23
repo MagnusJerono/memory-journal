@@ -1,7 +1,7 @@
-import { Entry, Chapter, AppView, ThemeMode } from '@/lib/types';
+import { Entry, Chapter, AppView, ThemeMode, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, Gear, CaretRight } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Plus, Books, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
@@ -28,6 +28,13 @@ export function HomeScreen({
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
+  const activeChapters = chapters.filter(c => !c.is_archived).slice(0, 4);
+
+  const getIconEmoji = (icon: ChapterIcon) => 
+    CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
+
+  const getEntryCountForChapter = (chapterId: string) => 
+    entries.filter(e => e.chapter_id === chapterId && !e.is_draft).length;
 
   return (
     <div className="min-h-screen">
@@ -79,29 +86,99 @@ export function HomeScreen({
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/30"
+            className="space-y-3"
           >
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-xl bg-accent/20">
-                <Sparkle weight="duotone" className="w-6 h-6 text-accent" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-serif text-lg font-semibold text-foreground">
-                  Ready to capture a moment?
+            <div className="grid grid-cols-2 gap-3">
+              <motion.button
+                onClick={() => onNavigate({ type: 'prompts-new' })}
+                className="p-4 rounded-2xl bg-gradient-to-br from-accent/15 via-primary/5 to-accent/10 border border-accent/25 hover:border-accent/40 transition-all text-left group"
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="p-2.5 rounded-xl bg-accent/20 w-fit mb-3">
+                  <NotePencil weight="duotone" className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-medium text-foreground group-hover:text-accent transition-colors text-sm">
+                  Custom Memory
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Start with a guided prompt to help you write.
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Write about anything
                 </p>
-              </div>
+              </motion.button>
+
+              <motion.button
+                onClick={() => onNavigate({ type: 'prompts' })}
+                className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/5 to-primary/10 border border-primary/20 hover:border-primary/40 transition-all text-left group"
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="p-2.5 rounded-xl bg-primary/20 w-fit mb-3">
+                  <Sparkle weight="duotone" className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm">
+                  Use a Prompt
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Get inspired to write
+                </p>
+              </motion.button>
             </div>
-            <Button
-              onClick={() => onNavigate({ type: 'prompts' })}
-              className="w-full mt-4 shadow-md"
-            >
-              <Sparkle className="mr-2" weight="bold" />
-              Start with a Prompt
-            </Button>
           </motion.div>
+        )}
+
+        {activeChapters.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-serif text-lg font-semibold text-foreground">Chapters</h2>
+              <button 
+                onClick={() => onNavigate({ type: 'chapters' })}
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                View all
+                <CaretRight weight="bold" className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {activeChapters.map((chapter, index) => (
+                <motion.button
+                  key={chapter.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.03 }}
+                  onClick={() => onNavigate({ type: 'chapter-detail', chapterId: chapter.id })}
+                  className="p-3 rounded-xl bg-card/60 backdrop-blur-sm border border-border/30 hover:border-border/50 hover:bg-card/80 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-base"
+                      style={{ backgroundColor: `${chapter.color}15` }}
+                    >
+                      {getIconEmoji(chapter.icon)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                        {chapter.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {getEntryCountForChapter(chapter.id)} memories
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+            {chapters.length === 0 && (
+              <motion.button
+                onClick={() => onNavigate({ type: 'chapters' })}
+                className="w-full p-4 rounded-xl bg-muted/30 border border-dashed border-border/50 hover:border-primary/30 transition-all text-center"
+              >
+                <Books weight="duotone" className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Create chapters to organize your memories</p>
+              </motion.button>
+            )}
+          </motion.section>
         )}
 
         {hasEntries && (
@@ -170,7 +247,7 @@ export function HomeScreen({
               Your journal awaits
             </h2>
             <p className="text-muted-foreground max-w-xs mx-auto">
-              Start capturing moments with guided prompts that help you write meaningful memories.
+              Start capturing moments with guided prompts or write your own custom memories.
             </p>
           </motion.div>
         )}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AppView, Prompt, PromptCategory, DEFAULT_PROMPTS, PROMPT_CATEGORIES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Sparkle, ArrowRight } from '@phosphor-icons/react';
+import { Sparkle, ArrowRight, PencilSimpleLine, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 
 interface PromptsScreenProps {
@@ -22,11 +22,15 @@ export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
     onNavigate({ type: 'prompts-new', promptId: prompt.id });
   };
 
+  const handleCustomMemory = () => {
+    onNavigate({ type: 'prompts-new' });
+  };
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          <h1 className="font-serif text-2xl font-semibold text-foreground">Prompts</h1>
+          <h1 className="font-serif text-2xl font-semibold text-foreground">New Memory</h1>
         </div>
       </header>
 
@@ -34,6 +38,36 @@ export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <p className="text-sm font-medium text-muted-foreground mb-3">How would you like to start?</p>
+          
+          <motion.button
+            onClick={handleCustomMemory}
+            className="w-full p-5 rounded-2xl bg-gradient-to-br from-accent/15 via-primary/5 to-accent/10 border border-accent/25 hover:border-accent/40 transition-all text-left group"
+            whileTap={{ scale: 0.99 }}
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-accent/20">
+                <NotePencil weight="duotone" className="w-6 h-6 text-accent" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
+                  Write a Custom Memory
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Start from scratch — describe anything you want to remember
+                </p>
+              </div>
+              <ArrowRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-accent transition-all mt-1" />
+            </div>
+          </motion.button>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
         >
           <p className="text-sm font-medium text-muted-foreground mb-3">Today's Prompt</p>
           <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 border border-primary/20">
@@ -57,7 +91,7 @@ export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
         </motion.section>
 
         <section>
-          <p className="text-sm font-medium text-muted-foreground mb-3">Categories</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">Browse Prompts</p>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -87,11 +121,6 @@ export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
         </section>
 
         <section>
-          <p className="text-sm font-medium text-muted-foreground mb-3">
-            {selectedCategory 
-              ? PROMPT_CATEGORIES.find(c => c.value === selectedCategory)?.label 
-              : 'All'} Prompts
-          </p>
           <div className="space-y-3">
             {filteredPrompts.map((prompt, index) => (
               <motion.button

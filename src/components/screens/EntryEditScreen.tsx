@@ -376,14 +376,32 @@ export function EntryEditScreen({
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-8">
-        {prompt && (
+        {prompt ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-4 rounded-xl bg-primary/10 border border-primary/20"
           >
-            <p className="text-sm text-muted-foreground mb-1">Today's prompt</p>
+            <p className="text-sm text-muted-foreground mb-1">Writing prompt</p>
             <p className="font-serif text-lg text-foreground">"{prompt.text}"</p>
+          </motion.div>
+        ) : isNewEntry && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-accent/10 border border-accent/20"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-accent/20">
+                <Sparkle weight="duotone" className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Custom Memory</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Describe what happened, where you were, and what made it special.
+                </p>
+              </div>
+            </div>
           </motion.div>
         )}
 

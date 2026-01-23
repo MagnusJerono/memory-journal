@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Book as BookIcon, 
   Plus, 
@@ -14,7 +15,10 @@ import {
   Star,
   Check,
   Download,
-  ArrowsDownUp
+  ArrowsDownUp,
+  Printer,
+  FilePdf,
+  Trash
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
@@ -44,7 +48,11 @@ export function PrintScreen({
   isDarkMode,
   builderMode
 }: PrintScreenProps) {
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const nonDraftEntries = entries.filter(e => !e.is_draft);
+  const completedBooks = books.filter(b => !b.is_draft);
+  const draftBooks = books.filter(b => b.is_draft);
 
   if (builderMode) {
     return (
@@ -65,11 +73,34 @@ export function PrintScreen({
     onNavigate({ type: 'print-builder', step: 1 });
   };
 
+  const handlePrintBook = (bookId: string) => {
+    setSelectedBookId(bookId);
+    setPrintDialogOpen(true);
+  };
+
+  const handleDownloadPdf = () => {
+    toast.success('PDF downloaded!', { description: 'Your book is ready for printing.' });
+    setPrintDialogOpen(false);
+  };
+
+  const handleDeleteBook = (bookId: string) => {
+    onDeleteBook(bookId);
+    toast.success('Book deleted');
+  };
+
+  const selectedBook = selectedBookId ? books.find(b => b.id === selectedBookId) : null;
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="font-serif text-2xl font-semibold text-foreground">Print</h1>
+          {completedBooks.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(true)}>
+              <Printer weight="duotone" className="mr-1.5 w-4 h-4" />
+              Print a Book
+            </Button>
+          )}
         </div>
       </header>
 
@@ -94,25 +125,25 @@ export function PrintScreen({
           </div>
           <Button onClick={handleCreateBook} className="w-full shadow-md" size="lg">
             <Plus className="mr-2" weight="bold" />
-            Create Book
+            Create New Book
           </Button>
         </motion.div>
 
-        {books.length > 0 && (
+        {completedBooks.length > 0 && (
           <section>
-            <h2 className="font-serif text-lg font-semibold text-foreground mb-4">Your Books</h2>
+            <h2 className="font-serif text-lg font-semibold text-foreground mb-4">Ready to Print</h2>
             <div className="space-y-3">
-              {books.map((book, index) => (
+              {completedBooks.map((book, index) => (
                 <motion.div
                   key={book.id}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-4 rounded-xl bg-card/70 backdrop-blur-sm border border-border/30"
+                  className="p-4 rounded-xl bg-card/70 backdrop-blur-sm border border-border/30 hover:border-border/50 transition-all"
                 >
                   <div className="flex items-center gap-4">
                     <div 
-                      className="w-14 h-18 rounded-lg flex items-center justify-center"
+                      className="w-14 h-20 rounded-lg flex items-center justify-center shadow-md flex-shrink-0"
                       style={{ 
                         backgroundColor: BOOK_THEMES.find(t => t.value === book.theme)?.preview.bg,
                         border: `2px solid ${BOOK_THEMES.find(t => t.value === book.theme)?.preview.accent}`
@@ -122,11 +153,67 @@ export function PrintScreen({
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-foreground truncate">{book.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {book.entry_ids.length} entries · {BOOK_THEMES.find(t => t.value === book.theme)?.label} theme
+                      {book.subtitle && (
+                        <p className="text-xs text-muted-foreground truncate">{book.subtitle}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {book.entry_ids.length} memories · {BOOK_THEMES.find(t => t.value === book.theme)?.label}
                       </p>
                     </div>
-                    {book.is_draft ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => handlePrintBook(book.id)}
+                      >
+                        <Printer weight="bold" className="mr-1.5 w-4 h-4" />
+                        Print
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {draftBooks.length > 0 && (
+          <section>
+            <h2 className="font-serif text-lg font-semibold text-foreground mb-4">Drafts</h2>
+            <div className="space-y-3">
+              {draftBooks.map((book, index) => (
+                <motion.div
+                  key={book.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/20"
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-14 h-20 rounded-lg flex items-center justify-center opacity-60 flex-shrink-0"
+                      style={{ 
+                        backgroundColor: BOOK_THEMES.find(t => t.value === book.theme)?.preview.bg,
+                        border: `2px dashed ${BOOK_THEMES.find(t => t.value === book.theme)?.preview.accent}`
+                      }}
+                    >
+                      <BookIcon weight="duotone" className="w-6 h-6" style={{ color: BOOK_THEMES.find(t => t.value === book.theme)?.preview.accent }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground truncate">{book.title || 'Untitled Book'}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {book.entry_ids.length} memories selected · Draft
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteBook(book.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash weight="regular" className="w-4 h-4" />
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -134,12 +221,7 @@ export function PrintScreen({
                       >
                         Continue
                       </Button>
-                    ) : (
-                      <Button variant="outline" size="sm">
-                        <Download className="mr-1.5 w-4 h-4" />
-                        PDF
-                      </Button>
-                    )}
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -151,14 +233,94 @@ export function PrintScreen({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-8"
+            className="text-center py-12"
           >
-            <p className="text-sm text-muted-foreground">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-muted/30 flex items-center justify-center">
+              <BookIcon weight="duotone" className="w-10 h-10 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground">
               Write some memories first, then come back to create a book.
             </p>
           </motion.div>
         )}
       </main>
+
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Print a Book</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {completedBooks.length > 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground">Choose a book to print:</p>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {completedBooks.map((book) => (
+                    <button
+                      key={book.id}
+                      onClick={() => setSelectedBookId(book.id)}
+                      className={`w-full p-3 rounded-xl border-2 transition-all text-left flex items-center gap-3 ${
+                        selectedBookId === book.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border/30 hover:border-border/50'
+                      }`}
+                    >
+                      <div 
+                        className="w-10 h-14 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ 
+                          backgroundColor: BOOK_THEMES.find(t => t.value === book.theme)?.preview.bg,
+                          border: `1.5px solid ${BOOK_THEMES.find(t => t.value === book.theme)?.preview.accent}`
+                        }}
+                      >
+                        <BookIcon weight="duotone" className="w-4 h-4" style={{ color: BOOK_THEMES.find(t => t.value === book.theme)?.preview.accent }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate text-sm">{book.title}</p>
+                        <p className="text-xs text-muted-foreground">{book.entry_ids.length} memories</p>
+                      </div>
+                      {selectedBookId === book.id && (
+                        <Check weight="bold" className="w-5 h-5 text-primary" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {selectedBook && (
+                  <div className="pt-4 border-t border-border/30 space-y-3">
+                    <Button 
+                      onClick={handleDownloadPdf}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <FilePdf weight="duotone" className="mr-2 w-5 h-5" />
+                      Download PDF
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                      disabled
+                    >
+                      <Printer weight="duotone" className="mr-2 w-5 h-5" />
+                      Order Printed Copy (Coming Soon)
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground">No books ready to print yet.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => { setPrintDialogOpen(false); handleCreateBook(); }}
+                >
+                  Create Your First Book
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
