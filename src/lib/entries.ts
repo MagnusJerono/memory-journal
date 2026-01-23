@@ -1,5 +1,20 @@
-import { Entry, AIGenerationResult, StoryTone, STORY_LANGUAGES, LocationSuggestion } from './types';
+import { Entry, StoryTone, STORY_LANGUAGES, LocationSuggestion } from './types';
 import { v4 as uuid } from 'uuid';
+
+export interface AIGenerationResult {
+  title: string;
+  highlights: string[];
+  story: string;
+  tags: {
+    people: string[];
+    places: string[];
+    moods: string[];
+    themes: string[];
+  };
+  location_suggestions: LocationSuggestion[];
+  missing_info_questions: string[];
+  uncertain_claims: string[];
+}
 
 const TONE_INSTRUCTIONS: Record<Exclude<StoryTone, 'custom'>, string> = {
   natural: `Write in a natural, authentic voice. Use conversational language that feels genuine and unforced, like someone sharing a meaningful memory with a close friend.`,
@@ -306,7 +321,7 @@ function validateAIResult(result: AIGenerationResult): AIGenerationResult {
   return result;
 }
 
-export function createEmptyEntry(date: string): Entry {
+export function createEmptyEntry(date: string, promptText?: string): Entry {
   const now = new Date().toISOString();
   return {
     id: uuid(),
@@ -323,8 +338,10 @@ export function createEmptyEntry(date: string): Entry {
     uncertain_claims: null,
     is_locked: false,
     is_starred: false,
-    chapter_ids: [],
+    is_draft: true,
+    chapter_id: null,
     photos: [],
+    prompt_used: promptText || null,
     created_at: now,
     updated_at: now
   };
@@ -372,6 +389,12 @@ export function filterEntriesByYear(entries: Entry[], year: number): Entry[] {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+export function filterEntriesByChapter(entries: Entry[], chapterId: string): Entry[] {
+  return entries
+    .filter(e => e.chapter_id === chapterId)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
 export function searchEntries(entries: Entry[], query: string): Entry[] {
   if (!query.trim()) return entries;
   
@@ -401,4 +424,15 @@ export function searchEntries(entries: Entry[], query: string): Entry[] {
 
 export function getEntryTitle(entry: Entry): string {
   return entry.title_user || entry.title_ai || 'Untitled Memory';
+}
+
+export function getRecentEntries(entries: Entry[], limit: number = 5): Entry[] {
+  return [...entries]
+    .filter(e => !e.is_draft)
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, limit);
+}
+
+export function getDraftEntry(entries: Entry[]): Entry | null {
+  return entries.find(e => e.is_draft) || null;
 }

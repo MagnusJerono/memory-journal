@@ -10,12 +10,17 @@ export interface Chapter {
   name: string;
   description: string | null;
   color: string;
-  icon: 'person' | 'heart' | 'star' | 'house' | 'airplane' | 'briefcase' | 'graduation' | 'baby' | 'ring' | 'custom';
+  icon: ChapterIcon;
+  is_pinned: boolean;
+  is_archived: boolean;
+  order: number;
   created_at: string;
   updated_at: string;
 }
 
-export const CHAPTER_ICONS = [
+export type ChapterIcon = 'person' | 'heart' | 'star' | 'house' | 'airplane' | 'briefcase' | 'graduation' | 'baby' | 'ring' | 'lightbulb' | 'moon' | 'custom';
+
+export const CHAPTER_ICONS: { value: ChapterIcon; label: string; emoji: string }[] = [
   { value: 'person', label: 'Person', emoji: '👤' },
   { value: 'heart', label: 'Love', emoji: '❤️' },
   { value: 'star', label: 'Special', emoji: '⭐' },
@@ -25,8 +30,10 @@ export const CHAPTER_ICONS = [
   { value: 'graduation', label: 'Education', emoji: '🎓' },
   { value: 'baby', label: 'Family', emoji: '👶' },
   { value: 'ring', label: 'Milestone', emoji: '💍' },
+  { value: 'lightbulb', label: 'Ideas', emoji: '💡' },
+  { value: 'moon', label: 'Dreams', emoji: '🌙' },
   { value: 'custom', label: 'Custom', emoji: '📁' },
-] as const;
+];
 
 export const CHAPTER_COLORS = [
   { value: 'rose', label: 'Rose', color: 'oklch(0.65 0.2 350)' },
@@ -35,7 +42,7 @@ export const CHAPTER_COLORS = [
   { value: 'sky', label: 'Sky', color: 'oklch(0.65 0.15 230)' },
   { value: 'violet', label: 'Violet', color: 'oklch(0.60 0.2 280)' },
   { value: 'slate', label: 'Slate', color: 'oklch(0.55 0.03 250)' },
-] as const;
+];
 
 export interface Entry {
   id: string;
@@ -57,8 +64,10 @@ export interface Entry {
   uncertain_claims: string[] | null;
   is_locked: boolean;
   is_starred: boolean;
-  chapter_ids: string[];
+  is_draft: boolean;
+  chapter_id: string | null;
   photos: Photo[];
+  prompt_used: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -70,18 +79,21 @@ export interface Photo {
   created_at: string;
 }
 
-export interface Yearbook {
+export interface Book {
   id: string;
-  year: number;
-  include_locked_only: boolean;
-  theme: string;
+  title: string;
+  subtitle: string | null;
+  theme: BookTheme;
+  entry_ids: string[];
+  is_draft: boolean;
   pdf_url: string | null;
   created_at: string;
+  updated_at: string;
 }
 
-export type YearbookTheme = 'classic' | 'modern' | 'vintage' | 'minimal' | 'romantic';
+export type BookTheme = 'classic' | 'modern' | 'vintage' | 'minimal' | 'romantic';
 
-export const YEARBOOK_THEMES: { value: YearbookTheme; label: string; description: string; preview: { bg: string; accent: string; text: string } }[] = [
+export const BOOK_THEMES: { value: BookTheme; label: string; description: string; preview: { bg: string; accent: string; text: string } }[] = [
   { 
     value: 'classic', 
     label: 'Classic', 
@@ -114,22 +126,55 @@ export const YEARBOOK_THEMES: { value: YearbookTheme; label: string; description
   },
 ];
 
-export interface AIGenerationResult {
-  title: string;
-  highlights: string[];
-  story: string;
-  tags: {
-    people: string[];
-    places: string[];
-    moods: string[];
-    themes: string[];
-  };
-  location_suggestions: LocationSuggestion[];
-  missing_info_questions: string[];
-  uncertain_claims: string[];
+export interface Prompt {
+  id: string;
+  text: string;
+  category: PromptCategory;
 }
 
-export type View = 'timeline' | 'new' | 'entry' | 'yearbook';
+export type PromptCategory = 'gratitude' | 'reflection' | 'memory' | 'creative' | 'goals' | 'relationships';
+
+export const PROMPT_CATEGORIES: { value: PromptCategory; label: string; emoji: string }[] = [
+  { value: 'gratitude', label: 'Gratitude', emoji: '🙏' },
+  { value: 'reflection', label: 'Reflection', emoji: '🪞' },
+  { value: 'memory', label: 'Memory', emoji: '📸' },
+  { value: 'creative', label: 'Creative', emoji: '🎨' },
+  { value: 'goals', label: 'Goals', emoji: '🎯' },
+  { value: 'relationships', label: 'Relationships', emoji: '💕' },
+];
+
+export const DEFAULT_PROMPTS: Prompt[] = [
+  { id: '1', text: 'What made you smile today?', category: 'gratitude' },
+  { id: '2', text: 'Describe a place that feels like home.', category: 'memory' },
+  { id: '3', text: 'What would you tell your younger self?', category: 'reflection' },
+  { id: '4', text: 'Write about a person who changed your life.', category: 'relationships' },
+  { id: '5', text: 'What are you most proud of this week?', category: 'gratitude' },
+  { id: '6', text: 'Describe your perfect day from start to finish.', category: 'creative' },
+  { id: '7', text: 'What is a goal you are working towards?', category: 'goals' },
+  { id: '8', text: 'Write about a moment that took your breath away.', category: 'memory' },
+  { id: '9', text: 'What does success mean to you?', category: 'reflection' },
+  { id: '10', text: 'Describe someone you admire and why.', category: 'relationships' },
+  { id: '11', text: 'What are three things you are grateful for today?', category: 'gratitude' },
+  { id: '12', text: 'Write about a challenge you overcame.', category: 'reflection' },
+  { id: '13', text: 'Describe a dream you had recently.', category: 'creative' },
+  { id: '14', text: 'What adventure would you like to have?', category: 'goals' },
+  { id: '15', text: 'Write about a favorite childhood memory.', category: 'memory' },
+  { id: '16', text: 'What makes you feel most alive?', category: 'reflection' },
+];
+
+export type NavigationTab = 'home' | 'prompts' | 'chapters' | 'search' | 'print';
+
+export type AppView = 
+  | { type: 'home' }
+  | { type: 'prompts' }
+  | { type: 'prompts-new'; promptId?: string }
+  | { type: 'chapters' }
+  | { type: 'chapter-detail'; chapterId: string }
+  | { type: 'entry-read'; entryId: string }
+  | { type: 'entry-edit'; entryId: string }
+  | { type: 'search' }
+  | { type: 'print' }
+  | { type: 'print-builder'; bookId?: string; step: 1 | 2 | 3 | 4 };
 
 export type StoryTone = 'natural' | 'poetic' | 'casual' | 'journalistic' | 'humorous' | 'nostalgic' | 'custom';
 
