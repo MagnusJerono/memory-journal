@@ -42,20 +42,20 @@ export function HomeScreen({
       <header className="sticky top-0 z-10">
         <CloudHeader isDarkMode={isDarkMode} className="mx-auto max-w-3xl px-4 pt-3">
           <div className="flex items-center justify-between">
+            <BrandHeader isDarkMode={isDarkMode} />
             <div className="flex items-center gap-2">
               <NavigationMenu 
                 onNavigate={onNavigate} 
                 currentTab="home" 
                 isDarkMode={isDarkMode} 
               />
-              <BrandHeader isDarkMode={isDarkMode} />
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
             </div>
-            <SettingsPanel
-              themeMode={themeMode}
-              onThemeModeChange={onThemeModeChange}
-              isDarkMode={isDarkMode}
-              isNightTime={isNightTime}
-            />
           </div>
         </CloudHeader>
       </header>
