@@ -206,7 +206,7 @@ function App() {
               handleSaveEntry(entry);
               navigate({ type: 'entry-read', entryId: entry.id });
             }}
-            onBack={() => navigate({ type: 'prompts' })}
+            onBack={() => navigate({ type: 'home' })}
             isDarkMode={isDarkMode}
           />
         );

@@ -356,15 +356,14 @@ export function EntryEditScreen({
     <div className="min-h-screen pb-8">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <CaretLeft className="mr-1 w-4 h-4" weight="bold" />
-              Cancel
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+              <CaretLeft className="w-5 h-5" weight="bold" />
             </Button>
+            <h1 className="font-serif text-lg font-semibold text-foreground">
+              {isNewEntry ? 'New Memory' : 'Edit Memory'}
+            </h1>
           </div>
-          <h1 className="font-serif text-lg font-semibold text-foreground">
-            {isNewEntry ? 'New Entry' : 'Edit Entry'}
-          </h1>
           <Button 
             onClick={handleSave}
             disabled={!canSave}

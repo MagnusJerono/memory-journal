@@ -5,6 +5,7 @@ import { PencilSimple, Sparkle, Camera, Star, CaretRight, Plus, Books, NotePenci
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 
 interface HomeScreenProps {
   entries: Entry[];
@@ -41,7 +42,14 @@ export function HomeScreen({
       <header className="sticky top-0 z-10">
         <CloudHeader isDarkMode={isDarkMode} className="mx-auto max-w-3xl px-4 pt-3">
           <div className="flex items-center justify-between">
-            <BrandHeader isDarkMode={isDarkMode} />
+            <div className="flex items-center gap-2">
+              <NavigationMenu 
+                onNavigate={onNavigate} 
+                currentTab="home" 
+                isDarkMode={isDarkMode} 
+              />
+              <BrandHeader isDarkMode={isDarkMode} />
+            </div>
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={onThemeModeChange}
