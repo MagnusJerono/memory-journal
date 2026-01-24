@@ -26,8 +26,21 @@ const darkShadowColors = [
   '0 2px 12px rgba(180, 140, 220, 0.35)',
 ];
 
+const lightHoverGlow = [
+  '0 0 20px rgba(91, 75, 168, 0.3), 0 0 40px rgba(91, 75, 168, 0.15)',
+  '0 0 28px rgba(91, 75, 168, 0.45), 0 0 50px rgba(91, 75, 168, 0.2)',
+  '0 0 20px rgba(91, 75, 168, 0.3), 0 0 40px rgba(91, 75, 168, 0.15)',
+];
+
+const darkHoverGlow = [
+  '0 0 20px rgba(180, 140, 220, 0.4), 0 0 40px rgba(180, 140, 220, 0.2)',
+  '0 0 32px rgba(180, 140, 220, 0.6), 0 0 55px rgba(180, 140, 220, 0.3)',
+  '0 0 20px rgba(180, 140, 220, 0.4), 0 0 40px rgba(180, 140, 220, 0.2)',
+];
+
 export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: LogoHomeButtonProps) {
   const [isClicked, setIsClicked] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const sizeClasses = {
     sm: 'text-xl sm:text-2xl',
@@ -43,10 +56,35 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
 
   const colors = isDarkMode ? darkColors : lightColors;
   const shadows = isDarkMode ? darkShadowColors : lightShadowColors;
+  const hoverGlow = isDarkMode ? darkHoverGlow : lightHoverGlow;
+
+  const getTextShadow = () => {
+    if (isClicked) {
+      return isDarkMode
+        ? ['0 2px 12px rgba(180, 140, 220, 0.3)', '0 2px 24px rgba(180, 140, 220, 0.6)', '0 2px 12px rgba(180, 140, 220, 0.3)']
+        : ['0 2px 12px rgba(91, 75, 168, 0.2)', '0 2px 24px rgba(91, 75, 168, 0.5)', '0 2px 12px rgba(91, 75, 168, 0.2)'];
+    }
+    if (isHovered) {
+      return hoverGlow;
+    }
+    return shadows;
+  };
+
+  const getTextShadowTransition = () => {
+    if (isClicked) {
+      return { duration: 0.5 } as const;
+    }
+    if (isHovered) {
+      return { duration: 1.5, repeat: Infinity, ease: "easeInOut" as const };
+    }
+    return { duration: 8, repeat: Infinity, ease: "easeInOut" as const };
+  };
 
   return (
     <motion.button
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="relative flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg px-1 -ml-1"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.95 }}
@@ -71,12 +109,8 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
       <motion.h1 
         className={`${sizeClasses[size]} tracking-tight select-none relative`}
         animate={{
-          color: isClicked ? colors : colors,
-          textShadow: isClicked
-            ? (isDarkMode
-              ? ['0 2px 12px rgba(180, 140, 220, 0.3)', '0 2px 24px rgba(180, 140, 220, 0.6)', '0 2px 12px rgba(180, 140, 220, 0.3)']
-              : ['0 2px 12px rgba(91, 75, 168, 0.2)', '0 2px 24px rgba(91, 75, 168, 0.5)', '0 2px 12px rgba(91, 75, 168, 0.2)'])
-            : shadows,
+          color: colors,
+          textShadow: getTextShadow(),
         }}
         transition={{
           color: {
@@ -84,9 +118,7 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
             repeat: Infinity,
             ease: "easeInOut",
           },
-          textShadow: isClicked 
-            ? { duration: 0.5 } 
-            : { duration: 8, repeat: Infinity, ease: "easeInOut" },
+          textShadow: getTextShadowTransition(),
         }}
         style={{
           fontFamily: "'Dancing Script', cursive",
