@@ -193,6 +193,9 @@ function App() {
           <PromptsScreen
             onNavigate={navigate}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -220,6 +223,9 @@ function App() {
             onSaveChapter={handleSaveChapter}
             onDeleteChapter={handleDeleteChapter}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -238,6 +244,9 @@ function App() {
             onDeleteChapter={handleDeleteChapter}
             onToggleStar={handleToggleStar}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -260,6 +269,9 @@ function App() {
             onAssignChapter={(chapterId) => handleAssignChapter(readEntry.id, chapterId)}
             chapters={chapterList}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -293,6 +305,9 @@ function App() {
             chapters={chapterList}
             onNavigate={navigate}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -306,6 +321,9 @@ function App() {
             onSaveBook={handleSaveBook}
             onDeleteBook={handleDeleteBook}
             isDarkMode={isDarkMode}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 
@@ -323,6 +341,9 @@ function App() {
               bookId: currentView.bookId,
               step: currentView.step
             }}
+            themeMode={themeMode}
+            onThemeModeChange={setThemeMode}
+            isNightTime={isNightTime}
           />
         );
 

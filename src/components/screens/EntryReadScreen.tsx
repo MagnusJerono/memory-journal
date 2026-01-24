@@ -24,6 +24,8 @@ import {
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 interface EntryReadScreenProps {
   entry: Entry;
@@ -34,6 +36,9 @@ interface EntryReadScreenProps {
   onDelete: () => void;
   onAssignChapter: (chapterId: string | null) => void;
   isDarkMode: boolean;
+  themeMode?: 'auto' | 'light' | 'dark';
+  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
+  isNightTime?: boolean;
 }
 
 export function EntryReadScreen({
@@ -44,7 +49,10 @@ export function EntryReadScreen({
   onToggleStar,
   onDelete,
   onAssignChapter,
-  isDarkMode
+  isDarkMode,
+  themeMode = 'auto',
+  onThemeModeChange,
+  isNightTime = false
 }: EntryReadScreenProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
@@ -134,6 +142,20 @@ export function EntryReadScreen({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <NavigationMenu 
+              onNavigate={onNavigate} 
+              currentTab="home" 
+              isDarkMode={isDarkMode} 
+            />
+            {onThemeModeChange && (
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            )}
           </div>
         </div>
       </header>

@@ -14,6 +14,8 @@ import {
 import { CaretLeft, DotsThreeVertical, PencilSimple, PushPin, Archive, Trash, Camera, Star, CaretRight, Sparkle, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 interface ChapterDetailScreenProps {
   chapter: Chapter;
@@ -23,6 +25,9 @@ interface ChapterDetailScreenProps {
   onDeleteChapter: (chapterId: string) => void;
   onToggleStar: (entryId: string) => void;
   isDarkMode: boolean;
+  themeMode?: 'auto' | 'light' | 'dark';
+  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
+  isNightTime?: boolean;
 }
 
 export function ChapterDetailScreen({
@@ -32,7 +37,10 @@ export function ChapterDetailScreen({
   onSaveChapter,
   onDeleteChapter,
   onToggleStar,
-  isDarkMode
+  isDarkMode,
+  themeMode = 'auto',
+  onThemeModeChange,
+  isNightTime = false
 }: ChapterDetailScreenProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -103,35 +111,51 @@ export function ChapterDetailScreen({
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <DotsThreeVertical weight="bold" className="w-5 h-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-                <PencilSimple className="mr-2 w-4 h-4" />
-                Edit Chapter
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleTogglePin}>
-                <PushPin className="mr-2 w-4 h-4" weight={chapter.is_pinned ? 'fill' : 'regular'} />
-                {chapter.is_pinned ? 'Unpin' : 'Pin'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleArchive}>
-                <Archive className="mr-2 w-4 h-4" />
-                Archive
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash className="mr-2 w-4 h-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <DotsThreeVertical weight="bold" className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <PencilSimple className="mr-2 w-4 h-4" />
+                  Edit Chapter
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleTogglePin}>
+                  <PushPin className="mr-2 w-4 h-4" weight={chapter.is_pinned ? 'fill' : 'regular'} />
+                  {chapter.is_pinned ? 'Unpin' : 'Pin'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleArchive}>
+                  <Archive className="mr-2 w-4 h-4" />
+                  Archive
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash className="mr-2 w-4 h-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <NavigationMenu 
+              onNavigate={onNavigate} 
+              currentTab="chapters" 
+              isDarkMode={isDarkMode} 
+            />
+            {onThemeModeChange && (
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            )}
+          </div>
         </div>
       </header>
 

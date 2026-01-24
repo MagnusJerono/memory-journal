@@ -23,6 +23,8 @@ import {
 import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 interface PrintScreenProps {
   books: Book[];
@@ -36,6 +38,9 @@ interface PrintScreenProps {
     bookId?: string;
     step: 1 | 2 | 3 | 4;
   };
+  themeMode?: 'auto' | 'light' | 'dark';
+  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
+  isNightTime?: boolean;
 }
 
 export function PrintScreen({
@@ -46,7 +51,10 @@ export function PrintScreen({
   onSaveBook,
   onDeleteBook,
   isDarkMode,
-  builderMode
+  builderMode,
+  themeMode = 'auto',
+  onThemeModeChange,
+  isNightTime = false
 }: PrintScreenProps) {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
@@ -95,12 +103,27 @@ export function PrintScreen({
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="font-serif text-2xl font-semibold text-foreground">Print</h1>
-          {completedBooks.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(true)}>
-              <Printer weight="duotone" className="mr-1.5 w-4 h-4" />
-              Print a Book
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {completedBooks.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(true)}>
+                <Printer weight="duotone" className="mr-1.5 w-4 h-4" />
+                Print a Book
+              </Button>
+            )}
+            <NavigationMenu 
+              onNavigate={onNavigate} 
+              currentTab="print" 
+              isDarkMode={isDarkMode} 
+            />
+            {onThemeModeChange && (
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            )}
+          </div>
         </div>
       </header>
 

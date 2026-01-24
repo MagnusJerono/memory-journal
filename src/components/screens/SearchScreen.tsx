@@ -5,19 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MagnifyingGlass, X, Camera, Star, CaretRight } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 interface SearchScreenProps {
   entries: Entry[];
   chapters: Chapter[];
   onNavigate: (view: AppView) => void;
   isDarkMode: boolean;
+  themeMode?: 'auto' | 'light' | 'dark';
+  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
+  isNightTime?: boolean;
 }
 
 export function SearchScreen({
   entries,
   chapters,
   onNavigate,
-  isDarkMode
+  isDarkMode,
+  themeMode = 'auto',
+  onThemeModeChange,
+  isNightTime = false
 }: SearchScreenProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,22 +49,37 @@ export function SearchScreen({
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="relative flex items-center gap-2">
-            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />
-            <Input
-              ref={inputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search memories..."
-              className="pl-10 pr-10 h-12 text-base bg-card/60 border-border/40"
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />
+              <Input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search memories..."
+                className="pl-10 pr-10 h-12 text-base bg-card/60 border-border/40"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+                >
+                  <X weight="bold" className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+            <NavigationMenu 
+              onNavigate={onNavigate} 
+              currentTab="search" 
+              isDarkMode={isDarkMode} 
             />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
-              >
-                <X weight="bold" className="w-4 h-4 text-muted-foreground" />
-              </button>
+            {onThemeModeChange && (
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
             )}
           </div>
         </div>

@@ -3,13 +3,18 @@ import { AppView, Prompt, PromptCategory, DEFAULT_PROMPTS, PROMPT_CATEGORIES } f
 import { Button } from '@/components/ui/button';
 import { Sparkle, ArrowRight, PencilSimpleLine, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
   isDarkMode: boolean;
+  themeMode?: 'auto' | 'light' | 'dark';
+  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
+  isNightTime?: boolean;
 }
 
-export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
+export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onThemeModeChange, isNightTime = false }: PromptsScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null);
   
   const todaysPrompt = DEFAULT_PROMPTS[Math.floor(Date.now() / 86400000) % DEFAULT_PROMPTS.length];
@@ -29,8 +34,23 @@ export function PromptsScreen({ onNavigate, isDarkMode }: PromptsScreenProps) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="font-serif text-2xl font-semibold text-foreground">New Memory</h1>
+          <div className="flex items-center gap-2">
+            <NavigationMenu 
+              onNavigate={onNavigate} 
+              currentTab="prompts" 
+              isDarkMode={isDarkMode} 
+            />
+            {onThemeModeChange && (
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={onThemeModeChange}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            )}
+          </div>
         </div>
       </header>
 
