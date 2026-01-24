@@ -1,4 +1,5 @@
 import { ThemeMode } from '@/lib/types';
+import { AppLanguage, APP_LANGUAGES, getTranslations, getLanguageLabel } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
@@ -10,6 +11,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { 
   GearSix, 
@@ -41,7 +49,7 @@ interface UserPreferences {
   notifications: boolean;
   emailUpdates: boolean;
   autoSave: boolean;
-  language: string;
+  language: AppLanguage;
 }
 
 export function SettingsPanel({ 
@@ -80,8 +88,10 @@ export function SettingsPanel({
     notifications: true,
     emailUpdates: false,
     autoSave: true,
-    language: 'en'
+    language: 'en' as AppLanguage
   };
+
+  const t = getTranslations(currentPreferences.language as AppLanguage);
 
   return (
     <Sheet>
@@ -104,9 +114,9 @@ export function SettingsPanel({
       </SheetTrigger>
       <SheetContent className="bg-card/95 backdrop-blur-xl border-border/50 overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-serif text-2xl">Profile & Settings</SheetTitle>
+          <SheetTitle className="font-serif text-2xl">{t.settings.title}</SheetTitle>
           <SheetDescription>
-            Manage your Tightly experience
+            {t.settings.description}
           </SheetDescription>
         </SheetHeader>
         
@@ -142,35 +152,61 @@ export function SettingsPanel({
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <User weight="duotone" className="w-4 h-4" />
-              Account
+              {t.settings.account}
             </h3>
             
             <div className="space-y-2">
-              <SettingRow 
-                icon={<Globe weight="duotone" className="w-4 h-4" />}
-                label="Language"
-                description="App display language"
-                action={
-                  <span className="text-sm text-muted-foreground">English</span>
-                }
-              />
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="text-muted-foreground">
+                    <Globe weight="duotone" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t.settings.language}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings.languageDesc}</p>
+                  </div>
+                </div>
+                <Select
+                  value={currentPreferences.language}
+                  onValueChange={(v) => updatePreference('language', v as AppLanguage)}
+                >
+                  <SelectTrigger className="w-[140px] h-9 text-sm">
+                    <SelectValue>
+                      <span className="flex items-center gap-2">
+                        <span>{APP_LANGUAGES.find(l => l.code === currentPreferences.language)?.flag}</span>
+                        <span>{getLanguageLabel(currentPreferences.language as AppLanguage)}</span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {APP_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <span className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.nativeLabel}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <SettingRow 
                 icon={<Shield weight="duotone" className="w-4 h-4" />}
-                label="Privacy"
-                description="Manage your data"
+                label={t.settings.privacy}
+                description={t.settings.privacyDesc}
                 action={
                   <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    View
+                    {t.settings.view}
                   </Button>
                 }
               />
               <SettingRow 
                 icon={<Download weight="duotone" className="w-4 h-4" />}
-                label="Export Data"
-                description="Download your memories"
+                label={t.settings.exportData}
+                description={t.settings.exportDataDesc}
                 action={
                   <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    Export
+                    {t.settings.export}
                   </Button>
                 }
               />
@@ -182,14 +218,14 @@ export function SettingsPanel({
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <Bell weight="duotone" className="w-4 h-4" />
-              Notifications
+              {t.settings.notifications}
             </h3>
             
             <div className="space-y-2">
               <SettingRow 
                 icon={<Bell weight="duotone" className="w-4 h-4" />}
-                label="Push Notifications"
-                description="Get notified about memories"
+                label={t.settings.pushNotifications}
+                description={t.settings.pushNotificationsDesc}
                 action={
                   <Switch 
                     checked={currentPreferences.notifications}
@@ -199,8 +235,8 @@ export function SettingsPanel({
               />
               <SettingRow 
                 icon={<Envelope weight="duotone" className="w-4 h-4" />}
-                label="Email Updates"
-                description="Weekly memory digest"
+                label={t.settings.emailUpdates}
+                description={t.settings.emailUpdatesDesc}
                 action={
                   <Switch 
                     checked={currentPreferences.emailUpdates}
@@ -216,14 +252,14 @@ export function SettingsPanel({
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <GearSix weight="duotone" className="w-4 h-4" />
-              Preferences
+              {t.settings.preferences}
             </h3>
             
             <div className="space-y-2">
               <SettingRow 
                 icon={<GearSix weight="duotone" className="w-4 h-4" />}
-                label="Auto-save"
-                description="Save entries automatically"
+                label={t.settings.autoSave}
+                description={t.settings.autoSaveDesc}
                 action={
                   <Switch 
                     checked={currentPreferences.autoSave}
@@ -239,22 +275,22 @@ export function SettingsPanel({
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               {isDarkMode ? <Moon weight="duotone" className="w-4 h-4" /> : <Sun weight="duotone" className="w-4 h-4" />}
-              Appearance
+              {t.settings.appearance}
             </h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <span className="text-sm text-muted-foreground">Current mode</span>
+                <span className="text-sm text-muted-foreground">{t.settings.currentMode}</span>
                 <span className="flex items-center gap-2 text-sm font-medium">
                   {isDarkMode ? (
                     <>
                       <Moon weight="fill" className="w-4 h-4 text-primary" />
-                      Night
+                      {t.settings.night}
                     </>
                   ) : (
                     <>
                       <Sun weight="fill" className="w-4 h-4 text-amber-500" />
-                      Day
+                      {t.settings.day}
                     </>
                   )}
                 </span>
@@ -287,8 +323,8 @@ export function SettingsPanel({
                     <CircleHalf weight="duotone" className={`w-5 h-5 ${themeMode === 'auto' ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Automatic</p>
-                    <p className="text-xs text-muted-foreground">Switches at sunset & sunrise</p>
+                    <p className="font-medium text-foreground">{t.settings.automatic}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings.automaticDesc}</p>
                   </div>
                   {themeMode === 'auto' && (
                     <motion.div
@@ -313,8 +349,8 @@ export function SettingsPanel({
                     <Sun weight="duotone" className={`w-5 h-5 ${themeMode === 'light' ? 'text-amber-500' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Always Light</p>
-                    <p className="text-xs text-muted-foreground">Bright & airy daytime sky</p>
+                    <p className="font-medium text-foreground">{t.settings.alwaysLight}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings.alwaysLightDesc}</p>
                   </div>
                   {themeMode === 'light' && (
                     <motion.div
@@ -339,8 +375,8 @@ export function SettingsPanel({
                     <Moon weight="duotone" className={`w-5 h-5 ${themeMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">Always Night</p>
-                    <p className="text-xs text-muted-foreground">Stars & aurora at all times</p>
+                    <p className="font-medium text-foreground">{t.settings.alwaysNight}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings.alwaysNightDesc}</p>
                   </div>
                   {themeMode === 'dark' && (
                     <motion.div
@@ -359,14 +395,14 @@ export function SettingsPanel({
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
               <Info weight="duotone" className="w-4 h-4" />
-              About
+              {t.settings.about}
             </h3>
             
             <div className="space-y-2">
               <SettingRow 
                 icon={<Info weight="duotone" className="w-4 h-4" />}
-                label="Version"
-                description="Current app version"
+                label={t.settings.version}
+                description={t.settings.versionDesc}
                 action={
                   <span className="text-sm text-muted-foreground">1.0.0</span>
                 }
@@ -382,14 +418,14 @@ export function SettingsPanel({
               className="w-full justify-start text-muted-foreground hover:text-foreground"
             >
               <SignOut weight="duotone" className="w-4 h-4 mr-3" />
-              Sign Out
+              {t.settings.signOut}
             </Button>
             <Button 
               variant="ghost" 
               className="w-full justify-start text-destructive/70 hover:text-destructive hover:bg-destructive/10"
             >
               <Trash weight="duotone" className="w-4 h-4 mr-3" />
-              Delete Account
+              {t.settings.deleteAccount}
             </Button>
           </div>
 
