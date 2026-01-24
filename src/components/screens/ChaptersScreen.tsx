@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 interface ChaptersScreenProps {
   chapters: Chapter[];
@@ -86,7 +87,15 @@ export function ChaptersScreen({
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="font-serif text-2xl font-semibold text-foreground">Chapters</h1>
+          <div className="flex items-center gap-4">
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <span className="text-border/50">|</span>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">Chapters</h1>
+          </div>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={() => setIsDialogOpen(true)}>
               <Plus className="mr-1.5" weight="bold" size={16} />

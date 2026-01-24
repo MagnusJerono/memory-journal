@@ -25,6 +25,7 @@ import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 interface PrintScreenProps {
   books: Book[];
@@ -102,7 +103,15 @@ export function PrintScreen({
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="font-serif text-2xl font-semibold text-foreground">Print</h1>
+          <div className="flex items-center gap-4">
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <span className="text-border/50">|</span>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">Print</h1>
+          </div>
           <div className="flex items-center gap-2">
             {completedBooks.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(true)}>
@@ -458,7 +467,13 @@ function BookBuilder({
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={handleBack}>
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <span className="text-border/50">|</span>
+            <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
               <CaretLeft weight="bold" className="w-5 h-5" />
             </Button>
             <h1 className="font-serif text-lg font-semibold text-foreground">

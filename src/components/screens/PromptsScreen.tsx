@@ -5,6 +5,7 @@ import { Sparkle, ArrowRight, PencilSimpleLine, NotePencil } from '@phosphor-ico
 import { motion } from 'framer-motion';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
@@ -35,7 +36,15 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="font-serif text-2xl font-semibold text-foreground">New Memory</h1>
+          <div className="flex items-center gap-4">
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <span className="text-border/50">|</span>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">New Memory</h1>
+          </div>
           <div className="flex items-center gap-2">
             <NavigationMenu 
               onNavigate={onNavigate} 

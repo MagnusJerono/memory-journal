@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 interface ChapterDetailScreenProps {
   chapter: Chapter;
@@ -95,17 +96,23 @@ export function ChapterDetailScreen({
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <span className="text-border/50">|</span>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onNavigate({ type: 'chapters' })}
-              className="flex-shrink-0"
+              className="flex-shrink-0 h-8 w-8"
             >
               <CaretLeft weight="bold" className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-xl">{getIconEmoji(chapter.icon)}</span>
-              <h1 className="font-serif text-xl font-semibold text-foreground truncate">
+              <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground truncate">
                 {chapter.name}
               </h1>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
+import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, ChapterIcon, AppView } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
 import { searchLocations, getCurrentLocation, GeocodingResult } from '@/lib/geocoding';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from '@/components/entry/AudioWaveform';
 import { useKV } from '@github/spark/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
   city: <Buildings weight="duotone" className="w-4 h-4" />,
@@ -75,6 +76,7 @@ interface EntryEditScreenProps {
   onSave: (entry: Entry) => void;
   onBack: () => void;
   onDelete?: () => void;
+  onNavigate?: (view: AppView) => void;
   isDarkMode: boolean;
 }
 
@@ -85,6 +87,7 @@ export function EntryEditScreen({
   onSave, 
   onBack, 
   onDelete,
+  onNavigate,
   isDarkMode 
 }: EntryEditScreenProps) {
   const isNewEntry = !entry;
@@ -357,6 +360,16 @@ export function EntryEditScreen({
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
+            {onNavigate && (
+              <>
+                <LogoHomeButton 
+                  isDarkMode={isDarkMode} 
+                  onClick={() => onNavigate({ type: 'home' })} 
+                  size="sm"
+                />
+                <span className="text-border/50">|</span>
+              </>
+            )}
             <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
               <CaretLeft className="w-5 h-5" weight="bold" />
             </Button>

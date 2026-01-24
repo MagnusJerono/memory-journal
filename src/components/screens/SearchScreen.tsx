@@ -7,6 +7,7 @@ import { MagnifyingGlass, X, Camera, Star, CaretRight } from '@phosphor-icons/re
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { LogoHomeButton } from '@/components/LogoHomeButton';
 
 interface SearchScreenProps {
   entries: Entry[];
@@ -49,25 +50,13 @@ export function SearchScreen({
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-background/80 border-b border-border/20">
         <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />
-              <Input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search memories..."
-                className="pl-10 pr-10 h-12 text-base bg-card/60 border-border/40"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
-                >
-                  <X weight="bold" className="w-4 h-4 text-muted-foreground" />
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <LogoHomeButton 
+              isDarkMode={isDarkMode} 
+              onClick={() => onNavigate({ type: 'home' })} 
+              size="sm"
+            />
+            <div className="flex-1" />
             <NavigationMenu 
               onNavigate={onNavigate} 
               currentTab="search" 
@@ -80,6 +69,24 @@ export function SearchScreen({
                 isDarkMode={isDarkMode}
                 isNightTime={isNightTime}
               />
+            )}
+          </div>
+          <div className="relative">
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />
+            <Input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search memories..."
+              className="pl-10 pr-10 h-12 text-base bg-card/60 border-border/40"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+              >
+                <X weight="bold" className="w-4 h-4 text-muted-foreground" />
+              </button>
             )}
           </div>
         </div>

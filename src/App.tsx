@@ -210,6 +210,7 @@ function App() {
               navigate({ type: 'entry-read', entryId: entry.id });
             }}
             onBack={() => navigate({ type: 'home' })}
+            onNavigate={navigate}
             isDarkMode={isDarkMode}
           />
         );
@@ -290,6 +291,7 @@ function App() {
               navigate({ type: 'entry-read', entryId: entry.id });
             }}
             onBack={() => navigate({ type: 'entry-read', entryId: editEntry.id })}
+            onNavigate={navigate}
             onDelete={() => {
               handleDeleteEntry(editEntry.id);
               navigate({ type: 'home' });
