@@ -6,6 +6,7 @@ import { BottomNav } from './components/navigation/BottomNav';
 import { Toaster } from '@/components/ui/sonner';
 import { useNightMode } from './hooks/use-night-mode';
 import { useIsMobile } from './hooks/use-mobile';
+import { LanguageProvider } from './hooks/use-language.tsx';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { PromptsScreen } from './components/screens/PromptsScreen';
@@ -16,7 +17,7 @@ import { PrintScreen } from './components/screens/PrintScreen';
 import { EntryReadScreen } from './components/screens/EntryReadScreen';
 import { EntryEditScreen } from './components/screens/EntryEditScreen';
 
-function App() {
+function AppContent() {
   const [entries, setEntries] = useKV<Entry[]>('tightly-entries', []);
   const [chapters, setChapters] = useKV<Chapter[]>('tightly-chapters', []);
   const [books, setBooks] = useKV<Book[]>('tightly-books', []);
@@ -374,6 +375,14 @@ function App() {
 
       <Toaster position="bottom-center" />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

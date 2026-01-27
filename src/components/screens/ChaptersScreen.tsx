@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface ChaptersScreenProps {
   chapters: Chapter[];
@@ -34,6 +35,7 @@ export function ChaptersScreen({
   onThemeModeChange,
   isNightTime = false
 }: ChaptersScreenProps) {
+  const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -94,12 +96,12 @@ export function ChaptersScreen({
               size="sm"
             />
             <span className="text-border/50">|</span>
-            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">Chapters</h1>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.chapters.title}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={() => setIsDialogOpen(true)}>
               <Plus className="mr-1.5" weight="bold" size={16} />
-              New Chapter
+              {t.chapters.newChapter}
             </Button>
             <NavigationMenu 
               onNavigate={onNavigate} 
@@ -129,19 +131,16 @@ export function ChaptersScreen({
               <Books weight="duotone" className="w-12 h-12 text-primary/60" />
             </div>
             <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
-              Organize your memories
+              {t.chapters.noChapters}
             </h2>
             <p className="text-muted-foreground max-w-xs mx-auto mb-8">
-              Chapters help you group memories by theme — Travel, Family, Dreams, or anything meaningful to you.
+              {t.chapters.noChaptersDesc}
             </p>
             <div className="flex flex-col gap-3 max-w-xs mx-auto">
               <Button onClick={() => setIsDialogOpen(true)} size="lg" className="w-full">
                 <Plus className="mr-2" weight="bold" />
-                Create First Chapter
+                {t.chapters.newChapter}
               </Button>
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Ideas:</span> Travel Adventures, Family Moments, Work Wins, Dreams & Goals
-              </div>
             </div>
           </motion.div>
         ) : (
@@ -178,7 +177,7 @@ export function ChaptersScreen({
                         </p>
                       )}
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {getEntryCount(chapter.id)} {getEntryCount(chapter.id) === 1 ? 'memory' : 'memories'}
+                        {getEntryCount(chapter.id)} {t.chapters.entries}
                       </p>
                     </div>
                     <CaretRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
@@ -191,7 +190,7 @@ export function ChaptersScreen({
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
                   <Archive weight="duotone" className="w-3.5 h-3.5" />
-                  Archived ({archivedChapters.length})
+                  {t.chapters.archived} ({archivedChapters.length})
                 </p>
                 <div className="space-y-2">
                   {archivedChapters.map((chapter) => (
@@ -210,7 +209,7 @@ export function ChaptersScreen({
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm text-foreground truncate">{chapter.name}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {getEntryCount(chapter.id)} memories
+                            {getEntryCount(chapter.id)} {t.home.memories}
                           </p>
                         </div>
                       </div>
@@ -226,11 +225,11 @@ export function ChaptersScreen({
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif">Create Chapter</DialogTitle>
+            <DialogTitle className="font-serif">{t.chapters.newChapter}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Name</label>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">{t.chapters.name}</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -239,7 +238,7 @@ export function ChaptersScreen({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Description (optional)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Description</label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -248,7 +247,7 @@ export function ChaptersScreen({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Icon</label>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">{t.chapters.icon}</label>
               <div className="flex flex-wrap gap-2">
                 {CHAPTER_ICONS.map((icon) => (
                   <button
@@ -267,7 +266,7 @@ export function ChaptersScreen({
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Color</label>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">{t.chapters.color}</label>
               <div className="flex flex-wrap gap-2">
                 {CHAPTER_COLORS.map((color) => (
                   <button
@@ -284,10 +283,10 @@ export function ChaptersScreen({
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border/30">
               <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button onClick={handleCreate} disabled={!name.trim()}>
-                Create Chapter
+                {t.chapters.newChapter}
               </Button>
             </div>
           </div>

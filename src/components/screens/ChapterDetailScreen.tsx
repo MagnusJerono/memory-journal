@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface ChapterDetailScreenProps {
   chapter: Chapter;
@@ -43,6 +44,7 @@ export function ChapterDetailScreen({
   onThemeModeChange,
   isNightTime = false
 }: ChapterDetailScreenProps) {
+  const { t } = useLanguage();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [name, setName] = useState(chapter.name);

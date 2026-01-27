@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AppView, Prompt, PromptCategory, DEFAULT_PROMPTS, PROMPT_CATEGORIES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Sparkle, ArrowRight, PencilSimpleLine, NotePencil } from '@phosphor-icons/react';
+import { Sparkle, ArrowRight, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
@@ -16,6 +17,7 @@ interface PromptsScreenProps {
 }
 
 export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onThemeModeChange, isNightTime = false }: PromptsScreenProps) {
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null);
   
   const todaysPrompt = DEFAULT_PROMPTS[Math.floor(Date.now() / 86400000) % DEFAULT_PROMPTS.length];
@@ -43,7 +45,7 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
               size="sm"
             />
             <span className="text-border/50">|</span>
-            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">New Memory</h1>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.home.newMemory}</h1>
           </div>
           <div className="flex items-center gap-2">
             <NavigationMenu 
@@ -69,7 +71,7 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
           animate={{ opacity: 1, y: 0 }}
           className="space-y-3"
         >
-          <p className="text-sm font-medium text-muted-foreground mb-3">How would you like to start?</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t.prompts.description}</p>
           
           <motion.button
             onClick={handleCustomMemory}
@@ -82,10 +84,10 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
               </div>
               <div className="flex-1">
                 <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-accent transition-colors">
-                  Write a Custom Memory
+                  {t.home.customMemory}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Start from scratch — describe anything you want to remember
+                  {t.home.customMemoryDesc}
                 </p>
               </div>
               <ArrowRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-accent transition-all mt-1" />
@@ -98,7 +100,7 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
-          <p className="text-sm font-medium text-muted-foreground mb-3">Today's Prompt</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t.prompts.daily}</p>
           <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 border border-primary/20">
             <div className="flex items-start gap-4 mb-5">
               <div className="p-3 rounded-xl bg-primary/20">
@@ -113,14 +115,14 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
               className="w-full shadow-lg shadow-primary/20"
               size="lg"
             >
-              Start Writing
+              {t.prompts.useThis}
               <ArrowRight className="ml-2" weight="bold" />
             </Button>
           </div>
         </motion.section>
 
         <section>
-          <p className="text-sm font-medium text-muted-foreground mb-3">Browse Prompts</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t.prompts.categories}</p>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -130,7 +132,7 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
                   : 'bg-secondary/60 text-secondary-foreground hover:bg-secondary'
               }`}
             >
-              All
+              {t.prompts.allPrompts}
             </button>
             {PROMPT_CATEGORIES.map(cat => (
               <button

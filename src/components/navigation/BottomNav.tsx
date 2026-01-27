@@ -1,6 +1,7 @@
 import { NavigationTab } from '@/lib/types';
 import { House, Sparkle, Books, MagnifyingGlass, Book } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface BottomNavProps {
   currentTab: NavigationTab;
@@ -8,15 +9,17 @@ interface BottomNavProps {
   isDarkMode: boolean;
 }
 
-const tabs: { id: NavigationTab; label: string; Icon: typeof House }[] = [
-  { id: 'home', label: 'Home', Icon: House },
-  { id: 'prompts', label: 'Prompts', Icon: Sparkle },
-  { id: 'chapters', label: 'Chapters', Icon: Books },
-  { id: 'search', label: 'Search', Icon: MagnifyingGlass },
-  { id: 'print', label: 'Print', Icon: Book },
-];
-
 export function BottomNav({ currentTab, onTabChange, isDarkMode }: BottomNavProps) {
+  const { t } = useLanguage();
+  
+  const tabs: { id: NavigationTab; labelKey: keyof typeof t.nav; Icon: typeof House }[] = [
+    { id: 'home', labelKey: 'home', Icon: House },
+    { id: 'prompts', labelKey: 'prompts', Icon: Sparkle },
+    { id: 'chapters', labelKey: 'chapters', Icon: Books },
+    { id: 'search', labelKey: 'search', Icon: MagnifyingGlass },
+    { id: 'print', labelKey: 'print', Icon: Book },
+  ];
+
   return (
     <nav className={`fixed bottom-0 left-0 right-0 z-50 ${
       isDarkMode 
@@ -24,7 +27,7 @@ export function BottomNav({ currentTab, onTabChange, isDarkMode }: BottomNavProp
         : 'bg-white/90 border-t border-border/20'
     } backdrop-blur-xl safe-area-bottom`}>
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
-        {tabs.map(({ id, label, Icon }) => {
+        {tabs.map(({ id, labelKey, Icon }) => {
           const isActive = currentTab === id;
           return (
             <motion.button
@@ -42,7 +45,7 @@ export function BottomNav({ currentTab, onTabChange, isDarkMode }: BottomNavProp
                 className={`w-6 h-6 mb-0.5 transition-all ${isActive ? 'scale-110' : ''}`}
               />
               <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-primary' : ''}`}>
-                {label}
+                {t.nav[labelKey]}
               </span>
               {isActive && (
                 <motion.div

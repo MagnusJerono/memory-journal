@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface PrintScreenProps {
   books: Book[];
@@ -57,6 +58,7 @@ export function PrintScreen({
   onThemeModeChange,
   isNightTime = false
 }: PrintScreenProps) {
+  const { t } = useLanguage();
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const nonDraftEntries = entries.filter(e => !e.is_draft);
@@ -110,7 +112,7 @@ export function PrintScreen({
               size="sm"
             />
             <span className="text-border/50">|</span>
-            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">Print</h1>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.print.title}</h1>
           </div>
           <div className="flex items-center gap-2">
             {completedBooks.length > 0 && (
@@ -148,16 +150,16 @@ export function PrintScreen({
             </div>
             <div className="flex-1">
               <h2 className="font-serif text-xl font-semibold text-foreground mb-1">
-                Create a Book
+                {t.print.createBook}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Turn your memories into a beautiful printed journal.
+                {t.print.description}
               </p>
             </div>
           </div>
           <Button onClick={handleCreateBook} className="w-full shadow-md" size="lg">
             <Plus className="mr-2" weight="bold" />
-            Create New Book
+            {t.print.createBook}
           </Button>
         </motion.div>
 

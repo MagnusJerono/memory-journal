@@ -43,6 +43,7 @@ import { AudioWaveform } from '@/components/entry/AudioWaveform';
 import { useKV } from '@github/spark/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
   city: <Buildings weight="duotone" className="w-4 h-4" />,
@@ -90,6 +91,7 @@ export function EntryEditScreen({
   onNavigate,
   isDarkMode 
 }: EntryEditScreenProps) {
+  const { t, language } = useLanguage();
   const isNewEntry = !entry;
   const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;
 

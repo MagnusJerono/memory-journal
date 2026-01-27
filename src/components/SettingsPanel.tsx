@@ -1,5 +1,6 @@
 import { ThemeMode } from '@/lib/types';
-import { AppLanguage, APP_LANGUAGES, getTranslations, getLanguageLabel } from '@/lib/i18n';
+import { AppLanguage, APP_LANGUAGES, getLanguageLabel } from '@/lib/i18n';
+import { useLanguage } from '@/hooks/use-language.tsx';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
@@ -32,7 +33,8 @@ import {
   Trash, 
   SignOut,
   Info,
-  Envelope
+  Envelope,
+  Detective
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -49,7 +51,6 @@ interface UserPreferences {
   notifications: boolean;
   emailUpdates: boolean;
   autoSave: boolean;
-  language: AppLanguage;
 }
 
 export function SettingsPanel({ 
@@ -62,9 +63,10 @@ export function SettingsPanel({
   const [preferences, setPreferences] = useKV<UserPreferences>('user-preferences', {
     notifications: true,
     emailUpdates: false,
-    autoSave: true,
-    language: 'en'
+    autoSave: true
   });
+  
+  const { language, setLanguage, autoDetect, setAutoDetect, t } = useLanguage();
 
   useEffect(() => {
     window.spark.user().then((u) => {
@@ -74,12 +76,11 @@ export function SettingsPanel({
     }).catch(() => {});
   }, []);
 
-  const updatePreference = (key: keyof UserPreferences, value: boolean | string) => {
+  const updatePreference = (key: keyof UserPreferences, value: boolean) => {
     setPreferences((current) => ({
       notifications: current?.notifications ?? true,
       emailUpdates: current?.emailUpdates ?? false,
       autoSave: current?.autoSave ?? true,
-      language: current?.language ?? 'en',
       [key]: value
     }));
   };
@@ -87,11 +88,8 @@ export function SettingsPanel({
   const currentPreferences = preferences ?? {
     notifications: true,
     emailUpdates: false,
-    autoSave: true,
-    language: 'en' as AppLanguage
+    autoSave: true
   };
-
-  const t = getTranslations(currentPreferences.language as AppLanguage);
 
   return (
     <Sheet>
@@ -151,12 +149,28 @@ export function SettingsPanel({
 
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <User weight="duotone" className="w-4 h-4" />
-              {t.settings.account}
+              <Globe weight="duotone" className="w-4 h-4" />
+              {t.settings.language}
             </h3>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="text-muted-foreground">
+                    <Detective weight="duotone" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t.settings.autoDetect}</p>
+                    <p className="text-xs text-muted-foreground">{t.settings.autoDetectDesc}</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={autoDetect}
+                  onCheckedChange={setAutoDetect}
+                />
+              </div>
+
+              <div className={`flex items-center justify-between p-3 rounded-lg transition-colors ${autoDetect ? 'opacity-50' : 'hover:bg-muted/30'}`}>
                 <div className="flex items-center gap-3">
                   <div className="text-muted-foreground">
                     <Globe weight="duotone" className="w-4 h-4" />
@@ -167,14 +181,15 @@ export function SettingsPanel({
                   </div>
                 </div>
                 <Select
-                  value={currentPreferences.language}
-                  onValueChange={(v) => updatePreference('language', v as AppLanguage)}
+                  value={language}
+                  onValueChange={(v) => setLanguage(v as AppLanguage)}
+                  disabled={autoDetect}
                 >
                   <SelectTrigger className="w-[140px] h-9 text-sm">
                     <SelectValue>
                       <span className="flex items-center gap-2">
-                        <span>{APP_LANGUAGES.find(l => l.code === currentPreferences.language)?.flag}</span>
-                        <span>{getLanguageLabel(currentPreferences.language as AppLanguage)}</span>
+                        <span>{APP_LANGUAGES.find(l => l.code === language)?.flag}</span>
+                        <span>{getLanguageLabel(language)}</span>
                       </span>
                     </SelectValue>
                   </SelectTrigger>
@@ -190,6 +205,18 @@ export function SettingsPanel({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <User weight="duotone" className="w-4 h-4" />
+              {t.settings.account}
+            </h3>
+            
+            <div className="space-y-2">
               <SettingRow 
                 icon={<Shield weight="duotone" className="w-4 h-4" />}
                 label={t.settings.privacy}

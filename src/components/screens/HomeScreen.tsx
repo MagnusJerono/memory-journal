@@ -1,11 +1,12 @@
 import { Entry, Chapter, AppView, ThemeMode, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Plus, Books, NotePencil } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface HomeScreenProps {
   entries: Entry[];
@@ -26,6 +27,7 @@ export function HomeScreen({
   isDarkMode,
   isNightTime
 }: HomeScreenProps) {
+  const { t } = useLanguage();
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
@@ -36,6 +38,21 @@ export function HomeScreen({
 
   const getEntryCountForChapter = (chapterId: string) => 
     entries.filter(e => e.chapter_id === chapterId && !e.is_draft).length;
+
+  const formatTimeAgo = (isoString: string): string => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t.time.justNow;
+    if (diffMins < 60) return `${diffMins}${t.time.minutesAgo}`;
+    if (diffHours < 24) return `${diffHours}${t.time.hoursAgo}`;
+    if (diffDays < 7) return `${diffDays}${t.time.daysAgo}`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="min-h-screen">
@@ -72,12 +89,12 @@ export function HomeScreen({
                 <PencilSimple weight="duotone" className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Continue writing</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">{t.home.continueWriting}</p>
                 <h3 className="font-serif text-lg font-semibold text-foreground truncate">
                   {getEntryTitle(draft)}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Draft · Last edited {formatTimeAgo(draft.updated_at)}
+                  {t.home.draft} · {t.home.lastEdited} {formatTimeAgo(draft.updated_at)}
                 </p>
               </div>
             </div>
@@ -85,7 +102,7 @@ export function HomeScreen({
               onClick={() => onNavigate({ type: 'entry-edit', entryId: draft.id })}
               className="w-full mt-4 shadow-md"
             >
-              Continue Writing
+              {t.home.continueWriting}
             </Button>
           </motion.div>
         )}
@@ -106,10 +123,10 @@ export function HomeScreen({
                   <NotePencil weight="duotone" className="w-5 h-5 text-accent" />
                 </div>
                 <h3 className="font-medium text-foreground group-hover:text-accent transition-colors text-sm">
-                  Custom Memory
+                  {t.home.customMemory}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Write about anything
+                  {t.home.customMemoryDesc}
                 </p>
               </motion.button>
 
@@ -122,10 +139,10 @@ export function HomeScreen({
                   <Sparkle weight="duotone" className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm">
-                  Use a Prompt
+                  {t.home.usePrompt}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Get inspired to write
+                  {t.home.usePromptDesc}
                 </p>
               </motion.button>
             </div>
@@ -139,12 +156,12 @@ export function HomeScreen({
             transition={{ delay: 0.05 }}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-serif text-lg font-semibold text-foreground">Chapters</h2>
+              <h2 className="font-serif text-lg font-semibold text-foreground">{t.home.chapters}</h2>
               <button 
                 onClick={() => onNavigate({ type: 'chapters' })}
                 className="text-sm text-primary hover:underline flex items-center gap-1"
               >
-                View all
+                {t.home.viewAll}
                 <CaretRight weight="bold" className="w-3 h-3" />
               </button>
             </div>
@@ -170,7 +187,7 @@ export function HomeScreen({
                         {chapter.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {getEntryCountForChapter(chapter.id)} memories
+                        {getEntryCountForChapter(chapter.id)} {t.home.memories}
                       </p>
                     </div>
                   </div>
@@ -183,7 +200,7 @@ export function HomeScreen({
                 className="w-full p-4 rounded-xl bg-muted/30 border border-dashed border-border/50 hover:border-primary/30 transition-all text-center"
               >
                 <Books weight="duotone" className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Create chapters to organize your memories</p>
+                <p className="text-sm text-muted-foreground">{t.home.createChapters}</p>
               </motion.button>
             )}
           </motion.section>
@@ -192,7 +209,7 @@ export function HomeScreen({
         {hasEntries && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-xl font-semibold text-foreground">Recent Memories</h2>
+              <h2 className="font-serif text-xl font-semibold text-foreground">{t.home.recentMemories}</h2>
             </div>
             <div className="space-y-3">
               {recentEntries.map((entry, index) => (
@@ -252,29 +269,14 @@ export function HomeScreen({
               <Sparkle weight="duotone" className="w-12 h-12 text-primary/60" />
             </div>
             <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
-              Your journal awaits
+              {t.home.journalAwaits}
             </h2>
             <p className="text-muted-foreground max-w-xs mx-auto">
-              Start capturing moments with guided prompts or write your own custom memories.
+              {t.home.journalAwaitsDesc}
             </p>
           </motion.div>
         )}
       </main>
     </div>
   );
-}
-
-function formatTimeAgo(isoString: string): string {
-  const date = new Date(isoString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

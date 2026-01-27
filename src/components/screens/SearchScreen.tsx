@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface SearchScreenProps {
   entries: Entry[];
@@ -28,6 +29,7 @@ export function SearchScreen({
   onThemeModeChange,
   isNightTime = false
 }: SearchScreenProps) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -37,9 +39,6 @@ export function SearchScreen({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  const getIconEmoji = (icon: ChapterIcon) => 
-    CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
 
   const getChapterName = (chapterId: string | null) => {
     if (!chapterId) return null;
@@ -77,7 +76,7 @@ export function SearchScreen({
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search memories..."
+              placeholder={t.search.placeholder}
               className="pl-10 pr-10 h-12 text-base bg-card/60 border-border/40"
             />
             {query && (
@@ -106,7 +105,7 @@ export function SearchScreen({
                 <MagnifyingGlass weight="duotone" className="w-10 h-10 text-muted-foreground/40" />
               </div>
               <p className="text-muted-foreground">
-                Search by keywords, places, people, or moods
+                {t.search.placeholder}
               </p>
             </motion.div>
           ) : results.length === 0 ? (
@@ -121,13 +120,13 @@ export function SearchScreen({
                 <MagnifyingGlass weight="duotone" className="w-10 h-10 text-muted-foreground/40" />
               </div>
               <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-                No memories found
+                {t.search.noResults}
               </h2>
               <p className="text-muted-foreground max-w-xs mx-auto mb-6">
-                No memories match "<span className="font-medium text-foreground">{query}</span>". Try different keywords.
+                {t.search.noResultsDesc}
               </p>
               <Button variant="outline" onClick={() => setQuery('')}>
-                Clear search
+                {t.common.close}
               </Button>
             </motion.div>
           ) : (

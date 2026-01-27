@@ -18,6 +18,7 @@ import {
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { AppView, NavigationTab } from '@/lib/types';
+import { useLanguage } from '@/hooks/use-language.tsx';
 
 interface NavigationMenuProps {
   onNavigate: (view: AppView) => void;
@@ -26,43 +27,56 @@ interface NavigationMenuProps {
 }
 
 export function NavigationMenu({ onNavigate, currentTab, isDarkMode }: NavigationMenuProps) {
+  const { t } = useLanguage();
+  
   const menuItems = [
     { 
       id: 'home' as NavigationTab, 
-      label: 'Home', 
+      labelKey: 'home' as const, 
       icon: House, 
       view: { type: 'home' } as AppView,
-      description: 'Recent memories & quick actions'
+      descriptionKey: 'home' as const
     },
     { 
       id: 'prompts' as NavigationTab, 
-      label: 'Prompts', 
+      labelKey: 'prompts' as const, 
       icon: Sparkle, 
       view: { type: 'prompts' } as AppView,
-      description: 'Get inspired to write'
+      descriptionKey: 'prompts' as const
     },
     { 
       id: 'chapters' as NavigationTab, 
-      label: 'Chapters', 
+      labelKey: 'chapters' as const, 
       icon: Books, 
       view: { type: 'chapters' } as AppView,
-      description: 'Organize your memories'
+      descriptionKey: 'chapters' as const
     },
     { 
       id: 'search' as NavigationTab, 
-      label: 'Search', 
+      labelKey: 'search' as const, 
       icon: MagnifyingGlass, 
       view: { type: 'search' } as AppView,
-      description: 'Find any memory'
+      descriptionKey: 'search' as const
     },
     { 
       id: 'print' as NavigationTab, 
-      label: 'Print Books', 
+      labelKey: 'print' as const, 
       icon: Printer, 
       view: { type: 'print' } as AppView,
-      description: 'Create bound chapter books'
+      descriptionKey: 'print' as const
     },
   ];
+
+  const getDescription = (key: string) => {
+    switch (key) {
+      case 'home': return t.home.recentMemories;
+      case 'prompts': return t.prompts.description;
+      case 'chapters': return t.chapters.description;
+      case 'search': return t.search.title;
+      case 'print': return t.print.description;
+      default: return '';
+    }
+  };
 
   return (
     <Sheet>
@@ -111,10 +125,10 @@ export function NavigationMenu({ onNavigate, currentTab, isDarkMode }: Navigatio
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>
-                    {item.label}
+                    {t.nav[item.labelKey]}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {item.description}
+                    {getDescription(item.descriptionKey)}
                   </p>
                 </div>
                 <CaretRight 
