@@ -378,6 +378,7 @@ function AppContent() {
   );
 }
 
+function App() {
   return (
     <LanguageProvider>
       <AppContent />
@@ -385,5 +386,4 @@ function AppContent() {
   );
 }
 
-export default App;
 export default App;
