@@ -44,6 +44,7 @@ import { useKV } from '@github/spark/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
   city: <Buildings weight="duotone" className="w-4 h-4" />,
@@ -78,7 +79,6 @@ interface EntryEditScreenProps {
   onBack: () => void;
   onDelete?: () => void;
   onNavigate?: (view: AppView) => void;
-  isDarkMode: boolean;
 }
 
 export function EntryEditScreen({ 
@@ -88,9 +88,9 @@ export function EntryEditScreen({
   onSave, 
   onBack, 
   onDelete,
-  onNavigate,
-  isDarkMode 
+  onNavigate
 }: EntryEditScreenProps) {
+  const { isDarkMode } = useTheme();
   const { t, language } = useLanguage();
   const isNewEntry = !entry;
   const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;

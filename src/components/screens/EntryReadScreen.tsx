@@ -28,6 +28,7 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface EntryReadScreenProps {
   entry: Entry;
@@ -37,10 +38,6 @@ interface EntryReadScreenProps {
   onToggleStar: () => void;
   onDelete: () => void;
   onAssignChapter: (chapterId: string | null) => void;
-  isDarkMode: boolean;
-  themeMode?: 'auto' | 'light' | 'dark';
-  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
-  isNightTime?: boolean;
 }
 
 export function EntryReadScreen({
@@ -50,12 +47,9 @@ export function EntryReadScreen({
   onNavigate,
   onToggleStar,
   onDelete,
-  onAssignChapter,
-  isDarkMode,
-  themeMode = 'auto',
-  onThemeModeChange,
-  isNightTime = false
+  onAssignChapter
 }: EntryReadScreenProps) {
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
@@ -157,14 +151,12 @@ export function EntryReadScreen({
               currentTab="home" 
               isDarkMode={isDarkMode} 
             />
-            {onThemeModeChange && (
-              <SettingsPanel
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
-            )}
+            <SettingsPanel
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+              isDarkMode={isDarkMode}
+              isNightTime={isNightTime}
+            />
           </div>
         </div>
       </header>

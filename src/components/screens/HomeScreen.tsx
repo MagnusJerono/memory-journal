@@ -1,4 +1,4 @@
-import { Entry, Chapter, AppView, ThemeMode, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
+import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
@@ -7,27 +7,21 @@ import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface HomeScreenProps {
   entries: Entry[];
   chapters: Chapter[];
   onNavigate: (view: AppView) => void;
-  themeMode: ThemeMode;
-  onThemeModeChange: (mode: ThemeMode) => void;
-  isDarkMode: boolean;
-  isNightTime: boolean;
 }
 
 export function HomeScreen({
   entries,
   chapters,
-  onNavigate,
-  themeMode,
-  onThemeModeChange,
-  isDarkMode,
-  isNightTime
+  onNavigate
 }: HomeScreenProps) {
   const { t } = useLanguage();
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
@@ -68,7 +62,7 @@ export function HomeScreen({
               />
               <SettingsPanel
                 themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
+                onThemeModeChange={setThemeMode}
                 isDarkMode={isDarkMode}
                 isNightTime={isNightTime}
               />
