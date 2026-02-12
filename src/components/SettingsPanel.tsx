@@ -20,9 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { 
-  GearSix, 
   Sun, 
   Moon, 
   CircleHalf, 
@@ -36,9 +34,11 @@ import {
   Info,
   Envelope,
   Detective,
-  Pen
+  Pen,
+  Palette
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import { AccordionSettingsSection } from './AccordionSettingsSection';
 import { useEffect, useState } from 'react';
 import { useKV } from '@github/spark/hooks';
 
@@ -71,6 +71,15 @@ export function SettingsPanel({
   });
   const [personalVoiceSample, setPersonalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
   
+  // State for managing expanded sections
+  const [expandedSections, setExpandedSections] = useState({
+    appearance: true,
+    writingStyle: false,
+    notifications: false,
+    dataPrivacy: false,
+    about: false
+  });
+  
   const { language, setLanguage, autoDetect, setAutoDetect, t } = useLanguage();
 
   useEffect(() => {
@@ -94,6 +103,13 @@ export function SettingsPanel({
     notifications: true,
     emailUpdates: false,
     autoSave: true
+  };
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   return (
@@ -125,7 +141,8 @@ export function SettingsPanel({
           </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-4">
+          {/* User Profile Card */}
           <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 border border-border/30">
             <div className="flex items-center gap-4">
               {user?.avatarUrl ? (
@@ -152,13 +169,132 @@ export function SettingsPanel({
             </div>
           </div>
 
-          <Separator className="bg-border/50" />
+          {/* Collapsible Sections */}
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Globe weight="duotone" className="w-4 h-4" />
-              {t.settings.language}
-            </h3>
+          <AccordionSettingsSection
+            sectionKey="appearance"
+            icon={<Palette weight="duotone" className="w-5 h-5 text-muted-foreground" />}
+            title={t.settings.appearance}
+            isExpanded={expandedSections.appearance}
+            onToggle={toggleSection}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <span className="text-sm text-muted-foreground">{t.settings.currentMode}</span>
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  {isDarkMode ? (
+                  <>
+                    <Moon weight="fill" className="w-4 h-4 text-primary" />
+                    {t.settings.night}
+                  </>
+                ) : (
+                  <>
+                    <Sun weight="fill" className="w-4 h-4 text-amber-500" />
+                    {t.settings.day}
+                  </>
+                )}
+              </span>
+            </div>
+
+            {themeMode === 'auto' && (
+              <p className="text-xs text-muted-foreground px-1">
+                {isNightTime 
+                  ? "It's after sunset – night mode is active" 
+                  : "It's daytime – light mode is active"}
+              </p>
+            )}
+
+            <RadioGroup 
+              value={themeMode} 
+              onValueChange={(v) => onThemeModeChange(v as ThemeMode)}
+              className="space-y-2"
+            >
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  themeMode === 'auto' 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border/50 hover:border-border'
+                }`}
+              >
+                <RadioGroupItem value="auto" id="auto" className="sr-only" />
+                <div className={`p-2.5 rounded-lg ${themeMode === 'auto' ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                  <CircleHalf weight="duotone" className={`w-5 h-5 ${themeMode === 'auto' ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{t.settings.automatic}</p>
+                  <p className="text-xs text-muted-foreground">{t.settings.automaticDesc}</p>
+                </div>
+                {themeMode === 'auto' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-2 h-2 rounded-full bg-primary"
+                  />
+                )}
+              </motion.label>
+
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  themeMode === 'light' 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border/50 hover:border-border'
+                }`}
+              >
+                <RadioGroupItem value="light" id="light" className="sr-only" />
+                <div className={`p-2.5 rounded-lg ${themeMode === 'light' ? 'bg-amber-500/20' : 'bg-muted/50'}`}>
+                  <Sun weight="duotone" className={`w-5 h-5 ${themeMode === 'light' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{t.settings.alwaysLight}</p>
+                  <p className="text-xs text-muted-foreground">{t.settings.alwaysLightDesc}</p>
+                </div>
+                {themeMode === 'light' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-2 h-2 rounded-full bg-primary"
+                  />
+                )}
+              </motion.label>
+
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  themeMode === 'dark' 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border/50 hover:border-border'
+                }`}
+              >
+                <RadioGroupItem value="dark" id="dark" className="sr-only" />
+                <div className={`p-2.5 rounded-lg ${themeMode === 'dark' ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                  <Moon weight="duotone" className={`w-5 h-5 ${themeMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{t.settings.alwaysNight}</p>
+                  <p className="text-xs text-muted-foreground">{t.settings.alwaysNightDesc}</p>
+                </div>
+                {themeMode === 'dark' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-2 h-2 rounded-full bg-primary"
+                  />
+                )}
+              </motion.label>
+            </RadioGroup>
+
+            <div className="space-y-3 pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Globe weight="duotone" className="w-4 h-4 text-muted-foreground" />
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t.settings.language}
+                </h4>
+              </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
@@ -213,106 +349,17 @@ export function SettingsPanel({
                 </Select>
               </div>
             </div>
-          </div>
-
-          <Separator className="bg-border/50" />
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <User weight="duotone" className="w-4 h-4" />
-              {t.settings.account}
-            </h3>
-            
-            <div className="space-y-2">
-              <SettingRow 
-                icon={<Shield weight="duotone" className="w-4 h-4" />}
-                label={t.settings.privacy}
-                description={t.settings.privacyDesc}
-                action={
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    {t.settings.view}
-                  </Button>
-                }
-              />
-              <SettingRow 
-                icon={<Download weight="duotone" className="w-4 h-4" />}
-                label={t.settings.exportData}
-                description={t.settings.exportDataDesc}
-                action={
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    {t.settings.export}
-                  </Button>
-                }
-              />
             </div>
-          </div>
-
-          <Separator className="bg-border/50" />
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Bell weight="duotone" className="w-4 h-4" />
-              {t.settings.notifications}
-            </h3>
-            
-            <div className="space-y-2">
-              <SettingRow 
-                icon={<Bell weight="duotone" className="w-4 h-4" />}
-                label={t.settings.pushNotifications}
-                description={t.settings.pushNotificationsDesc}
-                action={
-                  <Switch 
-                    checked={currentPreferences.notifications}
-                    onCheckedChange={(v) => updatePreference('notifications', v)}
-                  />
-                }
-              />
-              <SettingRow 
-                icon={<Envelope weight="duotone" className="w-4 h-4" />}
-                label={t.settings.emailUpdates}
-                description={t.settings.emailUpdatesDesc}
-                action={
-                  <Switch 
-                    checked={currentPreferences.emailUpdates}
-                    onCheckedChange={(v) => updatePreference('emailUpdates', v)}
-                  />
-                }
-              />
             </div>
-          </div>
+          </AccordionSettingsSection>
 
-          <Separator className="bg-border/50" />
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <GearSix weight="duotone" className="w-4 h-4" />
-              {t.settings.preferences}
-            </h3>
-            
-            <div className="space-y-2">
-              <SettingRow 
-                icon={<GearSix weight="duotone" className="w-4 h-4" />}
-                label={t.settings.autoSave}
-                description={t.settings.autoSaveDesc}
-                action={
-                  <Switch 
-                    checked={currentPreferences.autoSave}
-                    onCheckedChange={(v) => updatePreference('autoSave', v)}
-                  />
-                }
-              />
-            </div>
-          </div>
-
-          <Separator className="bg-border/50" />
-
-          {/* My Writing Voice Section */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Pen weight="duotone" className="w-4 h-4" />
-              My Writing Voice
-            </h3>
-            
+          <AccordionSettingsSection
+            sectionKey="writingStyle"
+            icon={<Pen weight="duotone" className="w-5 h-5 text-muted-foreground" />}
+            title="My Writing Voice"
+            isExpanded={expandedSections.writingStyle}
+            onToggle={toggleSection}
+          >
             <div className="space-y-3">
               <div>
                 <Textarea
@@ -337,136 +384,106 @@ export function SettingsPanel({
                 </Button>
               )}
             </div>
-          </div>
+          </AccordionSettingsSection>
 
-          <Separator className="bg-border/50" />
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              {isDarkMode ? <Moon weight="duotone" className="w-4 h-4" /> : <Sun weight="duotone" className="w-4 h-4" />}
-              {t.settings.appearance}
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <span className="text-sm text-muted-foreground">{t.settings.currentMode}</span>
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  {isDarkMode ? (
-                    <>
-                      <Moon weight="fill" className="w-4 h-4 text-primary" />
-                      {t.settings.night}
-                    </>
-                  ) : (
-                    <>
-                      <Sun weight="fill" className="w-4 h-4 text-amber-500" />
-                      {t.settings.day}
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {themeMode === 'auto' && (
-                <p className="text-xs text-muted-foreground px-1">
-                  {isNightTime 
-                    ? "It's after sunset – night mode is active" 
-                    : "It's daytime – light mode is active"}
-                </p>
-              )}
-
-              <RadioGroup 
-                value={themeMode} 
-                onValueChange={(v) => onThemeModeChange(v as ThemeMode)}
-                className="space-y-2"
-              >
-                <motion.label 
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    themeMode === 'auto' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-border/50 hover:border-border'
-                  }`}
-                >
-                  <RadioGroupItem value="auto" id="auto" className="sr-only" />
-                  <div className={`p-2.5 rounded-lg ${themeMode === 'auto' ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                    <CircleHalf weight="duotone" className={`w-5 h-5 ${themeMode === 'auto' ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{t.settings.automatic}</p>
-                    <p className="text-xs text-muted-foreground">{t.settings.automaticDesc}</p>
-                  </div>
-                  {themeMode === 'auto' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2 h-2 rounded-full bg-primary"
-                    />
-                  )}
-                </motion.label>
-
-                <motion.label 
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    themeMode === 'light' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-border/50 hover:border-border'
-                  }`}
-                >
-                  <RadioGroupItem value="light" id="light" className="sr-only" />
-                  <div className={`p-2.5 rounded-lg ${themeMode === 'light' ? 'bg-amber-500/20' : 'bg-muted/50'}`}>
-                    <Sun weight="duotone" className={`w-5 h-5 ${themeMode === 'light' ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{t.settings.alwaysLight}</p>
-                    <p className="text-xs text-muted-foreground">{t.settings.alwaysLightDesc}</p>
-                  </div>
-                  {themeMode === 'light' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2 h-2 rounded-full bg-primary"
-                    />
-                  )}
-                </motion.label>
-
-                <motion.label 
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    themeMode === 'dark' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-border/50 hover:border-border'
-                  }`}
-                >
-                  <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                  <div className={`p-2.5 rounded-lg ${themeMode === 'dark' ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                    <Moon weight="duotone" className={`w-5 h-5 ${themeMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{t.settings.alwaysNight}</p>
-                    <p className="text-xs text-muted-foreground">{t.settings.alwaysNightDesc}</p>
-                  </div>
-                  {themeMode === 'dark' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2 h-2 rounded-full bg-primary"
-                    />
-                  )}
-                </motion.label>
-              </RadioGroup>
+          <AccordionSettingsSection
+            sectionKey="notifications"
+            icon={<Bell weight="duotone" className="w-5 h-5 text-muted-foreground" />}
+            title={t.settings.notifications}
+            isExpanded={expandedSections.notifications}
+            onToggle={toggleSection}
+          >
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<Bell weight="duotone" className="w-4 h-4" />}
+                label={t.settings.pushNotifications}
+                description={t.settings.pushNotificationsDesc}
+                action={
+                  <Switch 
+                    checked={currentPreferences.notifications}
+                    onCheckedChange={(v) => updatePreference('notifications', v)}
+                  />
+                }
+              />
+              <SettingRow 
+                icon={<Envelope weight="duotone" className="w-4 h-4" />}
+                label={t.settings.emailUpdates}
+                description={t.settings.emailUpdatesDesc}
+                action={
+                  <Switch 
+                    checked={currentPreferences.emailUpdates}
+                    onCheckedChange={(v) => updatePreference('emailUpdates', v)}
+                  />
+                }
+              />
+              <SettingRow 
+                icon={<Shield weight="duotone" className="w-4 h-4" />}
+                label={t.settings.autoSave}
+                description={t.settings.autoSaveDesc}
+                action={
+                  <Switch 
+                    checked={currentPreferences.autoSave}
+                    onCheckedChange={(v) => updatePreference('autoSave', v)}
+                  />
+                }
+              />
             </div>
-          </div>
+          </AccordionSettingsSection>
 
-          <Separator className="bg-border/50" />
+          <AccordionSettingsSection
+            sectionKey="dataPrivacy"
+            icon={<Shield weight="duotone" className="w-5 h-5 text-muted-foreground" />}
+            title="Data & Privacy"
+            isExpanded={expandedSections.dataPrivacy}
+            onToggle={toggleSection}
+          >
+            <div className="space-y-2">
+              <SettingRow 
+                icon={<Shield weight="duotone" className="w-4 h-4" />}
+                label={t.settings.privacy}
+                description={t.settings.privacyDesc}
+                action={
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">
+                    {t.settings.view}
+                  </Button>
+                }
+              />
+              <SettingRow 
+                icon={<Download weight="duotone" className="w-4 h-4" />}
+                label={t.settings.exportData}
+                description={t.settings.exportDataDesc}
+                action={
+                  <Button variant="ghost" size="sm" className="h-8 text-xs">
+                    {t.settings.export}
+                  </Button>
+                }
+              />
+              <div className="pt-2 space-y-2">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                >
+                  <SignOut weight="duotone" className="w-4 h-4 mr-3" />
+                  {t.settings.signOut}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash weight="duotone" className="w-4 h-4 mr-3" />
+                  {t.settings.deleteAccount}
+                </Button>
+              </div>
+            </div>
+          </AccordionSettingsSection>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Info weight="duotone" className="w-4 h-4" />
-              {t.settings.about}
-            </h3>
-            
+          <AccordionSettingsSection
+            sectionKey="about"
+            icon={<Info weight="duotone" className="w-5 h-5 text-muted-foreground" />}
+            title={t.settings.about}
+            isExpanded={expandedSections.about}
+            onToggle={toggleSection}
+          >
             <div className="space-y-2">
               <SettingRow 
                 icon={<Info weight="duotone" className="w-4 h-4" />}
@@ -476,32 +493,13 @@ export function SettingsPanel({
                   <span className="text-sm text-muted-foreground">1.0.0</span>
                 }
               />
+
+              <div className="text-xs text-muted-foreground text-center space-y-1 pt-4">
+                <p className="font-serif text-sm">Tightly</p>
+                <p className="tracking-wide">Hold them tight</p>
+              </div>
             </div>
-          </div>
-
-          <Separator className="bg-border/50" />
-
-          <div className="space-y-2">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-            >
-              <SignOut weight="duotone" className="w-4 h-4 mr-3" />
-              {t.settings.signOut}
-            </Button>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash weight="duotone" className="w-4 h-4 mr-3" />
-              {t.settings.deleteAccount}
-            </Button>
-          </div>
-
-          <div className="text-xs text-muted-foreground text-center space-y-1 pt-4">
-            <p className="font-serif text-sm">Tightly</p>
-            <p className="tracking-wide">Hold them tight</p>
-          </div>
+          </AccordionSettingsSection>
         </div>
       </SheetContent>
     </Sheet>
@@ -532,3 +530,4 @@ function SettingRow({
     </div>
   );
 }
+
