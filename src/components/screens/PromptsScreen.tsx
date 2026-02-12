@@ -7,16 +7,14 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
-  isDarkMode: boolean;
-  themeMode?: 'auto' | 'light' | 'dark';
-  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
-  isNightTime?: boolean;
 }
 
-export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onThemeModeChange, isNightTime = false }: PromptsScreenProps) {
+export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null);
   
@@ -53,14 +51,12 @@ export function PromptsScreen({ onNavigate, isDarkMode, themeMode = 'auto', onTh
               currentTab="prompts" 
               isDarkMode={isDarkMode} 
             />
-            {onThemeModeChange && (
-              <SettingsPanel
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
-            )}
+            <SettingsPanel
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+              isDarkMode={isDarkMode}
+              isNightTime={isNightTime}
+            />
           </div>
         </div>
       </header>

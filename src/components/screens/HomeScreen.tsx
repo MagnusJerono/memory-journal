@@ -1,4 +1,4 @@
-import { Entry, Chapter, AppView, ThemeMode, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
+import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
@@ -7,31 +7,85 @@ import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface HomeScreenProps {
   entries: Entry[];
   chapters: Chapter[];
   onNavigate: (view: AppView) => void;
-  themeMode: ThemeMode;
-  onThemeModeChange: (mode: ThemeMode) => void;
-  isDarkMode: boolean;
-  isNightTime: boolean;
 }
 
 export function HomeScreen({
   entries,
   chapters,
-  onNavigate,
-  themeMode,
-  onThemeModeChange,
-  isDarkMode,
-  isNightTime
+  onNavigate
 }: HomeScreenProps) {
   const { t } = useLanguage();
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
   const activeChapters = chapters.filter(c => !c.is_archived).slice(0, 4);
+
+  // "On This Day" - Find entries from same date in previous years
+  const getOnThisDayEntries = () => {
+    const today = new Date();
+    const todayMonth = today.getMonth();
+    const todayDay = today.getDate();
+    const thisYear = today.getFullYear();
+
+    return entries.filter(entry => {
+      if (entry.is_draft) return false;
+      const entryDate = new Date(entry.date);
+      const entryYear = entryDate.getFullYear();
+      return (
+        entryDate.getMonth() === todayMonth &&
+        entryDate.getDate() === todayDay &&
+        entryYear !== thisYear
+      );
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const onThisDayEntries = getOnThisDayEntries();
+
+  // Writing Streak - Calculate consecutive days with entries
+  const calculateStreak = () => {
+    const MILLISECONDS_PER_DAY = 86400000;
+    const nonDraftEntries = entries.filter(e => !e.is_draft);
+    if (nonDraftEntries.length === 0) return 0;
+
+    // Get unique dates with entries
+    const datesWithEntries = [...new Set(
+      nonDraftEntries.map(e => new Date(e.date).toDateString())
+    )].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+    if (datesWithEntries.length === 0) return 0;
+
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - MILLISECONDS_PER_DAY).toDateString();
+
+    // Check if there's an entry today or yesterday
+    if (datesWithEntries[0] !== today && datesWithEntries[0] !== yesterday) {
+      return 0; // Streak broken
+    }
+
+    let streak = 0;
+    let currentDate = new Date();
+    
+    for (const dateStr of datesWithEntries) {
+      const expectedDate = new Date(currentDate).toDateString();
+      if (dateStr === expectedDate) {
+        streak++;
+        currentDate = new Date(currentDate.getTime() - MILLISECONDS_PER_DAY); // Go back one day
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  const writingStreak = calculateStreak();
 
   const getIconEmoji = (icon: ChapterIcon) => 
     CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
@@ -68,7 +122,7 @@ export function HomeScreen({
               />
               <SettingsPanel
                 themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
+                onThemeModeChange={setThemeMode}
                 isDarkMode={isDarkMode}
                 isNightTime={isNightTime}
               />
@@ -78,6 +132,47 @@ export function HomeScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        {/* Writing Streak Tracker */}
+        {hasEntries && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`p-4 rounded-2xl border ${
+              writingStreak > 0
+                ? 'bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-amber-500/20'
+                : 'bg-accent/10 border-accent/20'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {writingStreak > 0 ? (
+                <>
+                  <div className="text-2xl">🔥</div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {writingStreak} {writingStreak === 1 ? 'day' : 'days'} streak
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Keep it going! Write today to continue your streak.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl">✨</div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Start your streak today
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Write consistently to build a writing habit.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {draft && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -203,6 +298,64 @@ export function HomeScreen({
                 <p className="text-sm text-muted-foreground">{t.home.createChapters}</p>
               </motion.button>
             )}
+          </motion.section>
+        )}
+
+        {/* On This Day - Show memories from same date in previous years */}
+        {onThisDayEntries.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="p-5 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/20"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">📅</span>
+              <h2 className="font-serif text-lg font-semibold text-foreground">On This Day</h2>
+            </div>
+            <div className="space-y-2">
+              {onThisDayEntries.slice(0, 3).map((entry, index) => {
+                const entryDate = new Date(entry.date);
+                const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
+                return (
+                  <motion.button
+                    key={entry.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => onNavigate({ type: 'entry-read', entryId: entry.id })}
+                    className="w-full p-3 rounded-xl bg-card/60 backdrop-blur-sm border border-border/30 hover:border-violet-500/40 hover:bg-card/80 transition-all text-left group"
+                  >
+                    <div className="flex items-start gap-3">
+                      {entry.photos[0] ? (
+                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                          <img
+                            src={entry.photos[0].storage_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                          <Camera weight="duotone" className="w-5 h-5 text-violet-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-violet-600 dark:text-violet-400 font-medium mb-0.5">
+                          {yearsAgo} {yearsAgo === 1 ? 'year' : 'years'} ago
+                        </p>
+                        <h3 className="font-medium text-foreground text-sm truncate group-hover:text-violet-600 transition-colors">
+                          {getEntryTitle(entry)}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatShortDate(entry.date)}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
           </motion.section>
         )}
 

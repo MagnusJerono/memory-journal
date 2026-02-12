@@ -11,6 +11,7 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ChaptersScreenProps {
   chapters: Chapter[];
@@ -18,10 +19,6 @@ interface ChaptersScreenProps {
   onNavigate: (view: AppView) => void;
   onSaveChapter: (chapter: Chapter) => void;
   onDeleteChapter: (chapterId: string) => void;
-  isDarkMode: boolean;
-  themeMode?: 'auto' | 'light' | 'dark';
-  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
-  isNightTime?: boolean;
 }
 
 export function ChaptersScreen({
@@ -29,12 +26,9 @@ export function ChaptersScreen({
   entries,
   onNavigate,
   onSaveChapter,
-  onDeleteChapter,
-  isDarkMode,
-  themeMode = 'auto',
-  onThemeModeChange,
-  isNightTime = false
+  onDeleteChapter
 }: ChaptersScreenProps) {
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [name, setName] = useState('');
@@ -108,14 +102,12 @@ export function ChaptersScreen({
               currentTab="chapters" 
               isDarkMode={isDarkMode} 
             />
-            {onThemeModeChange && (
-              <SettingsPanel
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
-            )}
+            <SettingsPanel
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+              isDarkMode={isDarkMode}
+              isNightTime={isNightTime}
+            />
           </div>
         </div>
       </header>

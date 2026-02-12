@@ -44,6 +44,7 @@ import { useKV } from '@github/spark/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
   city: <Buildings weight="duotone" className="w-4 h-4" />,
@@ -78,7 +79,6 @@ interface EntryEditScreenProps {
   onBack: () => void;
   onDelete?: () => void;
   onNavigate?: (view: AppView) => void;
-  isDarkMode: boolean;
 }
 
 export function EntryEditScreen({ 
@@ -88,9 +88,9 @@ export function EntryEditScreen({
   onSave, 
   onBack, 
   onDelete,
-  onNavigate,
-  isDarkMode 
+  onNavigate
 }: EntryEditScreenProps) {
+  const { isDarkMode } = useTheme();
   const { t, language } = useLanguage();
   const isNewEntry = !entry;
   const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;
@@ -117,6 +117,8 @@ export function EntryEditScreen({
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -198,6 +200,51 @@ export function EntryEditScreen({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Auto-save draft every 30 seconds if content has changed
+  useEffect(() => {
+    // Skip auto-save for new entries with no content
+    if (!transcript.trim() && !title.trim() && photos.length === 0) {
+      return;
+    }
+
+    const autoSaveInterval = setInterval(() => {
+      const entryId = entry?.id || uuid();
+      const now = new Date().toISOString();
+      
+      const draftEntry: Entry = {
+        id: entryId,
+        date: formatDateISO(date),
+        title_user: title.trim() || null,
+        title_ai: entry?.title_ai || null,
+        transcript: transcript.trim() || null,
+        story_ai: story || null,
+        highlights_ai: highlights.length > 0 ? highlights : null,
+        tags_ai: entry?.tags_ai || null,
+        location_suggestions: entry?.location_suggestions || null,
+        manual_locations: manualLocations.length > 0 ? manualLocations : null,
+        missing_info_questions: entry?.missing_info_questions || null,
+        uncertain_claims: entry?.uncertain_claims || null,
+        is_locked: entry?.is_locked || false,
+        is_starred: entry?.is_starred || false,
+        is_draft: true, // Mark as draft for auto-save
+        chapter_id: chapterId,
+        photos: photos.map(p => ({ ...p, entry_id: entryId })),
+        prompt_used: prompt?.text || entry?.prompt_used || null,
+        created_at: entry?.created_at || now,
+        updated_at: now
+      };
+
+      onSave(draftEntry);
+      setLastAutoSaveTime(new Date());
+      
+      // Show "Saved ✓" indicator
+      setShowSavedIndicator(true);
+      setTimeout(() => setShowSavedIndicator(false), 2000);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [transcript, title, photos, date, story, highlights, manualLocations, chapterId, entry, prompt, onSave]);
 
   const handleSelectLocation = (result: GeocodingResult) => {
     if (!manualLocations.includes(result.displayName)) {
@@ -379,13 +426,28 @@ export function EntryEditScreen({
               {isNewEntry ? 'New Memory' : 'Edit Memory'}
             </h1>
           </div>
-          <Button 
-            onClick={handleSave}
-            disabled={!canSave}
-            size="sm"
-          >
-            Save
-          </Button>
+          <div className="flex items-center gap-2">
+            <AnimatePresence>
+              {showSavedIndicator && (
+                <motion.div
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  className="text-sm text-muted-foreground flex items-center gap-1"
+                >
+                  <span className="text-green-600 dark:text-green-400">✓</span>
+                  <span>Saved</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <Button 
+              onClick={handleSave}
+              disabled={!canSave}
+              size="sm"
+            >
+              Save
+            </Button>
+          </div>
         </div>
       </header>
 

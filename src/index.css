@@ -165,3 +165,38 @@ h1, h2, h3, h4, h5, h6 {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Page transition animations */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.page-transition-enter {
+  animation: page-enter 250ms ease-out forwards;
+}
+
+.page-transition-exit {
+  animation: page-exit 200ms ease-in forwards;
+}
+
+.page-transition {
+  transition: opacity 250ms ease-out, transform 250ms ease-out;
+}

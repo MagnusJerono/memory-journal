@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
-import { Entry, Chapter, Book, AppView, NavigationTab } from './lib/types';
+import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
+import { DesktopSidebar } from './components/navigation/DesktopSidebar';
 import { Toaster } from '@/components/ui/sonner';
-import { useNightMode } from './hooks/use-night-mode';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useIsMobile } from './hooks/use-mobile';
 import { LanguageProvider } from './hooks/use-language.tsx';
+import { useJournalData } from './hooks/use-journal-data';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { PromptsScreen } from './components/screens/PromptsScreen';
@@ -18,12 +20,22 @@ import { EntryReadScreen } from './components/screens/EntryReadScreen';
 import { EntryEditScreen } from './components/screens/EntryEditScreen';
 
 function AppContent() {
-  const [entries, setEntries] = useKV<Entry[]>('tightly-entries', []);
-  const [chapters, setChapters] = useKV<Chapter[]>('tightly-chapters', []);
-  const [books, setBooks] = useKV<Book[]>('tightly-books', []);
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
-  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useNightMode();
+  const { isDarkMode } = useTheme();
   const isMobile = useIsMobile();
+  const {
+    entries,
+    chapters,
+    books,
+    saveEntry,
+    deleteEntry,
+    toggleStar,
+    saveChapter,
+    deleteChapter,
+    assignChapter,
+    saveBook,
+    deleteBook,
+  } = useJournalData();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -32,100 +44,6 @@ function AppContent() {
       document.documentElement.classList.remove('dark-mode');
     }
   }, [isDarkMode]);
-
-  const entryList = (entries || []).map(e => ({
-    ...e,
-    is_starred: e.is_starred ?? false,
-    is_draft: e.is_draft ?? false,
-    chapter_id: e.chapter_id ?? null,
-    prompt_used: e.prompt_used ?? null,
-  }));
-  
-  const chapterList = (chapters || []).map(c => ({
-    ...c,
-    is_pinned: c.is_pinned ?? false,
-    is_archived: c.is_archived ?? false,
-    order: c.order ?? 0,
-  }));
-
-  const bookList = books || [];
-
-  const handleSaveEntry = (entry: Entry) => {
-    setEntries((current) => {
-      const list = current || [];
-      const existing = list.findIndex(e => e.id === entry.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...entry, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, entry];
-    });
-  };
-
-  const handleDeleteEntry = (entryId: string) => {
-    setEntries((current) => (current || []).filter(e => e.id !== entryId));
-  };
-
-  const handleToggleStar = (entryId: string) => {
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => 
-        e.id === entryId 
-          ? { ...e, is_starred: !e.is_starred, updated_at: new Date().toISOString() }
-          : e
-      );
-    });
-  };
-
-  const handleSaveChapter = (chapter: Chapter) => {
-    setChapters((current) => {
-      const list = current || [];
-      const existing = list.findIndex(c => c.id === chapter.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...chapter, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, { ...chapter, order: list.length }];
-    });
-  };
-
-  const handleDeleteChapter = (chapterId: string) => {
-    setChapters((current) => (current || []).filter(c => c.id !== chapterId));
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => e.chapter_id === chapterId ? { ...e, chapter_id: null } : e);
-    });
-  };
-
-  const handleAssignChapter = (entryId: string, chapterId: string | null) => {
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => 
-        e.id === entryId 
-          ? { ...e, chapter_id: chapterId, updated_at: new Date().toISOString() }
-          : e
-      );
-    });
-  };
-
-  const handleSaveBook = (book: Book) => {
-    setBooks((current) => {
-      const list = current || [];
-      const existing = list.findIndex(b => b.id === book.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...book, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, book];
-    });
-  };
-
-  const handleDeleteBook = (bookId: string) => {
-    setBooks((current) => (current || []).filter(b => b.id !== bookId));
-  };
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
@@ -179,13 +97,9 @@ function AppContent() {
       case 'home':
         return (
           <HomeScreen
-            entries={entryList}
-            chapters={chapterList}
+            entries={entries}
+            chapters={chapters}
             onNavigate={navigate}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isDarkMode={isDarkMode}
-            isNightTime={isNightTime}
           />
         );
 
@@ -193,10 +107,6 @@ function AppContent() {
         return (
           <PromptsScreen
             onNavigate={navigate}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
           />
         );
 
@@ -204,35 +114,30 @@ function AppContent() {
         return (
           <EntryEditScreen
             entry={null}
-            chapters={chapterList}
+            chapters={chapters}
             promptId={currentView.promptId}
             onSave={(entry) => {
-              handleSaveEntry(entry);
+              saveEntry(entry);
               navigate({ type: 'entry-read', entryId: entry.id });
             }}
             onBack={() => navigate({ type: 'home' })}
             onNavigate={navigate}
-            isDarkMode={isDarkMode}
           />
         );
 
       case 'chapters':
         return (
           <ChaptersScreen
-            chapters={chapterList}
-            entries={entryList}
+            chapters={chapters}
+            entries={entries}
             onNavigate={navigate}
-            onSaveChapter={handleSaveChapter}
-            onDeleteChapter={handleDeleteChapter}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
+            onSaveChapter={saveChapter}
+            onDeleteChapter={deleteChapter}
           />
         );
 
       case 'chapter-detail':
-        const chapter = chapterList.find(c => c.id === currentView.chapterId);
+        const chapter = chapters.find(c => c.id === currentView.chapterId);
         if (!chapter) {
           navigate({ type: 'chapters' });
           return null;
@@ -240,20 +145,16 @@ function AppContent() {
         return (
           <ChapterDetailScreen
             chapter={chapter}
-            entries={entryList.filter(e => e.chapter_id === currentView.chapterId)}
+            entries={entries.filter(e => e.chapter_id === currentView.chapterId)}
             onNavigate={navigate}
-            onSaveChapter={handleSaveChapter}
-            onDeleteChapter={handleDeleteChapter}
-            onToggleStar={handleToggleStar}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
+            onSaveChapter={saveChapter}
+            onDeleteChapter={deleteChapter}
+            onToggleStar={toggleStar}
           />
         );
 
       case 'entry-read':
-        const readEntry = entryList.find(e => e.id === currentView.entryId);
+        const readEntry = entries.find(e => e.id === currentView.entryId);
         if (!readEntry) {
           navigate({ type: 'home' });
           return null;
@@ -261,24 +162,20 @@ function AppContent() {
         return (
           <EntryReadScreen
             entry={readEntry}
-            chapter={chapterList.find(c => c.id === readEntry.chapter_id) || null}
+            chapter={chapters.find(c => c.id === readEntry.chapter_id) || null}
             onNavigate={navigate}
-            onToggleStar={() => handleToggleStar(readEntry.id)}
+            onToggleStar={() => toggleStar(readEntry.id)}
             onDelete={() => {
-              handleDeleteEntry(readEntry.id);
+              deleteEntry(readEntry.id);
               navigate({ type: 'home' });
             }}
-            onAssignChapter={(chapterId) => handleAssignChapter(readEntry.id, chapterId)}
-            chapters={chapterList}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
+            onAssignChapter={(chapterId) => assignChapter(readEntry.id, chapterId)}
+            chapters={chapters}
           />
         );
 
       case 'entry-edit':
-        const editEntry = entryList.find(e => e.id === currentView.entryId);
+        const editEntry = entries.find(e => e.id === currentView.entryId);
         if (!editEntry) {
           navigate({ type: 'home' });
           return null;
@@ -286,67 +183,54 @@ function AppContent() {
         return (
           <EntryEditScreen
             entry={editEntry}
-            chapters={chapterList}
+            chapters={chapters}
             onSave={(entry) => {
-              handleSaveEntry(entry);
+              saveEntry(entry);
               navigate({ type: 'entry-read', entryId: entry.id });
             }}
             onBack={() => navigate({ type: 'entry-read', entryId: editEntry.id })}
             onNavigate={navigate}
             onDelete={() => {
-              handleDeleteEntry(editEntry.id);
+              deleteEntry(editEntry.id);
               navigate({ type: 'home' });
             }}
-            isDarkMode={isDarkMode}
           />
         );
 
       case 'search':
         return (
           <SearchScreen
-            entries={entryList}
-            chapters={chapterList}
+            entries={entries}
+            chapters={chapters}
             onNavigate={navigate}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
           />
         );
 
       case 'print':
         return (
           <PrintScreen
-            books={bookList}
-            entries={entryList}
-            chapters={chapterList}
+            books={books}
+            entries={entries}
+            chapters={chapters}
             onNavigate={navigate}
-            onSaveBook={handleSaveBook}
-            onDeleteBook={handleDeleteBook}
-            isDarkMode={isDarkMode}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
+            onSaveBook={saveBook}
+            onDeleteBook={deleteBook}
           />
         );
 
       case 'print-builder':
         return (
           <PrintScreen
-            books={bookList}
-            entries={entryList}
-            chapters={chapterList}
+            books={books}
+            entries={entries}
+            chapters={chapters}
             onNavigate={navigate}
-            onSaveBook={handleSaveBook}
-            onDeleteBook={handleDeleteBook}
-            isDarkMode={isDarkMode}
+            onSaveBook={saveBook}
+            onDeleteBook={deleteBook}
             builderMode={{
               bookId: currentView.bookId,
               step: currentView.step
             }}
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            isNightTime={isNightTime}
           />
         );
 
@@ -361,10 +245,30 @@ function AppContent() {
     <div className="min-h-screen relative">
       <DreamyBackground isDarkMode={isDarkMode} />
       
-      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
-        {renderScreen()}
+      {/* Desktop Sidebar */}
+      {!isMobile && showBottomNav && (
+        <DesktopSidebar
+          currentTab={getCurrentTab()}
+          onTabChange={handleTabChange}
+        />
+      )}
+      
+      {/* Main Content with Page Transitions */}
+      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''} ${!isMobile && showBottomNav ? 'ml-64' : ''}`}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView.type}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            {renderScreen()}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
+      {/* Mobile Bottom Navigation */}
       {showBottomNav && isMobile && (
         <BottomNav
           currentTab={getCurrentTab()}
@@ -380,9 +284,11 @@ function AppContent() {
 
 function App() {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

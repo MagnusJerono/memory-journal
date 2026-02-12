@@ -9,26 +9,20 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SearchScreenProps {
   entries: Entry[];
   chapters: Chapter[];
   onNavigate: (view: AppView) => void;
-  isDarkMode: boolean;
-  themeMode?: 'auto' | 'light' | 'dark';
-  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
-  isNightTime?: boolean;
 }
 
 export function SearchScreen({
   entries,
   chapters,
-  onNavigate,
-  isDarkMode,
-  themeMode = 'auto',
-  onThemeModeChange,
-  isNightTime = false
+  onNavigate
 }: SearchScreenProps) {
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,14 +55,12 @@ export function SearchScreen({
               currentTab="search" 
               isDarkMode={isDarkMode} 
             />
-            {onThemeModeChange && (
-              <SettingsPanel
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
-            )}
+            <SettingsPanel
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+              isDarkMode={isDarkMode}
+              isNightTime={isNightTime}
+            />
           </div>
           <div className="relative">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />

@@ -27,6 +27,7 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface PrintScreenProps {
   books: Book[];
@@ -35,14 +36,10 @@ interface PrintScreenProps {
   onNavigate: (view: AppView) => void;
   onSaveBook: (book: Book) => void;
   onDeleteBook: (bookId: string) => void;
-  isDarkMode: boolean;
   builderMode?: {
     bookId?: string;
     step: 1 | 2 | 3 | 4;
   };
-  themeMode?: 'auto' | 'light' | 'dark';
-  onThemeModeChange?: (mode: 'auto' | 'light' | 'dark') => void;
-  isNightTime?: boolean;
 }
 
 export function PrintScreen({
@@ -52,12 +49,9 @@ export function PrintScreen({
   onNavigate,
   onSaveBook,
   onDeleteBook,
-  isDarkMode,
-  builderMode,
-  themeMode = 'auto',
-  onThemeModeChange,
-  isNightTime = false
+  builderMode
 }: PrintScreenProps) {
+  const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
@@ -126,14 +120,12 @@ export function PrintScreen({
               currentTab="print" 
               isDarkMode={isDarkMode} 
             />
-            {onThemeModeChange && (
-              <SettingsPanel
-                themeMode={themeMode}
-                onThemeModeChange={onThemeModeChange}
-                isDarkMode={isDarkMode}
-                isNightTime={isNightTime}
-              />
-            )}
+            <SettingsPanel
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+              isDarkMode={isDarkMode}
+              isNightTime={isNightTime}
+            />
           </div>
         </div>
       </header>
