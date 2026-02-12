@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, ChapterIcon, AppView } from '@/lib/types';
+import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
 import { searchLocations, getCurrentLocation, GeocodingResult } from '@/lib/geocoding';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,11 @@ import {
   Trash,
   Plus,
   ArrowsClockwise,
-  CircleNotch
+  CircleNotch,
+  Check,
+  CaretDown,
+  CaretUp,
+  PencilSimple
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -80,6 +84,7 @@ interface EntryEditScreenProps {
   onBack: () => void;
   onDelete?: () => void;
   onNavigate?: (view: AppView) => void;
+  onSaveChapter?: (chapter: Chapter) => void;
 }
 
 export function EntryEditScreen({ 
@@ -89,7 +94,8 @@ export function EntryEditScreen({
   onSave, 
   onBack, 
   onDelete,
-  onNavigate
+  onNavigate,
+  onSaveChapter
 }: EntryEditScreenProps) {
   const { isDarkMode } = useTheme();
   const { t, language } = useLanguage();
@@ -105,6 +111,24 @@ export function EntryEditScreen({
   const [highlights, setHighlights] = useState<string[]>(entry?.highlights_ai || []);
   const [story, setStory] = useState(entry?.story_ai || '');
   const [chapterId, setChapterId] = useState<string | null>(entry?.chapter_id || null);
+  const [tags, setTags] = useState(entry?.tags_ai || { people: [], places: [], moods: [], themes: [] });
+  const [missingInfoQuestions, setMissingInfoQuestions] = useState<string[]>(entry?.missing_info_questions || []);
+  const [selectedHighlights, setSelectedHighlights] = useState<Set<number>>(
+    new Set(entry?.highlights_ai?.map((_, idx) => idx) || [])
+  );
+  const [selectedTags, setSelectedTags] = useState({
+    people: new Set<number>(entry?.tags_ai?.people?.map((_, idx) => idx) || []),
+    places: new Set<number>(entry?.tags_ai?.places?.map((_, idx) => idx) || []),
+    moods: new Set<number>(entry?.tags_ai?.moods?.map((_, idx) => idx) || []),
+    themes: new Set<number>(entry?.tags_ai?.themes?.map((_, idx) => idx) || [])
+  });
+  const [newHighlight, setNewHighlight] = useState('');
+  const [isEditingStory, setIsEditingStory] = useState(false);
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
+  const [isCreatingChapter, setIsCreatingChapter] = useState(false);
+  const [newChapterName, setNewChapterName] = useState('');
+  const [newChapterIcon, setNewChapterIcon] = useState<ChapterIcon>('star');
+  const [newChapterColor, setNewChapterColor] = useState('rose');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -222,11 +246,11 @@ export function EntryEditScreen({
         title_ai: entry?.title_ai || null,
         transcript: transcript.trim() || null,
         story_ai: story || null,
-        highlights_ai: highlights.length > 0 ? highlights : null,
-        tags_ai: entry?.tags_ai || null,
+        highlights_ai: getSelectedHighlights().length > 0 ? getSelectedHighlights() : null,
+        tags_ai: getSelectedTags(),
         location_suggestions: entry?.location_suggestions || null,
         manual_locations: manualLocations.length > 0 ? manualLocations : null,
-        missing_info_questions: entry?.missing_info_questions || null,
+        missing_info_questions: missingInfoQuestions.length > 0 ? missingInfoQuestions : null,
         uncertain_claims: entry?.uncertain_claims || null,
         is_locked: entry?.is_locked || false,
         is_starred: entry?.is_starred || false,
@@ -322,6 +346,20 @@ export function EntryEditScreen({
     processImageFiles(Array.from(e.dataTransfer.files));
   }, [photos.length, processImageFiles]);
 
+  // Helper functions to get selected items
+  const getSelectedHighlights = (): string[] => {
+    return highlights.filter((_, idx) => selectedHighlights.has(idx));
+  };
+
+  const getSelectedTags = () => {
+    return {
+      people: tags.people.filter((_, idx) => selectedTags.people.has(idx)),
+      places: tags.places.filter((_, idx) => selectedTags.places.has(idx)),
+      moods: tags.moods.filter((_, idx) => selectedTags.moods.has(idx)),
+      themes: tags.themes.filter((_, idx) => selectedTags.themes.has(idx))
+    };
+  };
+
   const handleGenerate = async () => {
     if (!transcript || transcript.trim().length < 40) {
       toast.error('Please add more to your story', {
@@ -350,11 +388,22 @@ export function EntryEditScreen({
 
       setHighlights(aiResult.highlights);
       setStory(aiResult.story);
+      setTags(aiResult.tags);
+      setMissingInfoQuestions(aiResult.missing_info_questions || []);
       if (!title.trim()) setTitle(aiResult.title);
+      
+      // Initialize selected highlights and tags (all checked by default)
+      setSelectedHighlights(new Set(aiResult.highlights.map((_, idx) => idx)));
+      setSelectedTags({
+        people: new Set(aiResult.tags.people.map((_, idx) => idx)),
+        places: new Set(aiResult.tags.places.map((_, idx) => idx)),
+        moods: new Set(aiResult.tags.moods.map((_, idx) => idx)),
+        themes: new Set(aiResult.tags.themes.map((_, idx) => idx))
+      });
       
       toast.success('Your memory came to life ✨');
     } catch {
-      toast.error('Failed to generate story');
+      toast.error('Something went wrong — try again');
     } finally {
       setIsGenerating(false);
     }
@@ -371,11 +420,11 @@ export function EntryEditScreen({
       title_ai: entry?.title_ai || (title.trim() ? null : title.trim() || 'Untitled Memory'),
       transcript: transcript.trim() || null,
       story_ai: story || null,
-      highlights_ai: highlights.length > 0 ? highlights : null,
-      tags_ai: entry?.tags_ai || null,
+      highlights_ai: getSelectedHighlights().length > 0 ? getSelectedHighlights() : null,
+      tags_ai: getSelectedTags(),
       location_suggestions: entry?.location_suggestions || null,
       manual_locations: manualLocations.length > 0 ? manualLocations : null,
-      missing_info_questions: entry?.missing_info_questions || null,
+      missing_info_questions: missingInfoQuestions.length > 0 ? missingInfoQuestions : null,
       uncertain_claims: entry?.uncertain_claims || null,
       is_locked: entry?.is_locked || false,
       is_starred: entry?.is_starred || false,
@@ -391,16 +440,73 @@ export function EntryEditScreen({
     toast.success(isNewEntry ? 'Memory saved' : 'Changes saved');
   };
 
-  const handleAddHighlight = () => {
-    setHighlights(prev => [...prev, '']);
+  const toggleHighlight = (index: number) => {
+    setSelectedHighlights(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
 
-  const handleUpdateHighlight = (index: number, value: string) => {
-    setHighlights(prev => prev.map((h, i) => i === index ? value : h));
+  const addCustomHighlight = () => {
+    if (newHighlight.trim()) {
+      const newIndex = highlights.length;
+      setHighlights(prev => [...prev, newHighlight.trim()]);
+      setSelectedHighlights(prev => new Set([...prev, newIndex]));
+      setNewHighlight('');
+    }
   };
 
-  const handleRemoveHighlight = (index: number) => {
-    setHighlights(prev => prev.filter((_, i) => i !== index));
+  const toggleTag = (category: 'people' | 'places' | 'moods' | 'themes', index: number) => {
+    setSelectedTags(prev => {
+      const next = { ...prev };
+      const categorySet = new Set(prev[category]);
+      if (categorySet.has(index)) {
+        categorySet.delete(index);
+      } else {
+        categorySet.add(index);
+      }
+      next[category] = categorySet;
+      return next;
+    });
+  };
+
+  const handleQuestionClick = (question: string) => {
+    setTranscript(prev => prev + (prev ? '\n\n' : '') + question + '\n\n');
+    // Remove the question from the list after it's been clicked
+    setMissingInfoQuestions(prev => prev.filter(q => q !== question));
+    textareaRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => textareaRef.current?.focus(), 300);
+  };
+
+  const handleCreateChapter = () => {
+    if (!newChapterName.trim() || !onSaveChapter) return;
+    
+    const now = new Date().toISOString();
+    const newChapter: Chapter = {
+      id: uuid(),
+      name: newChapterName.trim(),
+      description: null,
+      color: newChapterColor,
+      icon: newChapterIcon,
+      is_pinned: false,
+      is_archived: false,
+      order: chapters.length,
+      created_at: now,
+      updated_at: now
+    };
+    
+    onSaveChapter(newChapter);
+    setChapterId(newChapter.id);
+    setIsCreatingChapter(false);
+    setNewChapterName('');
+    setNewChapterIcon('star');
+    setNewChapterColor('rose');
+    toast.success('Chapter created');
   };
 
   const canSave = (transcript.trim().length >= 40 && hasGenerated) || !isNewEntry;
@@ -775,44 +881,213 @@ export function EntryEditScreen({
 
         {hasGenerated && (
           <>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-muted-foreground">Highlights</label>
-                <Button variant="ghost" size="sm" onClick={handleAddHighlight} className="h-7 text-xs">
-                  <Plus className="mr-1 w-3 h-3" /> Add
+            {/* Story Section - Hero of post-generation */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">Your Story</label>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsEditingStory(!isEditingStory)}
+                  className="h-7 text-xs"
+                >
+                  <PencilSimple className="mr-1 w-3 h-3" /> 
+                  {isEditingStory ? 'Done' : 'Edit'}
                 </Button>
               </div>
+              
+              {isEditingStory ? (
+                <Textarea
+                  value={story}
+                  onChange={(e) => setStory(e.target.value)}
+                  className="min-h-[200px] resize-none font-serif text-base leading-relaxed"
+                />
+              ) : (
+                <div className="bg-card/50 backdrop-blur-sm border border-border/30 rounded-lg p-6 shadow-sm">
+                  <p className="font-serif text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                    {story}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Follow-up Questions Section */}
+            {missingInfoQuestions.length > 0 && (
               <div className="space-y-2">
-                {highlights.map((highlight, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <Input
-                      value={highlight}
-                      onChange={(e) => handleUpdateHighlight(idx, e.target.value)}
-                      placeholder="A memorable moment..."
-                      className="flex-1"
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveHighlight(idx)} className="flex-shrink-0">
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">💭</span>
+                  <label className="text-xs font-medium text-muted-foreground">Want to add more detail?</label>
+                </div>
+                <div className="space-y-2">
+                  {missingInfoQuestions.map((question, questionIdx) => (
+                    <button
+                      key={questionIdx}
+                      onClick={() => handleQuestionClick(question)}
+                      className="w-full text-left p-3 bg-accent/5 hover:bg-accent/10 border border-accent/20 rounded-lg transition-colors"
+                    >
+                      <p className="text-sm text-foreground/80">{question}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Highlights Selection */}
+            <div className="space-y-3">
+              <label className="text-xs font-medium text-muted-foreground">Highlights</label>
+              <div className="space-y-2">
+                {highlights.map((highlight, highlightIdx) => (
+                  <label 
+                    key={highlightIdx} 
+                    className="flex items-start gap-3 p-3 bg-card/30 rounded-lg border border-border/30 cursor-pointer hover:bg-card/50 transition-colors"
+                  >
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={selectedHighlights.has(highlightIdx)}
+                        onChange={() => toggleHighlight(highlightIdx)}
+                        className="w-4 h-4 rounded border-border/50 text-accent focus:ring-accent focus:ring-offset-0"
+                      />
+                    </div>
+                    <span className={cn(
+                      "text-sm flex-1 transition-colors",
+                      selectedHighlights.has(highlightIdx) ? "text-foreground" : "text-muted-foreground line-through"
+                    )}>
+                      {highlight}
+                    </span>
+                  </label>
                 ))}
+                
+                <div className="flex gap-2">
+                  <Input
+                    value={newHighlight}
+                    onChange={(e) => setNewHighlight(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addCustomHighlight()}
+                    placeholder="Add a custom highlight..."
+                    className="flex-1 text-sm"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={addCustomHighlight}
+                    disabled={!newHighlight.trim()}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Generated Story</label>
-              <Textarea
-                value={story}
-                onChange={(e) => setStory(e.target.value)}
-                className="min-h-[200px] resize-none"
-              />
+            {/* Tags Collapsible Section */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+                className="w-full flex items-center justify-between p-3 bg-card/30 rounded-lg border border-border/30 hover:bg-card/40 transition-colors"
+              >
+                <span className="text-xs font-medium text-muted-foreground">Tags & Details</span>
+                {isTagsExpanded ? (
+                  <CaretUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <CaretDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {isTagsExpanded && (
+                <div className="space-y-4 pt-2">
+                  {tags.people.length > 0 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">People</label>
+                      <div className="space-y-1.5">
+                        {tags.people.map((person, personIdx) => (
+                          <label key={personIdx} className="flex items-center gap-2 p-2 rounded hover:bg-card/30 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedTags.people.has(personIdx)}
+                              onChange={() => toggleTag('people', personIdx)}
+                              className="w-3.5 h-3.5 rounded border-border/50 text-accent"
+                            />
+                            <span className={cn("text-sm", selectedTags.people.has(personIdx) ? "text-foreground" : "text-muted-foreground line-through")}>{person}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {tags.places.length > 0 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">Places</label>
+                      <div className="space-y-1.5">
+                        {tags.places.map((place, placeIdx) => (
+                          <label key={placeIdx} className="flex items-center gap-2 p-2 rounded hover:bg-card/30 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedTags.places.has(placeIdx)}
+                              onChange={() => toggleTag('places', placeIdx)}
+                              className="w-3.5 h-3.5 rounded border-border/50 text-accent"
+                            />
+                            <span className={cn("text-sm", selectedTags.places.has(placeIdx) ? "text-foreground" : "text-muted-foreground line-through")}>{place}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {tags.moods.length > 0 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">Moods</label>
+                      <div className="space-y-1.5">
+                        {tags.moods.map((mood, moodIdx) => (
+                          <label key={moodIdx} className="flex items-center gap-2 p-2 rounded hover:bg-card/30 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedTags.moods.has(moodIdx)}
+                              onChange={() => toggleTag('moods', moodIdx)}
+                              className="w-3.5 h-3.5 rounded border-border/50 text-accent"
+                            />
+                            <span className={cn("text-sm", selectedTags.moods.has(moodIdx) ? "text-foreground" : "text-muted-foreground line-through")}>{mood}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {tags.themes.length > 0 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">Themes</label>
+                      <div className="space-y-1.5">
+                        {tags.themes.map((theme, themeIdx) => (
+                          <label key={themeIdx} className="flex items-center gap-2 p-2 rounded hover:bg-card/30 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedTags.themes.has(themeIdx)}
+                              onChange={() => toggleTag('themes', themeIdx)}
+                              className="w-3.5 h-3.5 rounded border-border/50 text-accent"
+                            />
+                            <span className={cn("text-sm", selectedTags.themes.has(themeIdx) ? "text-foreground" : "text-muted-foreground line-through")}>{theme}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
 
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-2 block">Chapter</label>
-          <Select value={chapterId || 'none'} onValueChange={(v) => setChapterId(v === 'none' ? null : v)}>
+          <Select 
+            value={chapterId || 'none'} 
+            onValueChange={(v) => {
+              if (v === 'new-chapter') {
+                setIsCreatingChapter(true);
+              } else {
+                setChapterId(v === 'none' ? null : v);
+                setIsCreatingChapter(false);
+              }
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select chapter" />
             </SelectTrigger>
@@ -823,8 +1098,88 @@ export function EntryEditScreen({
                   {getIconEmoji(ch.icon)} {ch.name}
                 </SelectItem>
               ))}
+              <SelectItem value="new-chapter">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Chapter</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
+
+          {isCreatingChapter && onSaveChapter && (
+            <div className="mt-4 p-4 bg-card/30 rounded-lg border border-border/30 space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Chapter Name</label>
+                <Input
+                  value={newChapterName}
+                  onChange={(e) => setNewChapterName(e.target.value)}
+                  placeholder="e.g., College Days, Summer 2023..."
+                  className="text-sm"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Icon</label>
+                <Select value={newChapterIcon} onValueChange={(v) => setNewChapterIcon(v as ChapterIcon)}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHAPTER_ICONS.map(icon => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        {icon.emoji} {icon.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Color</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CHAPTER_COLORS.map(col => (
+                    <button
+                      key={col.value}
+                      onClick={() => setNewChapterColor(col.value)}
+                      className={cn(
+                        "p-2 rounded-lg border-2 transition-all text-xs font-medium",
+                        newChapterColor === col.value 
+                          ? "border-foreground/30 shadow-sm" 
+                          : "border-transparent hover:border-foreground/10"
+                      )}
+                      style={{ backgroundColor: col.color }}
+                    >
+                      {col.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setIsCreatingChapter(false);
+                    setNewChapterName('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleCreateChapter}
+                  disabled={!newChapterName.trim()}
+                  className="flex-1"
+                >
+                  Create
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {!isNewEntry && onDelete && (

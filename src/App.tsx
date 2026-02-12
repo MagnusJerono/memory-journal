@@ -123,6 +123,7 @@ function AppContent() {
             }}
             onBack={() => navigate({ type: 'home' })}
             onNavigate={navigate}
+            onSaveChapter={saveChapter}
           />
         );
 
@@ -197,6 +198,7 @@ function AppContent() {
               deleteEntry(editEntry.id);
               navigate({ type: 'home' });
             }}
+            onSaveChapter={saveChapter}
           />
         );
 
