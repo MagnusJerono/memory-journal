@@ -454,8 +454,9 @@ export function EntryEditScreen({
 
   const addCustomHighlight = () => {
     if (newHighlight.trim()) {
+      const newIndex = highlights.length;
       setHighlights(prev => [...prev, newHighlight.trim()]);
-      setSelectedHighlights(prev => new Set([...prev, highlights.length]));
+      setSelectedHighlights(prev => new Set([...prev, newIndex]));
       setNewHighlight('');
     }
   };
@@ -476,6 +477,8 @@ export function EntryEditScreen({
 
   const handleQuestionClick = (question: string) => {
     setTranscript(prev => prev + (prev ? '\n\n' : '') + question + '\n\n');
+    // Remove the question from the list after it's been clicked
+    setMissingInfoQuestions(prev => prev.filter(q => q !== question));
     textareaRef.current?.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => textareaRef.current?.focus(), 300);
   };
@@ -1075,7 +1078,7 @@ export function EntryEditScreen({
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-2 block">Chapter</label>
           <Select 
-            value={isCreatingChapter ? 'new-chapter' : (chapterId || 'none')} 
+            value={chapterId || 'none'} 
             onValueChange={(v) => {
               if (v === 'new-chapter') {
                 setIsCreatingChapter(true);
