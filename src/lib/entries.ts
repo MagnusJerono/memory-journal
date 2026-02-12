@@ -37,6 +37,7 @@ interface GenerationOptions {
   refinementAnswers?: QuestionAnswer[];
   imageAnalysis?: ImageAnalysisResult | null;
   manualLocations?: string[];
+  personalVoiceSample?: string;
 }
 
 export interface ImageAnalysisResult {
@@ -101,7 +102,7 @@ If you cannot identify any specific locations, return empty locations array but 
 }
 
 function buildSystemPrompt(options: GenerationOptions): string {
-  const { tone, customTonePrompt, outputLanguage, refinementAnswers, imageAnalysis, manualLocations } = options;
+  const { tone, customTonePrompt, outputLanguage, refinementAnswers, imageAnalysis, manualLocations, personalVoiceSample } = options;
   
   let toneInstructions: string;
   if (tone === 'custom' && customTonePrompt) {
@@ -114,6 +115,20 @@ function buildSystemPrompt(options: GenerationOptions): string {
 
   const languageInstruction = outputLanguage && outputLanguage !== 'en'
     ? `\n\nIMPORTANT: Write the entire output (title, highlights, story, tags) in ${getLanguageName(outputLanguage)}. The JSON keys must remain in English, but all values/content must be in ${getLanguageName(outputLanguage)}.`
+    : '';
+
+  const personalVoiceSection = personalVoiceSample && personalVoiceSample.trim().length > 0
+    ? `\n\nIMPORTANT - MATCH THE USER'S PERSONAL VOICE:
+The user has provided a sample of how they naturally write. Study this sample carefully and mirror their:
+- Sentence length and structure
+- Vocabulary level and word choices
+- Use of humor, emotion, or understatement
+- Punctuation habits and paragraph style
+
+Their writing sample:
+"${personalVoiceSample.trim()}"
+
+Write the story as if the user wrote it themselves.`
     : '';
 
   const refinementSection = refinementAnswers && refinementAnswers.length > 0
@@ -205,7 +220,7 @@ Additional style constraints:
 - modern, concise, not cringe
 - no therapy language
 - no invented names/places (but DO correct obvious speech-to-text errors for real places)
-- BE SPECIFIC with locations - use neighborhood names, landmark names, exact venue names when known${languageInstruction}${refinementSection}`;
+- BE SPECIFIC with locations - use neighborhood names, landmark names, exact venue names when known${languageInstruction}${personalVoiceSection}${refinementSection}`;
 }
 
 export async function generateAIContent(
@@ -213,7 +228,8 @@ export async function generateAIContent(
   tone: StoryTone = 'natural',
   customTonePrompt?: string,
   outputLanguage?: string,
-  refinementAnswers?: QuestionAnswer[]
+  refinementAnswers?: QuestionAnswer[],
+  personalVoiceSample?: string
 ): Promise<AIGenerationResult> {
   let imageAnalysis: ImageAnalysisResult | null = null;
   
@@ -234,7 +250,8 @@ export async function generateAIContent(
     outputLanguage, 
     refinementAnswers,
     imageAnalysis,
-    manualLocations: entry.manual_locations || undefined
+    manualLocations: entry.manual_locations || undefined,
+    personalVoiceSample
   });
   const fullPrompt = `${systemPrompt}
 

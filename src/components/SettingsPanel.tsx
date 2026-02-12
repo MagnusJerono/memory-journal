@@ -4,6 +4,7 @@ import { useLanguage } from '@/hooks/use-language.tsx';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Sheet,
   SheetContent,
@@ -34,7 +35,8 @@ import {
   SignOut,
   Info,
   Envelope,
-  Detective
+  Detective,
+  Pen
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -67,6 +69,7 @@ export function SettingsPanel({
     emailUpdates: false,
     autoSave: true
   });
+  const [personalVoiceSample, setPersonalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
   
   const { language, setLanguage, autoDetect, setAutoDetect, t } = useLanguage();
 
@@ -298,6 +301,41 @@ export function SettingsPanel({
                   />
                 }
               />
+            </div>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          {/* My Writing Voice Section */}
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <Pen weight="duotone" className="w-4 h-4" />
+              My Writing Voice
+            </h3>
+            
+            <div className="space-y-3">
+              <div>
+                <Textarea
+                  value={personalVoiceSample || ''}
+                  onChange={(e) => setPersonalVoiceSample(e.target.value)}
+                  placeholder="Paste a paragraph or two of how you naturally write — a journal entry, a message to a friend, anything that sounds like you..."
+                  className="min-h-32 resize-y text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  We'll match this style when creating your stories
+                </p>
+              </div>
+              {personalVoiceSample && personalVoiceSample.trim().length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setPersonalVoiceSample('')}
+                  className="w-full text-muted-foreground hover:text-foreground"
+                >
+                  <Trash weight="duotone" className="w-4 h-4 mr-2" />
+                  Clear writing sample
+                </Button>
+              )}
             </div>
           </div>
 

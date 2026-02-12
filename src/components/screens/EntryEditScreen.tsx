@@ -110,6 +110,7 @@ export function EntryEditScreen({
   const [storyTone, setStoryTone] = useKV<StoryTone>('tightly-story-tone', 'natural');
   const [storyLanguage, setStoryLanguage] = useKV<string>('tightly-story-language', 'en');
   const [customTonePrompt, setCustomTonePrompt] = useKV<string>('tightly-custom-tone', '');
+  const [personalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
   const [isDragging, setIsDragging] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
@@ -340,14 +341,16 @@ export function EntryEditScreen({
         tempEntry, 
         currentTone,
         currentTone === 'custom' ? (customTonePrompt || undefined) : undefined,
-        storyLanguage || 'en'
+        storyLanguage || 'en',
+        undefined,
+        personalVoiceSample || undefined
       );
 
       setHighlights(aiResult.highlights);
       setStory(aiResult.story);
       if (!title.trim()) setTitle(aiResult.title);
       
-      toast.success('Story generated');
+      toast.success('Your memory came to life ✨');
     } catch {
       toast.error('Failed to generate story');
     } finally {
@@ -736,11 +739,11 @@ export function EntryEditScreen({
             className="w-full"
           >
             {isGenerating ? (
-              <><CircleNotch className="mr-2 w-4 h-4 animate-spin" /> Generating...</>
+              <><CircleNotch className="mr-2 w-4 h-4 animate-spin" /> Weaving your memory...</>
             ) : hasGenerated ? (
-              <><ArrowsClockwise className="mr-2 w-4 h-4" /> Regenerate Story</>
+              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> ✨ Try a fresh take</>
             ) : (
-              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> Generate Story</>
+              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> ✨ Bring it to life</>
             )}
           </Button>
         </div>

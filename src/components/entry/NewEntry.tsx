@@ -61,6 +61,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
   const [storyTone, setStoryTone] = useKV<StoryTone>('ziel-story-tone', 'natural');
   const [storyLanguage, setStoryLanguage] = useKV<string>('ziel-story-language', 'en');
   const [customTonePrompt, setCustomTonePrompt] = useKV<string>('ziel-custom-tone', '');
+  const [personalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
   const [isDragging, setIsDragging] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
@@ -341,7 +342,9 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
         entry, 
         currentTone,
         currentTone === 'custom' ? (customTonePrompt || undefined) : undefined,
-        storyLanguage || 'en'
+        storyLanguage || 'en',
+        undefined,
+        personalVoiceSample || undefined
       );
 
       entry.title_ai = aiResult.title;
@@ -353,7 +356,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
       entry.uncertain_claims = aiResult.uncertain_claims;
 
       onSave(entry);
-      toast.success('Memory created', {
+      toast.success('Your memory came to life ✨', {
         description: 'Your story has been generated.'
       });
     } catch (error) {
@@ -785,12 +788,12 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
               {isGenerating ? (
                 <>
                   <Spinner className="mr-2 animate-spin" />
-                  Generating your story...
+                  Weaving your memory...
                 </>
               ) : (
                 <>
                   <Sparkle className="mr-2" weight="fill" />
-                  Generate Story
+                  ✨ Bring it to life
                 </>
               )}
             </Button>

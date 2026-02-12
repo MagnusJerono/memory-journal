@@ -1,13 +1,14 @@
 import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, X } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useKV } from '@github/spark/hooks';
 
 interface HomeScreenProps {
   entries: Entry[];
@@ -22,6 +23,8 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { t } = useLanguage();
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
+  const [hasSeenWelcome, setHasSeenWelcome] = useKV<boolean>('tightly-has-seen-welcome', false);
+  
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
@@ -132,6 +135,37 @@ export function HomeScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        {/* Welcome Card - Show on first visit */}
+        {!hasSeenWelcome && !hasEntries && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/10 border border-primary/30 relative"
+          >
+            <button
+              onClick={() => setHasSeenWelcome(true)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-background/50 transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <div className="mb-4">
+              <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
+                Welcome to Tightly ✨
+              </h2>
+              <p className="text-muted-foreground">
+                Your memories deserve to be more than forgotten moments. Let's create your first memory together.
+              </p>
+            </div>
+            <Button 
+              onClick={() => onNavigate({ type: 'prompts-new' })}
+              className="w-full sm:w-auto"
+            >
+              <Sparkle className="mr-2 w-4 h-4" weight="fill" />
+              Create My First Memory
+            </Button>
+          </motion.div>
+        )}
+
         {/* Writing Streak Tracker */}
         {hasEntries && (
           <motion.div
