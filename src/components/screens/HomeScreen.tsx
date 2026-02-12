@@ -50,6 +50,7 @@ export function HomeScreen({
 
   // Writing Streak - Calculate consecutive days with entries
   const calculateStreak = () => {
+    const MILLISECONDS_PER_DAY = 86400000;
     const nonDraftEntries = entries.filter(e => !e.is_draft);
     if (nonDraftEntries.length === 0) return 0;
 
@@ -61,7 +62,7 @@ export function HomeScreen({
     if (datesWithEntries.length === 0) return 0;
 
     const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const yesterday = new Date(Date.now() - MILLISECONDS_PER_DAY).toDateString();
 
     // Check if there's an entry today or yesterday
     if (datesWithEntries[0] !== today && datesWithEntries[0] !== yesterday) {
@@ -75,7 +76,7 @@ export function HomeScreen({
       const expectedDate = new Date(currentDate).toDateString();
       if (dateStr === expectedDate) {
         streak++;
-        currentDate = new Date(currentDate.getTime() - 86400000); // Go back one day
+        currentDate = new Date(currentDate.getTime() - MILLISECONDS_PER_DAY); // Go back one day
       } else {
         break;
       }
@@ -148,7 +149,7 @@ export function HomeScreen({
                   <div className="text-2xl">🔥</div>
                   <div>
                     <p className="font-medium text-foreground">
-                      {writingStreak} day streak
+                      {writingStreak} {writingStreak === 1 ? 'day' : 'days'} streak
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Keep it going! Write today to continue your streak.
