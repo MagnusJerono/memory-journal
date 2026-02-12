@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useIsMobile } from './hooks/use-mobile';
 import { LanguageProvider } from './hooks/use-language.tsx';
 import { useJournalData } from './hooks/use-journal-data';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { PromptsScreen } from './components/screens/PromptsScreen';
@@ -252,9 +253,19 @@ function AppContent() {
         />
       )}
       
-      {/* Main Content */}
+      {/* Main Content with Page Transitions */}
       <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''} ${!isMobile && showBottomNav ? 'ml-64' : ''}`}>
-        {renderScreen()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView.type}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            {renderScreen()}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Mobile Bottom Navigation */}
