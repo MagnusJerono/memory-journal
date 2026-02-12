@@ -45,6 +45,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const GEOCODING_TYPE_ICONS: Record<GeocodingResult['type'], React.ReactNode> = {
   city: <Buildings weight="duotone" className="w-4 h-4" />,
@@ -92,6 +93,7 @@ export function EntryEditScreen({
 }: EntryEditScreenProps) {
   const { isDarkMode } = useTheme();
   const { t, language } = useLanguage();
+  const isMobile = useIsMobile();
   const isNewEntry = !entry;
   const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;
 
@@ -110,6 +112,7 @@ export function EntryEditScreen({
   const [storyTone, setStoryTone] = useKV<StoryTone>('tightly-story-tone', 'natural');
   const [storyLanguage, setStoryLanguage] = useKV<string>('tightly-story-language', 'en');
   const [customTonePrompt, setCustomTonePrompt] = useKV<string>('tightly-custom-tone', '');
+  const [personalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
   const [isDragging, setIsDragging] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
@@ -340,14 +343,16 @@ export function EntryEditScreen({
         tempEntry, 
         currentTone,
         currentTone === 'custom' ? (customTonePrompt || undefined) : undefined,
-        storyLanguage || 'en'
+        storyLanguage || 'en',
+        undefined,
+        personalVoiceSample || undefined
       );
 
       setHighlights(aiResult.highlights);
       setStory(aiResult.story);
       if (!title.trim()) setTitle(aiResult.title);
       
-      toast.success('Story generated');
+      toast.success('Your memory came to life ✨');
     } catch {
       toast.error('Failed to generate story');
     } finally {
@@ -519,22 +524,43 @@ export function EntryEditScreen({
           onDrop={handleDrop}
           className={cn("transition-all", isDragging && "ring-2 ring-primary ring-offset-2")}
         >
-          <label className="text-xs font-medium text-muted-foreground mb-2 block">
-            Photos ({photos.length}/10)
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              📷 {photos.length} of 10 photos
+            </label>
+            {photos.length < 10 && (
+              <span className="text-xs text-muted-foreground">
+                {10 - photos.length} remaining
+              </span>
+            )}
+          </div>
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
-            onChange={(e) => e.target.files && processImageFiles(Array.from(e.target.files))}
+            onChange={(e) => {
+              if (e.target.files) {
+                const fileCount = Array.from(e.target.files).length;
+                processImageFiles(Array.from(e.target.files));
+                if (fileCount > 0) {
+                  toast.success(`Added ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'} ✨`);
+                }
+              }
+            }}
             className="hidden"
           />
           
           {photos.length > 0 && (
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              {photos.map(photo => (
-                <div key={photo.id} className="relative aspect-square group rounded-xl overflow-hidden">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+              {photos.map((photo, index) => (
+                <motion.div
+                  key={photo.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="relative aspect-square group rounded-xl overflow-hidden"
+                >
                   <img src={photo.storage_url} alt="" className="w-full h-full object-cover" />
                   <button
                     onClick={() => setPhotos(prev => prev.filter(p => p.id !== photo.id))}
@@ -542,24 +568,26 @@ export function EntryEditScreen({
                   >
                     <X className="w-3 h-3 text-white" />
                   </button>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
 
           {photos.length < 10 && (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "w-full border-2 border-dashed rounded-xl p-6 text-center transition-all",
-                isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
-              )}
-            >
-              <UploadSimple weight="duotone" className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {isDragging ? "Drop photos here" : "Drag & drop or click to add"}
-              </p>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "flex-1 border-2 border-dashed rounded-xl p-6 text-center transition-all",
+                  isDragging ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"
+                )}
+              >
+                <UploadSimple weight="duotone" className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {isDragging ? "Drop photos here" : isMobile ? "Tap to select multiple photos" : "Drag & drop or click to add photos"}
+                </p>
+              </button>
+            </div>
           )}
         </div>
 
@@ -736,11 +764,11 @@ export function EntryEditScreen({
             className="w-full"
           >
             {isGenerating ? (
-              <><CircleNotch className="mr-2 w-4 h-4 animate-spin" /> Generating...</>
+              <><CircleNotch className="mr-2 w-4 h-4 animate-spin" /> Weaving your memory...</>
             ) : hasGenerated ? (
-              <><ArrowsClockwise className="mr-2 w-4 h-4" /> Regenerate Story</>
+              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> ✨ Try a fresh take</>
             ) : (
-              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> Generate Story</>
+              <><Sparkle className="mr-2 w-4 h-4" weight="fill" /> ✨ Bring it to life</>
             )}
           </Button>
         </div>

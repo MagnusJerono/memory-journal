@@ -1,13 +1,16 @@
 import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, X } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useKV } from '@github/spark/hooks';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 interface HomeScreenProps {
   entries: Entry[];
@@ -22,6 +25,9 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { t } = useLanguage();
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
+  const [hasSeenWelcome, setHasSeenWelcome] = useKV<boolean>('tightly-has-seen-welcome', false);
+  const [lastOTDToastDate, setLastOTDToastDate] = useKV<string>('tightly-last-otd-toast-date', '');
+  
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
@@ -47,6 +53,29 @@ export function HomeScreen({
   };
 
   const onThisDayEntries = getOnThisDayEntries();
+
+  // Show toast once per day if there are "On This Day" memories
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (onThisDayEntries.length > 0 && lastOTDToastDate !== today) {
+      const firstEntry = onThisDayEntries[0];
+      const entryDate = new Date(firstEntry.date);
+      const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
+      
+      // Only show toast for memories from previous years
+      if (yearsAgo > 0) {
+        toast('You have a memory from this day!', {
+          description: `From ${yearsAgo} ${yearsAgo === 1 ? 'year' : 'years'} ago`,
+          action: {
+            label: 'View',
+            onClick: () => onNavigate({ type: 'entry-read', entryId: firstEntry.id }),
+          },
+        });
+      }
+      
+      setLastOTDToastDate(today);
+    }
+  }, [onThisDayEntries, lastOTDToastDate, onNavigate, setLastOTDToastDate]);
 
   // Writing Streak - Calculate consecutive days with entries
   const calculateStreak = () => {
@@ -132,6 +161,37 @@ export function HomeScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        {/* Welcome Card - Show on first visit */}
+        {!hasSeenWelcome && !hasEntries && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/10 border border-primary/30 relative"
+          >
+            <button
+              onClick={() => setHasSeenWelcome(true)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-background/50 transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <div className="mb-4">
+              <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
+                Welcome to Tightly ✨
+              </h2>
+              <p className="text-muted-foreground">
+                Your memories deserve to be more than forgotten moments. Let's create your first memory together.
+              </p>
+            </div>
+            <Button 
+              onClick={() => onNavigate({ type: 'prompts-new' })}
+              className="w-full sm:w-auto"
+            >
+              <Sparkle className="mr-2 w-4 h-4" weight="fill" />
+              Create My First Memory
+            </Button>
+          </motion.div>
+        )}
+
         {/* Writing Streak Tracker */}
         {hasEntries && (
           <motion.div
@@ -301,61 +361,102 @@ export function HomeScreen({
           </motion.section>
         )}
 
-        {/* On This Day - Show memories from same date in previous years */}
+        {/* On This Day - Enhanced prominent card */}
         {onThisDayEntries.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="p-5 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/20"
+            className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30"
           >
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📅</span>
-              <h2 className="font-serif text-lg font-semibold text-foreground">On This Day</h2>
+              <span className="text-2xl">🕰️</span>
+              <h2 className="font-serif text-xl font-semibold text-foreground">On This Day</h2>
             </div>
-            <div className="space-y-2">
-              {onThisDayEntries.slice(0, 3).map((entry, index) => {
-                const entryDate = new Date(entry.date);
-                const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
-                return (
-                  <motion.button
-                    key={entry.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => onNavigate({ type: 'entry-read', entryId: entry.id })}
-                    className="w-full p-3 rounded-xl bg-card/60 backdrop-blur-sm border border-border/30 hover:border-violet-500/40 hover:bg-card/80 transition-all text-left group"
-                  >
-                    <div className="flex items-start gap-3">
-                      {entry.photos[0] ? (
-                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                          <img
-                            src={entry.photos[0].storage_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-                          <Camera weight="duotone" className="w-5 h-5 text-violet-500" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-violet-600 dark:text-violet-400 font-medium mb-0.5">
-                          {yearsAgo} {yearsAgo === 1 ? 'year' : 'years'} ago
-                        </p>
-                        <h3 className="font-medium text-foreground text-sm truncate group-hover:text-violet-600 transition-colors">
-                          {getEntryTitle(entry)}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatShortDate(entry.date)}
-                        </p>
-                      </div>
+            
+            {onThisDayEntries.length === 1 ? (
+              // Single memory - larger card
+              <motion.button
+                onClick={() => onNavigate({ type: 'entry-read', entryId: onThisDayEntries[0].id })}
+                className="w-full p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border/40 hover:border-amber-500/50 hover:bg-card/90 transition-all text-left group"
+              >
+                <div className="flex items-start gap-4">
+                  {onThisDayEntries[0].photos[0] ? (
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                      <img
+                        src={onThisDayEntries[0].photos[0].storage_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  </motion.button>
-                );
-              })}
-            </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                      <Camera weight="duotone" className="w-8 h-8 text-amber-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mb-1">
+                      {new Date().getFullYear() - new Date(onThisDayEntries[0].date).getFullYear()} years ago
+                    </p>
+                    <h3 className="font-medium text-foreground text-base truncate group-hover:text-amber-600 transition-colors mb-1">
+                      {getEntryTitle(onThisDayEntries[0])}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {onThisDayEntries[0].story_ai || onThisDayEntries[0].transcript}
+                    </p>
+                  </div>
+                  <CaretRight weight="bold" className="w-6 h-6 text-muted-foreground/50 group-hover:text-amber-500 transition-colors flex-shrink-0" />
+                </div>
+              </motion.button>
+            ) : (
+              // Multiple memories - horizontal scroll
+              <div className="overflow-x-auto -mx-6 px-6 pb-2">
+                <div className="flex gap-3" style={{ width: 'max-content' }}>
+                  {onThisDayEntries.map((entry, index) => {
+                    const entryDate = new Date(entry.date);
+                    const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
+                    return (
+                      <motion.button
+                        key={entry.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => onNavigate({ type: 'entry-read', entryId: entry.id })}
+                        className="w-72 p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border/40 hover:border-amber-500/50 hover:bg-card/90 transition-all text-left group"
+                      >
+                        <div className="flex items-start gap-3">
+                          {entry.photos[0] ? (
+                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                              <img
+                                src={entry.photos[0].storage_url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                              <Camera weight="duotone" className="w-6 h-6 text-amber-500" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">
+                              {yearsAgo} {yearsAgo === 1 ? 'year' : 'years'} ago
+                            </p>
+                            <h3 className="font-medium text-foreground text-sm truncate group-hover:text-amber-600 transition-colors">
+                              {getEntryTitle(entry)}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {(entry.story_ai || entry.transcript)?.substring(0, 80)}
+                              {((entry.story_ai || entry.transcript || '').length > 80) && '...'}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.section>
         )}
 
