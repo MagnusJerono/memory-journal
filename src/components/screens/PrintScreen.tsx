@@ -113,7 +113,8 @@ export function PrintScreen({
                 <Printer weight="duotone" className="mr-1.5 w-4 h-4" />
                 Print a Book
               </Button>
-            )}            <SettingsPanel
+            )}
+            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}

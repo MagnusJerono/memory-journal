@@ -44,7 +44,8 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
             <span className="text-border/50">|</span>
             <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.home.newMemory}</h1>
           </div>
-          <div className="flex items-center gap-2">            <SettingsPanel
+          <div className="flex items-center gap-2">
+            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}

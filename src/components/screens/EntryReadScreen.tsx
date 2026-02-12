@@ -143,7 +143,8 @@ export function EntryReadScreen({
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>            <SettingsPanel
+            </DropdownMenu>
+            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}

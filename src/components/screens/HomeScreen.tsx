@@ -142,7 +142,8 @@ export function HomeScreen({
         <CloudHeader isDarkMode={isDarkMode} className="mx-auto max-w-3xl px-4 pt-3">
           <div className="flex items-center justify-between">
             <BrandHeader isDarkMode={isDarkMode} />
-            <div className="flex items-center gap-2">              <SettingsPanel
+            <div className="flex items-center gap-2">
+              <SettingsPanel
                 themeMode={themeMode}
                 onThemeModeChange={setThemeMode}
                 isDarkMode={isDarkMode}

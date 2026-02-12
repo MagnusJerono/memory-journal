@@ -48,7 +48,8 @@ export function SearchScreen({
               onClick={() => onNavigate({ type: 'home' })} 
               size="sm"
             />
-            <div className="flex-1" />            <SettingsPanel
+            <div className="flex-1" />
+            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}

@@ -95,7 +95,8 @@ export function ChaptersScreen({
             <Button size="sm" onClick={() => setIsDialogOpen(true)}>
               <Plus className="mr-1.5" weight="bold" size={16} />
               {t.chapters.newChapter}
-            </Button>            <SettingsPanel
+            </Button>
+            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}
