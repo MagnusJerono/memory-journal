@@ -169,9 +169,16 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg px-1 -ml-1 overflow-visible"
-      whileHover={{ scale: 1.02 }}
+      animate={{
+        y: [0, -4, 0, -2, 0],
+      }}
+      transition={{
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut",
+        times: [0, 0.25, 0.5, 0.75, 1],
+      }}
       whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
       <AnimatePresence>
         {isClicked && (
