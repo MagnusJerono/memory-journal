@@ -14,7 +14,6 @@ import {
 import { CaretLeft, DotsThreeVertical, PencilSimple, PushPin, Archive, Trash, Camera, Star, CaretRight, Sparkle, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
@@ -143,14 +142,7 @@ export function ChapterDetailScreen({
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <NavigationMenu 
-              onNavigate={onNavigate} 
-              currentTab="chapters" 
-              isDarkMode={isDarkMode} 
-            />
-            <SettingsPanel
+            </DropdownMenu>            <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
               isDarkMode={isDarkMode}
