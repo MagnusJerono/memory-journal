@@ -361,7 +361,7 @@ export function NewEntry({ onSave, onBack }: NewEntryProps) {
       });
     } catch (error) {
       console.error('Generation failed:', error);
-      toast.error('Failed to generate story', {
+      toast.error('Something went wrong — try again', {
         description: 'Please try again.'
       });
     } finally {
