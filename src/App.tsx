@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
-import { DesktopSidebar } from './components/navigation/DesktopSidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useIsMobile } from './hooks/use-mobile';
@@ -118,7 +117,9 @@ function AppContent() {
             promptId={currentView.promptId}
             onSave={(entry) => {
               saveEntry(entry);
-              navigate({ type: 'entry-read', entryId: entry.id });
+              if (!entry.is_draft) {
+                navigate({ type: 'entry-read', entryId: entry.id });
+              }
             }}
             onBack={() => navigate({ type: 'home' })}
             onNavigate={navigate}
@@ -186,7 +187,9 @@ function AppContent() {
             chapters={chapters}
             onSave={(entry) => {
               saveEntry(entry);
-              navigate({ type: 'entry-read', entryId: entry.id });
+              if (!entry.is_draft) {
+                navigate({ type: 'entry-read', entryId: entry.id });
+              }
             }}
             onBack={() => navigate({ type: 'entry-read', entryId: editEntry.id })}
             onNavigate={navigate}
@@ -245,16 +248,8 @@ function AppContent() {
     <div className="min-h-screen relative">
       <DreamyBackground isDarkMode={isDarkMode} />
       
-      {/* Desktop Sidebar */}
-      {!isMobile && showBottomNav && (
-        <DesktopSidebar
-          currentTab={getCurrentTab()}
-          onTabChange={handleTabChange}
-        />
-      )}
-      
       {/* Main Content with Page Transitions */}
-      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''} ${!isMobile && showBottomNav ? 'ml-64' : ''}`}>
+      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView.type}
