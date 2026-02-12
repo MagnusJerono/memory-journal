@@ -45,6 +45,7 @@ interface SettingsPanelProps {
   onThemeModeChange: (mode: ThemeMode) => void;
   isDarkMode: boolean;
   isNightTime: boolean;
+  triggerButton?: React.ReactNode;
 }
 
 interface UserPreferences {
@@ -57,7 +58,8 @@ export function SettingsPanel({
   themeMode, 
   onThemeModeChange, 
   isDarkMode,
-  isNightTime 
+  isNightTime,
+  triggerButton
 }: SettingsPanelProps) {
   const [user, setUser] = useState<{ login: string; avatarUrl: string; email?: string } | null>(null);
   const [preferences, setPreferences] = useKV<UserPreferences>('user-preferences', {
@@ -94,21 +96,23 @@ export function SettingsPanel({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 relative"
-        >
-          {user?.avatarUrl ? (
-            <img 
-              src={user.avatarUrl} 
-              alt={user.login}
-              className="w-7 h-7 rounded-full ring-2 ring-border/50"
-            />
-          ) : (
-            <User weight="duotone" className="w-5 h-5" />
-          )}
-        </Button>
+        {triggerButton || (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 relative"
+          >
+            {user?.avatarUrl ? (
+              <img 
+                src={user.avatarUrl} 
+                alt={user.login}
+                className="w-7 h-7 rounded-full ring-2 ring-border/50"
+              />
+            ) : (
+              <User weight="duotone" className="w-5 h-5" />
+            )}
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent className="bg-card/95 backdrop-blur-xl border-border/50 overflow-y-auto">
         <SheetHeader>

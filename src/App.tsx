@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
+import { DesktopSidebar } from './components/navigation/DesktopSidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useIsMobile } from './hooks/use-mobile';
@@ -243,10 +244,20 @@ function AppContent() {
     <div className="min-h-screen relative">
       <DreamyBackground isDarkMode={isDarkMode} />
       
-      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
+      {/* Desktop Sidebar */}
+      {!isMobile && showBottomNav && (
+        <DesktopSidebar
+          currentTab={getCurrentTab()}
+          onTabChange={handleTabChange}
+        />
+      )}
+      
+      {/* Main Content */}
+      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''} ${!isMobile && showBottomNav ? 'ml-64' : ''}`}>
         {renderScreen()}
       </div>
 
+      {/* Mobile Bottom Navigation */}
       {showBottomNav && isMobile && (
         <BottomNav
           currentTab={getCurrentTab()}
