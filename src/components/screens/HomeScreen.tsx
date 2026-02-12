@@ -62,17 +62,20 @@ export function HomeScreen({
       const entryDate = new Date(firstEntry.date);
       const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
       
-      toast('You have a memory from this day!', {
-        description: `From ${yearsAgo} ${yearsAgo === 1 ? 'year' : 'years'} ago`,
-        action: {
-          label: 'View',
-          onClick: () => onNavigate({ type: 'entry-read', entryId: firstEntry.id }),
-        },
-      });
+      // Only show toast for memories from previous years
+      if (yearsAgo > 0) {
+        toast('You have a memory from this day!', {
+          description: `From ${yearsAgo} ${yearsAgo === 1 ? 'year' : 'years'} ago`,
+          action: {
+            label: 'View',
+            onClick: () => onNavigate({ type: 'entry-read', entryId: firstEntry.id }),
+          },
+        });
+      }
       
       setLastOTDToastDate(today);
     }
-  }, [onThisDayEntries.length, lastOTDToastDate]);
+  }, [onThisDayEntries, lastOTDToastDate, onNavigate, setLastOTDToastDate]);
 
   // Writing Streak - Calculate consecutive days with entries
   const calculateStreak = () => {
@@ -443,7 +446,8 @@ export function HomeScreen({
                               {getEntryTitle(entry)}
                             </h3>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {entry.story_ai?.substring(0, 80) || entry.transcript?.substring(0, 80)}...
+                              {(entry.story_ai || entry.transcript)?.substring(0, 80)}
+                              {((entry.story_ai || entry.transcript || '').length > 80) && '...'}
                             </p>
                           </div>
                         </div>
@@ -453,20 +457,6 @@ export function HomeScreen({
                 </div>
               </div>
             )}
-          </motion.section>
-        )}
-                        <h3 className="font-medium text-foreground text-sm truncate group-hover:text-violet-600 transition-colors">
-                          {getEntryTitle(entry)}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatShortDate(entry.date)}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
           </motion.section>
         )}
 

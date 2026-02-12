@@ -19,7 +19,7 @@ export function DreamyBackground({ isDarkMode }: DreamyBackgroundProps) {
     mediaQuery.addEventListener('change', handleChange);
 
     // Lazy load animation - wait for idle time or 300ms
-    if (window.requestIdleCallback) {
+    if ('requestIdleCallback' in window) {
       window.requestIdleCallback(() => setIsReady(true), { timeout: 300 });
     } else {
       setTimeout(() => setIsReady(true), 300);

@@ -87,19 +87,21 @@ export function useJournalData() {
   const [entries, setEntries] = useKV<Entry[]>('tightly-entries', []);
   const [chapters, setChapters] = useKV<Chapter[]>('tightly-chapters', []);
   const [books, setBooks] = useKV<Book[]>('tightly-books', []);
+  const [hasSeeded, setHasSeeded] = useKV<boolean>('tightly-has-seeded-content', false);
 
-  // Seed initial content on first load
+  // Seed initial content on first load only
   useEffect(() => {
-    if ((!entries || entries.length === 0) && (!chapters || chapters.length === 0)) {
+    if (!hasSeeded && (!entries || entries.length === 0) && (!chapters || chapters.length === 0)) {
       const starterChapters = createStarterChapters();
       const adventuresChapter = starterChapters.find(c => c.name === 'Adventures');
       if (adventuresChapter) {
         const sampleEntry = createSampleEntry(adventuresChapter.id);
         setChapters(starterChapters);
         setEntries([sampleEntry]);
+        setHasSeeded(true);
       }
     }
-  }, []);
+  }, [hasSeeded, setHasSeeded, setEntries, setChapters]);
 
   const entryList = (entries || []).map(e => ({
     ...e,

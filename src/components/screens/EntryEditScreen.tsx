@@ -584,7 +584,7 @@ export function EntryEditScreen({
               >
                 <UploadSimple weight="duotone" className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {isDragging ? "Drop photos here" : useIsMobile() ? "Tap to select multiple photos" : "Drag & drop or click to add photos"}
+                  {isDragging ? "Drop photos here" : isMobile ? "Tap to select multiple photos" : "Drag & drop or click to add photos"}
                 </p>
               </button>
             </div>
