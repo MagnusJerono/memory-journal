@@ -3,7 +3,6 @@ import { AppView, Prompt, PromptCategory, DEFAULT_PROMPTS, PROMPT_CATEGORIES } f
 import { Button } from '@/components/ui/button';
 import { Sparkle, ArrowRight, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
-import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
@@ -46,11 +45,6 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
             <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.home.newMemory}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <NavigationMenu 
-              onNavigate={onNavigate} 
-              currentTab="prompts" 
-              isDarkMode={isDarkMode} 
-            />
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}

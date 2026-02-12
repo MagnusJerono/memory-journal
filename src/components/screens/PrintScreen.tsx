@@ -23,7 +23,6 @@ import {
 import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
-import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
@@ -115,11 +114,6 @@ export function PrintScreen({
                 Print a Book
               </Button>
             )}
-            <NavigationMenu 
-              onNavigate={onNavigate} 
-              currentTab="print" 
-              isDarkMode={isDarkMode} 
-            />
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}

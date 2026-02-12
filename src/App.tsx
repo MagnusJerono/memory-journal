@@ -192,7 +192,7 @@ function AppContent() {
                 navigate({ type: 'entry-read', entryId: entry.id });
               }
             }}
-            onBack={() => navigate({ type: 'entry-read', entryId: editEntry.id })}
+            onBack={() => navigate({ type: 'home' })}
             onNavigate={navigate}
             onDelete={() => {
               deleteEntry(editEntry.id);
