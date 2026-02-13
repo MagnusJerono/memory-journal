@@ -91,7 +91,7 @@ const CoverPage: React.FC<{ book: Book; theme: BookTheme }> = ({ book, theme }) 
     title: {
       fontFamily: themeStyle.fontFamily,
       fontSize: themeStyle.titleSize,
-      fontWeight: 600,
+      fontWeight: 'bold',
       color: themeStyle.textColor,
       textAlign: 'center',
       marginBottom: 20,
@@ -153,7 +153,7 @@ const ChapterDividerPage: React.FC<{ chapter: Chapter; theme: BookTheme }> = ({ 
     chapterName: {
       fontFamily: themeStyle.fontFamily,
       fontSize: 28,
-      fontWeight: 600,
+      fontWeight: 'bold',
       color: themeStyle.textColor,
       textAlign: 'center',
       marginBottom: 15,
@@ -206,7 +206,7 @@ const EntryPage: React.FC<{ entry: Entry; theme: BookTheme; pageNumber: number }
     title: {
       fontFamily: themeStyle.fontFamily,
       fontSize: 18,
-      fontWeight: 600,
+      fontWeight: 'bold',
       color: themeStyle.textColor,
       marginBottom: 20,
     },
