@@ -26,6 +26,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -144,6 +145,13 @@ export function EntryReadScreen({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <div className="hidden sm:block">
+              <NavigationMenu 
+                onNavigate={onNavigate} 
+                currentTab="home" 
+                isDarkMode={isDarkMode} 
+              />
+            </div>
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
