@@ -41,6 +41,7 @@ export interface UseSpeechToTextReturn {
   error: string | null;
   audioLevel: number;
   recordingDuration: number; // Duration in seconds
+  getFrequencyData: () => Uint8Array | null; // For per-bin spectral visualization
 }
 
 export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
@@ -231,6 +232,13 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
     setError(null);
   }, []);
 
+  const getFrequencyData = useCallback(() => {
+    if (!analyserRef.current) return null;
+    const data = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(data);
+    return data;
+  }, []);
+
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -250,6 +258,7 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
     resetTranscript,
     error,
     audioLevel,
-    recordingDuration
+    recordingDuration,
+    getFrequencyData
   };
 }

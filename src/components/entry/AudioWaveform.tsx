@@ -7,6 +7,7 @@ interface AudioWaveformProps {
   className?: string;
   height?: number; // Height in pixels (default: 64)
   isDarkMode?: boolean; // Optional dark mode flag
+  getFrequencyData?: () => Uint8Array | null; // For per-bin spectral visualization
 }
 
 export function AudioWaveform({ 
@@ -14,7 +15,8 @@ export function AudioWaveform({
   isActive, 
   className,
   height = 64,
-  isDarkMode = false
+  isDarkMode = false,
+  getFrequencyData
 }: AudioWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -38,123 +40,83 @@ export function AudioWaveform({
     const draw = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);
 
-      // Smooth interpolation for dreamy feel (lerp factor 0.15)
+      // Fast attack, slow release for voice responsiveness
       const targetLevel = isActive ? audioLevel : 0.05; // Gentle breathing when idle
-      currentLevelRef.current += (targetLevel - currentLevelRef.current) * 0.15;
+      const diff = targetLevel - currentLevelRef.current;
+      const lerpUp = 0.5;   // Fast attack when voice gets louder
+      const lerpDown = 0.15; // Slower release for smooth decay
+      currentLevelRef.current += diff * (diff > 0 ? lerpUp : lerpDown);
       
-      // Increment time for wave animation
-      timeRef.current += 0.016; // ~60fps
+      // Increment time for visible horizontal flow (2.5x faster than before)
+      timeRef.current += 0.04;
 
       const centerY = rect.height / 2;
-      const points = 200; // Number of points for smooth curves
+      const lineCount = 20; // Draw 20 thin flowing lines
+      const baseAmplitude = rect.height * 0.35; // Use more vertical space
       
-      // Define wave parameters for 3 layers
-      const waves = [
-        {
-          frequency: 0.02,
-          amplitude: currentLevelRef.current * 0.6,
-          phase: timeRef.current * 0.001,
-          colors: isDarkMode 
-            ? { r: 167, g: 139, b: 250, a: 0.8 } // violet-300
-            : { r: 139, g: 92, b: 246, a: 0.8 },  // violet-500
-          lineWidth: 3,
-          glowWidth: 8,
-          glowAlpha: 0.4
-        },
-        {
-          frequency: 0.015,
-          amplitude: currentLevelRef.current * 0.4,
-          phase: timeRef.current * 0.0015 + 1,
-          colors: isDarkMode 
-            ? { r: 216, g: 180, b: 254, a: 0.5 } // purple-300
-            : { r: 168, g: 85, b: 247, a: 0.5 },  // purple-500
-          lineWidth: 2.5,
-          glowWidth: 7,
-          glowAlpha: 0.3
-        },
-        {
-          frequency: 0.025,
-          amplitude: currentLevelRef.current * 0.3,
-          phase: timeRef.current * 0.002 + 2,
-          colors: isDarkMode 
-            ? { r: 249, g: 168, b: 212, a: 0.3 } // pink-300
-            : { r: 244, g: 114, b: 182, a: 0.3 }, // pink-400
-          lineWidth: 2,
-          glowWidth: 6,
-          glowAlpha: 0.2
-        }
-      ];
-
-      // Draw each wave layer
-      waves.forEach(wave => {
-        const baseAmplitude = rect.height * 0.25;
-        const amplitude = baseAmplitude * wave.amplitude;
-        
-        // Draw glow layer first (behind the main wave)
-        if (isActive) {
-          ctx.save();
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = `rgba(${wave.colors.r}, ${wave.colors.g}, ${wave.colors.b}, ${wave.glowAlpha})`;
-          ctx.lineWidth = wave.glowWidth;
-          ctx.strokeStyle = `rgba(${wave.colors.r}, ${wave.colors.g}, ${wave.colors.b}, ${wave.glowAlpha * 0.5})`;
-          
-          ctx.beginPath();
-          for (let i = 0; i <= points; i++) {
-            const x = (i / points) * rect.width;
-            const progress = i / points;
-            const sineValue = Math.sin(progress * Math.PI * 2 * wave.frequency * rect.width + wave.phase);
-            const y = centerY + sineValue * amplitude;
-            
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-          ctx.stroke();
-          ctx.restore();
-        }
-        
-        // Draw main wave
-        const gradient = ctx.createLinearGradient(0, 0, rect.width, 0);
-        if (isActive) {
-          // Active gradient violet → purple → pink
-          if (isDarkMode) {
-            gradient.addColorStop(0, `rgba(167, 139, 250, ${wave.colors.a})`);    // violet-300
-            gradient.addColorStop(0.5, `rgba(216, 180, 254, ${wave.colors.a})`);  // purple-300
-            gradient.addColorStop(1, `rgba(249, 168, 212, ${wave.colors.a * 0.7})`); // pink-300
-          } else {
-            gradient.addColorStop(0, `rgba(139, 92, 246, ${wave.colors.a})`);     // violet-500
-            gradient.addColorStop(0.5, `rgba(168, 85, 247, ${wave.colors.a})`);   // purple-500
-            gradient.addColorStop(1, `rgba(244, 114, 182, ${wave.colors.a * 0.7})`); // pink-400
-          }
+      // Get frequency data if available
+      const frequencyData = getFrequencyData ? getFrequencyData() : null;
+      
+      // Create violet → blue gradient (left to right)
+      const gradient = ctx.createLinearGradient(0, 0, rect.width, 0);
+      if (isActive) {
+        if (isDarkMode) {
+          gradient.addColorStop(0, 'rgba(167, 139, 250, 0.6)');    // violet-300
+          gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.5)');   // violet-500/blue
+          gradient.addColorStop(1, 'rgba(96, 165, 250, 0.4)');     // blue-400
         } else {
-          // Inactive - very subtle violet
-          const inactiveAlpha = isDarkMode ? 0.15 : 0.1;
-          gradient.addColorStop(0, `rgba(167, 139, 250, ${inactiveAlpha})`);
-          gradient.addColorStop(1, `rgba(167, 139, 250, ${inactiveAlpha})`);
+          gradient.addColorStop(0, 'rgba(139, 92, 246, 0.6)');     // violet-500
+          gradient.addColorStop(0.5, 'rgba(124, 58, 237, 0.5)');   // violet-600/blue
+          gradient.addColorStop(1, 'rgba(59, 130, 246, 0.4)');     // blue-500
+        }
+      } else {
+        // Inactive - very subtle violet
+        const inactiveAlpha = isDarkMode ? 0.15 : 0.1;
+        gradient.addColorStop(0, `rgba(167, 139, 250, ${inactiveAlpha})`);
+        gradient.addColorStop(1, `rgba(96, 165, 250, ${inactiveAlpha * 0.5})`);
+      }
+
+      // Draw each of the 20 thin lines
+      for (let lineIdx = 0; lineIdx < lineCount; lineIdx++) {
+        // Each line gets a slightly different frequency and phase
+        const freq = 2 + lineIdx * 0.3; // Varying frequencies
+        const phaseOffset = lineIdx * 0.4; // Different phases so lines cross
+        
+        // Use frequency data if available — each line maps to a frequency bin
+        // This makes each line react to a DIFFERENT part of the audio spectrum
+        let binValue = currentLevelRef.current;
+        if (frequencyData && frequencyData.length > 0) {
+          const binIndex = Math.floor((lineIdx / lineCount) * frequencyData.length);
+          binValue = frequencyData[binIndex] / 255;
         }
         
-        ctx.lineWidth = wave.lineWidth;
+        // Dynamic amplitude based on frequency bin or overall level
+        const lineAmplitude = baseAmplitude * binValue * (0.5 + (lineIdx / lineCount) * 0.5);
+        
+        // Set line style
+        ctx.beginPath();
+        ctx.lineWidth = 1.2;
         ctx.strokeStyle = gradient;
+        ctx.globalAlpha = isActive ? (0.3 + binValue * 0.3) : 0.3; // More opaque when louder
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
-        ctx.beginPath();
-        for (let i = 0; i <= points; i++) {
-          const x = (i / points) * rect.width;
-          const progress = i / points;
-          const sineValue = Math.sin(progress * Math.PI * 2 * wave.frequency * rect.width + wave.phase);
-          const y = centerY + sineValue * amplitude;
+        // Draw the sine wave for this line
+        for (let x = 0; x < rect.width; x += 2) {
+          const progress = x / rect.width;
+          const y = centerY + Math.sin(progress * freq * Math.PI + timeRef.current + phaseOffset) * lineAmplitude;
           
-          if (i === 0) {
+          if (x === 0) {
             ctx.moveTo(x, y);
           } else {
             ctx.lineTo(x, y);
           }
         }
         ctx.stroke();
-      });
+      }
+      
+      // Reset global alpha
+      ctx.globalAlpha = 1.0;
 
       animationRef.current = requestAnimationFrame(draw);
     };
@@ -166,7 +128,7 @@ export function AudioWaveform({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [audioLevel, isActive, isDarkMode, height]);
+  }, [audioLevel, isActive, isDarkMode, height, getFrequencyData]);
 
   return (
     <canvas

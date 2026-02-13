@@ -164,7 +164,8 @@ export function EntryEditScreen({
     resetTranscript: resetSpeechTranscript,
     error: speechError,
     audioLevel,
-    recordingDuration
+    recordingDuration,
+    getFrequencyData
   } = useSpeechToText(speechLanguage || 'en-US');
 
   const hasGenerated = !!story || highlights.length > 0;
@@ -766,6 +767,7 @@ export function EntryEditScreen({
                     isActive={isListening}
                     height={64}
                     isDarkMode={isDarkMode}
+                    getFrequencyData={getFrequencyData}
                     className="mb-3"
                   />
                   

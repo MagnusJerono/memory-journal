@@ -90,7 +90,8 @@ export function RefinementPanel({
     stopListening,
     resetTranscript,
     audioLevel,
-    recordingDuration
+    recordingDuration,
+    getFrequencyData
   } = useSpeechToText(speechLanguage);
 
   useEffect(() => {
@@ -375,6 +376,7 @@ Return ONLY valid JSON in this format:
                                 isActive={isRecording}
                                 height={60}
                                 isDarkMode={isDarkMode}
+                                getFrequencyData={getFrequencyData}
                                 className="mb-2"
                               />
                               
