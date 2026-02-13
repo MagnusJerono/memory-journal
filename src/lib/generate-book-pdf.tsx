@@ -295,7 +295,7 @@ const BookPDFDocument: React.FC<BookPDFProps> = ({ book, entries, chapters }) =>
     entriesByChapter.get(chapterId)!.push(entry);
   });
 
-  let pageNumber = 1; // Start after cover
+  let pageNumber = 0; // Cover is unnumbered, content pages start at 1
 
   return (
     <Document>

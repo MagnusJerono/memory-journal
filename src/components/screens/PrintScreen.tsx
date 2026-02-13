@@ -758,7 +758,8 @@ function BookBuilder({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Estimated Pages:</span>
                   <span className="font-medium text-foreground">
-                    {selectedEntryIds.length + 1} - {selectedEntryIds.length * 2 + 1}
+                    {/* Cover (1) + entries (1-2 pages each) + chapter dividers */}
+                    {selectedEntryIds.length + 1}-{selectedEntryIds.length * 2 + 1}
                   </span>
                 </div>
               </div>
