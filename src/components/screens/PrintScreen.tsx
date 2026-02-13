@@ -729,7 +729,8 @@ function BookBuilder({
               
               const entryTitle = getEntryTitle(sampleEntry);
               const story = sampleEntry.story_ai || sampleEntry.transcript || '';
-              const preview = story.split('\n\n')[0].substring(0, 200) + (story.length > 200 ? '...' : '');
+              const firstParagraph = story.split('\n\n')[0];
+              const preview = firstParagraph.substring(0, 200) + (firstParagraph.length > 200 ? '...' : '');
               
               return (
                 <motion.div
