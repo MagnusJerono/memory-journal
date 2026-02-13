@@ -338,7 +338,8 @@ export async function generateBookPDF(
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${book.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf`;
+    const sanitizedTitle = book.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    link.download = `${sanitizedTitle || 'untitled-book'}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

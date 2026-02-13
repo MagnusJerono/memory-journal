@@ -758,8 +758,15 @@ function BookBuilder({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Estimated Pages:</span>
                   <span className="font-medium text-foreground">
-                    {/* Cover (1) + entries (1-2 pages each) + chapter dividers */}
-                    {selectedEntryIds.length + 1}-{selectedEntryIds.length * 2 + 1}
+                    {/* Calculation: Cover (1) + entries (1-2 pages each depending on length) + chapter dividers */}
+                    {(() => {
+                      const selectedEntries = entries.filter(e => selectedEntryIds.includes(e.id));
+                      const uniqueChapters = new Set(selectedEntries.map(e => e.chapter_id).filter(Boolean));
+                      const chapterPages = uniqueChapters.size;
+                      const minPages = 1 + chapterPages + selectedEntryIds.length;
+                      const maxPages = 1 + chapterPages + (selectedEntryIds.length * 2);
+                      return `${minPages}-${maxPages}`;
+                    })()}
                   </span>
                 </div>
               </div>
