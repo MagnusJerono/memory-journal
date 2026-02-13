@@ -5,6 +5,7 @@ import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, X }
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useKV } from '@github/spark/hooks';
@@ -143,6 +144,13 @@ export function HomeScreen({
           <div className="flex items-center justify-between">
             <BrandHeader isDarkMode={isDarkMode} />
             <div className="flex items-center gap-2">
+              <div className="hidden sm:block">
+                <NavigationMenu 
+                  onNavigate={onNavigate} 
+                  currentTab="home" 
+                  isDarkMode={isDarkMode} 
+                />
+              </div>
               <SettingsPanel
                 themeMode={themeMode}
                 onThemeModeChange={setThemeMode}

@@ -5,6 +5,7 @@ import { Sparkle, ArrowRight, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -45,6 +46,13 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
             <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.home.newMemory}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <NavigationMenu 
+                onNavigate={onNavigate} 
+                currentTab="prompts" 
+                isDarkMode={isDarkMode} 
+              />
+            </div>
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}

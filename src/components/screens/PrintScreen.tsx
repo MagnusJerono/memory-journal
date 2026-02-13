@@ -25,6 +25,7 @@ import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -114,6 +115,13 @@ export function PrintScreen({
                 Print a Book
               </Button>
             )}
+            <div className="hidden sm:block">
+              <NavigationMenu 
+                onNavigate={onNavigate} 
+                currentTab="print" 
+                isDarkMode={isDarkMode} 
+              />
+            </div>
             <SettingsPanel
               themeMode={themeMode}
               onThemeModeChange={setThemeMode}
