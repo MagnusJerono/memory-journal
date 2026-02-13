@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Book, Entry, Chapter, AppView, BOOK_THEMES, BookTheme, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getEntryTitle, formatShortDate } from '@/lib/entries';
+import { generateBookPDF } from '@/lib/generate-book-pdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -83,9 +84,20 @@ export function PrintScreen({
     setPrintDialogOpen(true);
   };
 
-  const handleDownloadPdf = () => {
-    toast.success('PDF downloaded!', { description: 'Your book is ready for printing.' });
-    setPrintDialogOpen(false);
+  const handleDownloadPdf = async () => {
+    if (!selectedBook) return;
+    
+    try {
+      toast.loading('Generating PDF...');
+      await generateBookPDF(selectedBook, entries, chapters);
+      toast.dismiss();
+      toast.success('PDF downloaded!', { description: 'Your book is ready for printing.' });
+      setPrintDialogOpen(false);
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to generate PDF', { description: 'Please try again.' });
+      console.error('PDF generation error:', error);
+    }
   };
 
   const handleDeleteBook = (bookId: string) => {
@@ -383,6 +395,7 @@ function BookBuilder({
   const [theme, setTheme] = useState<BookTheme>(existingBook?.theme || 'classic');
   const [filterChapter, setFilterChapter] = useState<string | null>(null);
   const [filterStarred, setFilterStarred] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const filteredEntries = entries.filter(e => {
     if (filterChapter && e.chapter_id !== filterChapter) return false;
@@ -436,7 +449,7 @@ function BookBuilder({
     toast.success('Draft saved');
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const book: Book = {
       id: existingBook?.id || uuid(),
       title: title || 'Untitled Book',
@@ -444,13 +457,29 @@ function BookBuilder({
       theme,
       entry_ids: selectedEntryIds,
       is_draft: false,
-      pdf_url: 'placeholder.pdf',
+      pdf_url: null,
       created_at: existingBook?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+    
     onSaveBook(book);
-    toast.success('Book exported! (PDF generation coming soon)');
-    onNavigate({ type: 'print' });
+    
+    // Generate and download PDF
+    setIsGeneratingPdf(true);
+    try {
+      toast.loading('Generating your book...');
+      await generateBookPDF(book, entries, chapters);
+      toast.dismiss();
+      toast.success('Book exported!', { description: 'Your PDF has been downloaded.' });
+      onNavigate({ type: 'print' });
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to generate PDF', { description: 'Book saved, but PDF generation failed. Try downloading from the Print screen.' });
+      console.error('PDF generation error:', error);
+      onNavigate({ type: 'print' });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const getIconEmoji = (icon: ChapterIcon) => 
@@ -485,9 +514,9 @@ function BookBuilder({
               <CaretRight className="ml-1 w-4 h-4" weight="bold" />
             </Button>
           ) : (
-            <Button onClick={handleExport}>
+            <Button onClick={handleExport} disabled={isGeneratingPdf}>
               <Download className="mr-1.5 w-4 h-4" />
-              Export PDF
+              {isGeneratingPdf ? 'Generating...' : 'Export PDF'}
             </Button>
           )}
         </div>
@@ -650,6 +679,13 @@ function BookBuilder({
 
         {step === 3 && (
           <div className="space-y-6">
+            <div className="text-center mb-4">
+              <p className="text-sm text-muted-foreground">
+                Preview of your book · {selectedEntryIds.length} memories
+              </p>
+            </div>
+            
+            {/* Cover Preview */}
             <div className="flex justify-center">
               <div 
                 className="w-48 h-64 rounded-xl shadow-2xl flex flex-col items-center justify-center p-6"
@@ -675,36 +711,58 @@ function BookBuilder({
               </div>
             </div>
 
-            <div className="text-center text-sm text-muted-foreground">
-              {selectedEntryIds.length} entries · ~{selectedEntryIds.length * 4} pages
-            </div>
+            {/* Sample Entry Preview */}
+            {selectedEntryIds.length > 0 && (() => {
+              const sampleEntry = entries.find(e => e.id === selectedEntryIds[0]);
+              if (!sampleEntry) return null;
+              
+              const entryTitle = getEntryTitle(sampleEntry);
+              const story = sampleEntry.story_ai || sampleEntry.transcript || '';
+              const preview = story.split('\n\n')[0].substring(0, 200) + (story.length > 200 ? '...' : '');
+              
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="max-w-md mx-auto p-6 rounded-xl bg-card/50 border border-border/20"
+                >
+                  <div className="text-xs text-muted-foreground mb-2">Sample Entry Page</div>
+                  <div className="text-xs font-medium text-primary mb-1.5">
+                    {formatShortDate(sampleEntry.date)}
+                  </div>
+                  <h4 className="font-serif font-semibold text-foreground mb-3 text-sm">{entryTitle}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{preview}</p>
+                </motion.div>
+              );
+            })()}
 
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-muted-foreground">Entry Order</p>
-                <Button variant="ghost" size="sm" className="text-xs">
-                  <ArrowsDownUp className="mr-1 w-3 h-3" />
-                  Reorder
-                </Button>
+            {/* Book Details Summary */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="max-w-md mx-auto p-4 rounded-xl bg-muted/20 border border-border/20"
+            >
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Theme:</span>
+                  <span className="font-medium text-foreground">
+                    {BOOK_THEMES.find(t => t.value === theme)?.label}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Memories:</span>
+                  <span className="font-medium text-foreground">{selectedEntryIds.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Estimated Pages:</span>
+                  <span className="font-medium text-foreground">
+                    {selectedEntryIds.length + 1} - {selectedEntryIds.length * 2 + 1}
+                  </span>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                {selectedEntryIds.slice(0, 5).map((id, idx) => {
-                  const entry = entries.find(e => e.id === id);
-                  if (!entry) return null;
-                  return (
-                    <div key={id} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
-                      <span className="text-muted-foreground w-5">{idx + 1}.</span>
-                      <span className="truncate">{getEntryTitle(entry)}</span>
-                    </div>
-                  );
-                })}
-                {selectedEntryIds.length > 5 && (
-                  <p className="text-xs text-muted-foreground text-center py-2">
-                    +{selectedEntryIds.length - 5} more entries
-                  </p>
-                )}
-              </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -726,9 +784,9 @@ function BookBuilder({
                   </p>
                 </div>
               </div>
-              <Button onClick={handleExport} className="w-full" size="lg">
+              <Button onClick={handleExport} className="w-full" size="lg" disabled={isGeneratingPdf}>
                 <Download className="mr-2" weight="bold" />
-                Download PDF
+                {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}
               </Button>
             </motion.div>
 
