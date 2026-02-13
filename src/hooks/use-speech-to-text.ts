@@ -139,7 +139,9 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
       startTimeRef.current = Date.now();
       setRecordingDuration(0);
       
-      // Update duration every 100ms
+      // Update duration every 100ms for smooth UI animation and accurate timing.
+      // Even though display is in whole seconds (MM:SS), the frequent updates
+      // ensure immediate visual feedback and sub-second accuracy for the waveform.
       durationIntervalRef.current = window.setInterval(() => {
         if (startTimeRef.current) {
           const elapsed = (Date.now() - startTimeRef.current) / 1000;

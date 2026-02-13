@@ -41,7 +41,7 @@ import {
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from '@/components/entry/AudioWaveform';
 import { useKV } from '@github/spark/hooks';
@@ -745,7 +745,7 @@ export function EntryEditScreen({
                             style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }} />
                       <span className="text-sm font-semibold text-accent">Recording</span>
                       <span className="text-xs text-muted-foreground font-mono">
-                        {Math.floor(recordingDuration / 60)}:{String(Math.floor(recordingDuration % 60)).padStart(2, '0')}
+                        {formatDuration(recordingDuration)}
                       </span>
                     </div>
                     <Button

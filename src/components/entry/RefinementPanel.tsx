@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Lightbulb, Microphone, Stop, PaperPlaneTilt, ChatCircleDots, Spinner, ArrowRight, ArrowsClockwise, Plus } from '@phosphor-icons/react';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -354,7 +354,7 @@ Return ONLY valid JSON in this format:
                                         style={{ boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)' }} />
                                   <span className="text-xs font-semibold text-accent">Recording</span>
                                   <span className="text-xs text-muted-foreground font-mono">
-                                    {Math.floor(recordingDuration / 60)}:{String(Math.floor(recordingDuration % 60)).padStart(2, '0')}
+                                    {formatDuration(recordingDuration)}
                                   </span>
                                 </div>
                                 <Button
