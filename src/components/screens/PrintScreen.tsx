@@ -88,9 +88,9 @@ export function PrintScreen({
     if (!selectedBook) return;
     
     try {
-      toast.loading('Generating PDF...');
+      const toastId = toast.loading('Generating PDF...');
       await generateBookPDF(selectedBook, entries, chapters);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.success('PDF downloaded!', { description: 'Your book is ready for printing.' });
       setPrintDialogOpen(false);
     } catch (error) {
@@ -467,9 +467,9 @@ function BookBuilder({
     // Generate and download PDF
     setIsGeneratingPdf(true);
     try {
-      toast.loading('Generating your book...');
+      const toastId = toast.loading('Generating your book...');
       await generateBookPDF(book, entries, chapters);
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.success('Book exported!', { description: 'Your PDF has been downloaded.' });
       onNavigate({ type: 'print' });
     } catch (error) {

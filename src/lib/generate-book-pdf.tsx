@@ -9,11 +9,12 @@ import { getEntryTitle, formatDate } from './entries';
 const getThemeStyles = (theme: BookTheme) => {
   const themeConfig = BOOK_THEMES.find(t => t.value === theme);
   if (!themeConfig) {
+    // Default fallback uses Times-Roman to match classic theme
     return {
       coverBg: '#f9fafb',
       accentColor: '#374151',
       textColor: '#1f2937',
-      fontFamily: 'serif'
+      fontFamily: 'Times-Roman'
     };
   }
 
@@ -251,11 +252,11 @@ const EntryPage: React.FC<{ entry: Entry; theme: BookTheme; pageNumber: number }
     }
   });
 
-  // Get locations for footer
-  const locations = [
+  // Get locations for footer (deduplicate efficiently)
+  const locations = [...new Set([
     ...(entry.manual_locations || []),
     ...(entry.tags_ai?.places || [])
-  ].filter((loc, idx, arr) => arr.indexOf(loc) === idx).slice(0, 2);
+  ])].slice(0, 2);
 
   return (
     <Page size="A4" style={styles.page}>
@@ -338,9 +339,10 @@ export async function generateBookPDF(
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    // Sanitize filename: replace non-alphanumeric with single hyphen, trim hyphens, fallback to 'untitled-book'
+    // Sanitize filename: replace non-alphanumeric with hyphen, collapse multiple hyphens, trim hyphens
     const sanitizedTitle = book.title
       .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/-+/g, '-')
       .replace(/^-+|-+$/g, '')
       .toLowerCase();
     link.download = `${sanitizedTitle || 'untitled-book'}.pdf`;
