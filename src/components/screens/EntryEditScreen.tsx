@@ -729,21 +729,21 @@ export function EntryEditScreen({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
-                className="mt-4 p-4 sm:p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border-2 border-accent/30 shadow-lg relative overflow-hidden"
+                className="mt-4 p-4 sm:p-5 bg-gradient-to-br from-violet-500/10 to-violet-500/5 rounded-2xl border-2 border-violet-500/30 shadow-lg relative overflow-hidden"
                 style={{
-                  boxShadow: '0 0 20px rgba(var(--color-accent-9), 0.15)',
+                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
                   animation: 'pulse-glow 2s ease-in-out infinite'
                 }}
               >
                 {/* Animated background gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5 animate-pulse opacity-50" />
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-purple-500/10 to-pink-400/5 animate-pulse opacity-50" />
                 
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 bg-destructive rounded-full animate-pulse shadow-lg" 
-                            style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }} />
-                      <span className="text-sm font-semibold text-accent">Recording</span>
+                      <span className="w-3 h-3 bg-violet-500 rounded-full animate-pulse shadow-lg" 
+                            style={{ boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)' }} />
+                      <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">Recording</span>
                       <span className="text-xs text-muted-foreground font-mono">
                         {formatDuration(recordingDuration)}
                       </span>
@@ -753,7 +753,7 @@ export function EntryEditScreen({
                       variant="default"
                       size="sm"
                       onClick={toggleListening}
-                      className="bg-destructive hover:bg-destructive/90 text-white shadow-lg h-9 px-4"
+                      className="bg-violet-500 hover:bg-violet-600 text-white shadow-lg h-9 px-4"
                       aria-label="Stop recording"
                     >
                       <Stop weight="fill" className="h-4 w-4 mr-2" />
@@ -764,7 +764,7 @@ export function EntryEditScreen({
                   <AudioWaveform 
                     audioLevel={audioLevel} 
                     isActive={isListening}
-                    height={80}
+                    height={64}
                     isDarkMode={isDarkMode}
                     className="mb-3"
                   />
