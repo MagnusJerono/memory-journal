@@ -40,6 +40,7 @@ export interface UseSpeechToTextReturn {
   resetTranscript: () => void;
   error: string | null;
   audioLevel: number;
+  recordingDuration: number; // Duration in seconds
 }
 
 export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
@@ -48,12 +49,15 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const durationIntervalRef = useRef<number | null>(null);
   
   const isSupported = typeof window !== 'undefined' && 
     (!!window.SpeechRecognition || !!window.webkitSpeechRecognition);
@@ -97,6 +101,11 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
       animationFrameRef.current = null;
     }
     
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
@@ -109,6 +118,8 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
     
     analyserRef.current = null;
     setAudioLevel(0);
+    setRecordingDuration(0);
+    startTimeRef.current = null;
   }, []);
 
   const startListening = useCallback(() => {
@@ -125,6 +136,19 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
 
     recognition.onstart = () => {
       setIsListening(true);
+      startTimeRef.current = Date.now();
+      setRecordingDuration(0);
+      
+      // Update duration every 100ms for smooth UI animation and accurate timing.
+      // Even though display is in whole seconds (MM:SS), the frequent updates
+      // ensure immediate visual feedback and sub-second accuracy for the waveform.
+      durationIntervalRef.current = window.setInterval(() => {
+        if (startTimeRef.current) {
+          const elapsed = (Date.now() - startTimeRef.current) / 1000;
+          setRecordingDuration(elapsed);
+        }
+      }, 100);
+      
       startAudioAnalysis();
     };
 
@@ -225,6 +249,7 @@ export function useSpeechToText(lang: string = 'en-US'): UseSpeechToTextReturn {
     stopListening,
     resetTranscript,
     error,
-    audioLevel
+    audioLevel,
+    recordingDuration
   };
 }

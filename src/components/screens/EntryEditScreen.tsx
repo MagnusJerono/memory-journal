@@ -41,7 +41,7 @@ import {
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from '@/components/entry/AudioWaveform';
 import { useKV } from '@github/spark/hooks';
@@ -163,7 +163,8 @@ export function EntryEditScreen({
     stopListening,
     resetTranscript: resetSpeechTranscript,
     error: speechError,
-    audioLevel
+    audioLevel,
+    recordingDuration
   } = useSpeechToText(speechLanguage || 'en-US');
 
   const hasGenerated = !!story || highlights.length > 0;
@@ -721,15 +722,68 @@ export function EntryEditScreen({
             )}
           </div>
           
-          {isListening && (
-            <div className="mt-3 p-3 bg-accent/5 rounded-lg border border-accent/20">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-accent">Recording...</span>
-              </div>
-              <AudioWaveform audioLevel={audioLevel} isActive={isListening} />
-            </div>
-          )}
+          <AnimatePresence>
+            {isListening && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+                className="mt-4 p-4 sm:p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border-2 border-accent/30 shadow-lg relative overflow-hidden"
+                style={{
+                  boxShadow: '0 0 20px rgba(var(--color-accent-9), 0.15)',
+                  animation: 'pulse-glow 2s ease-in-out infinite'
+                }}
+              >
+                {/* Animated background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5 animate-pulse opacity-50" />
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-destructive rounded-full animate-pulse shadow-lg" 
+                            style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }} />
+                      <span className="text-sm font-semibold text-accent">Recording</span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {formatDuration(recordingDuration)}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={toggleListening}
+                      className="bg-destructive hover:bg-destructive/90 text-white shadow-lg h-9 px-4"
+                      aria-label="Stop recording"
+                    >
+                      <Stop weight="fill" className="h-4 w-4 mr-2" />
+                      Stop
+                    </Button>
+                  </div>
+                  
+                  <AudioWaveform 
+                    audioLevel={audioLevel} 
+                    isActive={isListening}
+                    height={80}
+                    isDarkMode={isDarkMode}
+                    className="mb-3"
+                  />
+                  
+                  {/* Show interim transcript in real-time */}
+                  {interimTranscript && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-3 bg-background/80 backdrop-blur-sm rounded-md border border-accent/20 mt-3"
+                    >
+                      <p className="text-xs text-muted-foreground mb-1">Live transcript:</p>
+                      <p className="text-sm text-foreground/80 italic">{interimTranscript}</p>
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {speechSupported && !isListening && (
             <div className="mt-2 flex items-center gap-2">

@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Lightbulb, Microphone, Stop, PaperPlaneTilt, ChatCircleDots, Spinner, ArrowRight, ArrowsClockwise, Plus } from '@phosphor-icons/react';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from './AudioWaveform';
-import { cn } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const SPEECH_LANGUAGES = [
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
@@ -71,6 +72,7 @@ export function RefinementPanel({
   isLocked,
   transcript
 }: RefinementPanelProps) {
+  const { isDarkMode } = useTheme();
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [activeRecordingIndex, setActiveRecordingIndex] = useState<number | null>(null);
@@ -87,7 +89,8 @@ export function RefinementPanel({
     startListening,
     stopListening,
     resetTranscript,
-    audioLevel
+    audioLevel,
+    recordingDuration
   } = useSpeechToText(speechLanguage);
 
   useEffect(() => {
@@ -328,15 +331,68 @@ Return ONLY valid JSON in this format:
                         )}
                       </div>
 
-                      {isRecording && (
-                        <div className="mt-2 p-2 bg-accent/5 rounded-lg border border-accent/20">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                            <span className="text-xs font-medium text-accent">Listening...</span>
-                          </div>
-                          <AudioWaveform audioLevel={audioLevel} isActive={isRecording} />
-                        </div>
-                      )}
+                      <AnimatePresence>
+                        {isRecording && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.25 }}
+                            className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border-2 border-accent/30 shadow-lg relative overflow-hidden"
+                            style={{
+                              boxShadow: '0 0 20px rgba(var(--color-accent-9), 0.15)',
+                              animation: 'pulse-glow 2s ease-in-out infinite'
+                            }}
+                          >
+                            {/* Animated background gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5 animate-pulse opacity-50" />
+                            
+                            <div className="relative z-10">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 bg-destructive rounded-full animate-pulse shadow-lg" 
+                                        style={{ boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)' }} />
+                                  <span className="text-xs font-semibold text-accent">Recording</span>
+                                  <span className="text-xs text-muted-foreground font-mono">
+                                    {formatDuration(recordingDuration)}
+                                  </span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleRecording(index)}
+                                  className="bg-destructive hover:bg-destructive/90 text-white shadow-md h-7 px-3 text-xs"
+                                  aria-label="Stop recording"
+                                >
+                                  <Stop weight="fill" className="h-3.5 w-3.5 mr-1.5" />
+                                  Stop
+                                </Button>
+                              </div>
+                              
+                              <AudioWaveform 
+                                audioLevel={audioLevel} 
+                                isActive={isRecording}
+                                height={60}
+                                isDarkMode={isDarkMode}
+                                className="mb-2"
+                              />
+                              
+                              {/* Show interim transcript in real-time */}
+                              {interimTranscript && (
+                                <motion.div 
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="p-2 bg-background/80 backdrop-blur-sm rounded-md border border-accent/20 mt-2"
+                                >
+                                  <p className="text-xs text-muted-foreground mb-0.5">Live transcript:</p>
+                                  <p className="text-xs text-foreground/80 italic">{interimTranscript}</p>
+                                </motion.div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {speechSupported && !isRecording && (
                         <div className="flex items-center gap-2 mt-2">

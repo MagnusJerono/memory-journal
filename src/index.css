@@ -200,3 +200,13 @@ h1, h2, h3, h4, h5, h6 {
 .page-transition {
   transition: opacity 250ms ease-out, transform 250ms ease-out;
 }
+
+/* Recording indicator pulse-glow animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(var(--color-accent-9), 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(var(--color-accent-9), 0.25);
+  }
+}
