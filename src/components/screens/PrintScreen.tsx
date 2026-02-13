@@ -87,14 +87,14 @@ export function PrintScreen({
   const handleDownloadPdf = async () => {
     if (!selectedBook) return;
     
+    const toastId = toast.loading('Generating PDF...');
     try {
-      const toastId = toast.loading('Generating PDF...');
       await generateBookPDF(selectedBook, entries, chapters);
       toast.dismiss(toastId);
       toast.success('PDF downloaded!', { description: 'Your book is ready for printing.' });
       setPrintDialogOpen(false);
     } catch (error) {
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error('Failed to generate PDF', { description: 'Please try again.' });
       console.error('PDF generation error:', error);
     }
@@ -419,6 +419,17 @@ function BookBuilder({
     setSelectedEntryIds([]);
   };
 
+  // Helper function to estimate page count
+  const estimatePageCount = (entryIds: string[]) => {
+    const selectedEntries = entries.filter(e => entryIds.includes(e.id));
+    const uniqueChapters = new Set(selectedEntries.map(e => e.chapter_id).filter(Boolean));
+    const chapterPages = uniqueChapters.size;
+    const coverPages = 1;
+    const minPages = coverPages + chapterPages + entryIds.length;
+    const maxPages = coverPages + chapterPages + (entryIds.length * 2);
+    return { min: minPages, max: maxPages };
+  };
+
   const handleNext = () => {
     if (step < 4) {
       setStep((step + 1) as 1 | 2 | 3 | 4);
@@ -466,14 +477,14 @@ function BookBuilder({
     
     // Generate and download PDF
     setIsGeneratingPdf(true);
+    const toastId = toast.loading('Generating your book...');
     try {
-      const toastId = toast.loading('Generating your book...');
       await generateBookPDF(book, entries, chapters);
       toast.dismiss(toastId);
       toast.success('Book exported!', { description: 'Your PDF has been downloaded.' });
       onNavigate({ type: 'print' });
     } catch (error) {
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.error('Failed to generate PDF', { description: 'Book saved, but PDF generation failed. Try downloading from the Print screen.' });
       console.error('PDF generation error:', error);
       onNavigate({ type: 'print' });
@@ -758,14 +769,9 @@ function BookBuilder({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Estimated Pages:</span>
                   <span className="font-medium text-foreground">
-                    {/* Calculation: Cover (1) + entries (1-2 pages each depending on length) + chapter dividers */}
                     {(() => {
-                      const selectedEntries = entries.filter(e => selectedEntryIds.includes(e.id));
-                      const uniqueChapters = new Set(selectedEntries.map(e => e.chapter_id).filter(Boolean));
-                      const chapterPages = uniqueChapters.size;
-                      const minPages = 1 + chapterPages + selectedEntryIds.length;
-                      const maxPages = 1 + chapterPages + (selectedEntryIds.length * 2);
-                      return `${minPages}-${maxPages}`;
+                      const { min, max } = estimatePageCount(selectedEntryIds);
+                      return `${min}-${max}`;
                     })()}
                   </span>
                 </div>

@@ -179,6 +179,8 @@ const ChapterDividerPage: React.FC<{ chapter: Chapter; theme: BookTheme }> = ({ 
   );
 };
 
+const MAX_FOOTER_LOCATIONS = 2; // Maximum locations to display in footer
+
 // Entry Page Component
 const EntryPage: React.FC<{ entry: Entry; theme: BookTheme; pageNumber: number }> = ({ entry, theme, pageNumber }) => {
   const themeStyle = getThemeStyles(theme);
@@ -252,11 +254,11 @@ const EntryPage: React.FC<{ entry: Entry; theme: BookTheme; pageNumber: number }
     }
   });
 
-  // Get locations for footer (deduplicate efficiently)
+  // Get locations for footer (deduplicate efficiently, limit to MAX_FOOTER_LOCATIONS)
   const locations = [...new Set([
     ...(entry.manual_locations || []),
     ...(entry.tags_ai?.places || [])
-  ])].slice(0, 2);
+  ])].slice(0, MAX_FOOTER_LOCATIONS);
 
   return (
     <Page size="A4" style={styles.page}>
