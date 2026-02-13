@@ -1,294 +1,125 @@
-import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { Book, Entry, Chapter, BookTheme, BOOK_THEMES } from './types';
 import { getEntryTitle, formatDate } from './entries';
 
-// Note: Using built-in PDF fonts (Times-Roman, Helvetica) to avoid external font loading issues
-
-// Theme-specific styles
 const getThemeStyles = (theme: BookTheme) => {
-  const themeConfig = BOOK_THEMES.find(t => t.value === theme);
-  if (!themeConfig) {
-    // Default fallback uses Times-Roman to match classic theme
-    return {
-      coverBg: '#f9fafb',
-      accentColor: '#374151',
-      textColor: '#1f2937',
-      fontFamily: 'Times-Roman'
-    };
-  }
-
-  const styles: Record<BookTheme, any> = {
+  const styles: Record<BookTheme, {
+    coverBg: string;
+    accentColor: string;
+    textColor: string;
+    fontFamily: string;
+    titleSize: number;
+    subtitleSize: number;
+  }> = {
     classic: {
       coverBg: '#fdfcfb',
       accentColor: '#4a5568',
       textColor: '#2d3748',
-      fontFamily: 'Times-Roman',
+      fontFamily: 'Georgia, serif',
       titleSize: 32,
       subtitleSize: 16,
-      coverPadding: 80
     },
     modern: {
       coverBg: '#ffffff',
       accentColor: '#6366f1',
       textColor: '#111827',
-      fontFamily: 'Helvetica',
+      fontFamily: 'Helvetica, Arial, sans-serif',
       titleSize: 36,
       subtitleSize: 14,
-      coverPadding: 60
     },
     vintage: {
       coverBg: '#faf8f3',
       accentColor: '#b45309',
       textColor: '#44403c',
-      fontFamily: 'Times-Roman',
+      fontFamily: 'Georgia, serif',
       titleSize: 30,
       subtitleSize: 15,
-      coverPadding: 70
     },
     minimal: {
       coverBg: '#fefefe',
       accentColor: '#6b7280',
       textColor: '#1f2937',
-      fontFamily: 'Helvetica',
+      fontFamily: 'Helvetica, Arial, sans-serif',
       titleSize: 28,
       subtitleSize: 14,
-      coverPadding: 100
     },
     romantic: {
       coverBg: '#fef5f8',
       accentColor: '#ec4899',
       textColor: '#831843',
-      fontFamily: 'Times-Roman',
+      fontFamily: 'Georgia, serif',
       titleSize: 34,
       subtitleSize: 16,
-      coverPadding: 70
     }
   };
 
-  return styles[theme];
+  return styles[theme] || styles.classic;
 };
 
-interface BookPDFProps {
-  book: Book;
-  entries: Entry[];
-  chapters: Chapter[];
+const MAX_FOOTER_LOCATIONS = 2;
+
+function generateCoverHTML(book: Book, theme: BookTheme): string {
+  const style = getThemeStyles(theme);
+  
+  return `
+    <div class="page cover-page" style="background: ${style.coverBg}; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 80px;">
+      <div style="width: 100px; height: 3px; background: ${style.accentColor}; margin-bottom: 30px;"></div>
+      <h1 style="font-family: ${style.fontFamily}; font-size: ${style.titleSize}px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 20px 0;">${book.title}</h1>
+      ${book.subtitle ? `<p style="font-family: ${style.fontFamily}; font-size: ${style.subtitleSize}px; color: ${style.textColor}; opacity: 0.7; text-align: center; margin: 0 0 40px 0;">${book.subtitle}</p>` : ''}
+      <div style="width: 100px; height: 3px; background: ${style.accentColor}; margin: 30px 0;"></div>
+      <p style="font-family: ${style.fontFamily}; font-size: 12px; color: ${style.textColor}; opacity: 0.6; text-align: center;">${book.entry_ids.length} Memories</p>
+    </div>
+  `;
 }
 
-// Cover Page Component
-const CoverPage: React.FC<{ book: Book; theme: BookTheme }> = ({ book, theme }) => {
-  const themeStyle = getThemeStyles(theme);
+function generateChapterDividerHTML(chapter: Chapter, theme: BookTheme): string {
+  const style = getThemeStyles(theme);
   
-  const styles = StyleSheet.create({
-    page: {
-      backgroundColor: themeStyle.coverBg,
-      padding: themeStyle.coverPadding,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    title: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: themeStyle.titleSize,
-      fontWeight: 'bold',
-      color: themeStyle.textColor,
-      textAlign: 'center',
-      marginBottom: 20,
-    },
-    subtitle: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: themeStyle.subtitleSize,
-      color: themeStyle.textColor,
-      opacity: 0.7,
-      textAlign: 'center',
-      marginBottom: 40,
-    },
-    divider: {
-      width: 100,
-      height: 3,
-      backgroundColor: themeStyle.accentColor,
-      marginTop: 30,
-      marginBottom: 30,
-    },
-    entryCount: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 12,
-      color: themeStyle.textColor,
-      opacity: 0.6,
-      textAlign: 'center',
-    }
-  });
+  return `
+    <div class="page chapter-divider" style="background: ${style.coverBg}; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 60px;">
+      <div style="width: 80px; height: 2px; background: ${style.accentColor}; margin-bottom: 30px;"></div>
+      <h2 style="font-family: ${style.fontFamily}; font-size: 28px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 15px 0;">${chapter.name}</h2>
+      ${chapter.description ? `<p style="font-family: ${style.fontFamily}; font-size: 14px; color: ${style.textColor}; opacity: 0.6; text-align: center; max-width: 300px;">${chapter.description}</p>` : ''}
+    </div>
+  `;
+}
 
-  return (
-    <Page size="A4" style={styles.page}>
-      <View style={styles.divider} />
-      <Text style={styles.title}>{book.title}</Text>
-      {book.subtitle && <Text style={styles.subtitle}>{book.subtitle}</Text>}
-      <View style={styles.divider} />
-      <Text style={styles.entryCount}>{book.entry_ids.length} Memories</Text>
-    </Page>
-  );
-};
-
-// Chapter Divider Page Component
-const ChapterDividerPage: React.FC<{ chapter: Chapter; theme: BookTheme }> = ({ chapter, theme }) => {
-  const themeStyle = getThemeStyles(theme);
-  
-  const styles = StyleSheet.create({
-    page: {
-      backgroundColor: themeStyle.coverBg,
-      padding: 60,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    divider: {
-      width: 80,
-      height: 2,
-      backgroundColor: themeStyle.accentColor,
-      marginBottom: 30,
-    },
-    chapterName: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: themeStyle.textColor,
-      textAlign: 'center',
-      marginBottom: 15,
-    },
-    chapterDescription: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 14,
-      color: themeStyle.textColor,
-      opacity: 0.6,
-      textAlign: 'center',
-      maxWidth: 300,
-    }
-  });
-
-  return (
-    <Page size="A4" style={styles.page}>
-      <View style={styles.divider} />
-      <Text style={styles.chapterName}>{chapter.name}</Text>
-      {chapter.description && (
-        <Text style={styles.chapterDescription}>{chapter.description}</Text>
-      )}
-    </Page>
-  );
-};
-
-const MAX_FOOTER_LOCATIONS = 2; // Maximum locations to display in footer
-
-// Entry Page Component
-const EntryPage: React.FC<{ entry: Entry; theme: BookTheme; pageNumber: number }> = ({ entry, theme, pageNumber }) => {
-  const themeStyle = getThemeStyles(theme);
+function generateEntryHTML(entry: Entry, theme: BookTheme, pageNumber: number): string {
+  const style = getThemeStyles(theme);
   const title = getEntryTitle(entry);
   const story = entry.story_ai || entry.transcript || '';
   
-  const styles = StyleSheet.create({
-    page: {
-      backgroundColor: '#ffffff',
-      padding: 60,
-      paddingBottom: 80,
-      display: 'flex',
-      flexDirection: 'column',
-    },
-    date: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 10,
-      color: themeStyle.accentColor,
-      marginBottom: 8,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-    },
-    title: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: themeStyle.textColor,
-      marginBottom: 20,
-    },
-    divider: {
-      width: 40,
-      height: 1,
-      backgroundColor: themeStyle.accentColor,
-      marginBottom: 20,
-      opacity: 0.4,
-    },
-    story: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 11,
-      color: themeStyle.textColor,
-      lineHeight: 1.8,
-      textAlign: 'justify',
-    },
-    paragraph: {
-      marginBottom: 12,
-    },
-    footer: {
-      position: 'absolute',
-      bottom: 40,
-      left: 60,
-      right: 60,
-      display: 'flex',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: '#e5e7eb',
-    },
-    pageNumber: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 9,
-      color: themeStyle.textColor,
-      opacity: 0.5,
-    },
-    tags: {
-      fontFamily: themeStyle.fontFamily,
-      fontSize: 8,
-      color: themeStyle.accentColor,
-      opacity: 0.6,
-    }
-  });
-
-  // Get locations for footer (deduplicate efficiently, limit to MAX_FOOTER_LOCATIONS)
   const locations = [...new Set([
     ...(entry.manual_locations || []),
     ...(entry.tags_ai?.places || [])
   ])].slice(0, MAX_FOOTER_LOCATIONS);
 
-  return (
-    <Page size="A4" style={styles.page}>
-      <Text style={styles.date}>{formatDate(entry.date)}</Text>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.divider} />
-      <View>
-        {story.split('\n\n').map((paragraph, idx) => (
-          <Text key={idx} style={[styles.story, styles.paragraph]}>
-            {paragraph.trim()}
-          </Text>
-        ))}
-      </View>
-      <View style={styles.footer}>
-        <Text style={styles.tags}>
-          {locations.length > 0 ? locations.join(' • ') : ''}
-        </Text>
-        <Text style={styles.pageNumber}>{pageNumber}</Text>
-      </View>
-    </Page>
-  );
-};
+  const paragraphs = story.split('\n\n').map(p => p.trim()).filter(Boolean);
 
-// Main Book PDF Document Component
-const BookPDFDocument: React.FC<BookPDFProps> = ({ book, entries, chapters }) => {
+  return `
+    <div class="page entry-page" style="background: #ffffff; padding: 60px; padding-bottom: 80px; display: flex; flex-direction: column; height: 100%; position: relative; box-sizing: border-box;">
+      <p style="font-family: ${style.fontFamily}; font-size: 10px; color: ${style.accentColor}; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px;">${formatDate(entry.date)}</p>
+      <h3 style="font-family: ${style.fontFamily}; font-size: 18px; font-weight: bold; color: ${style.textColor}; margin: 0 0 20px 0;">${title}</h3>
+      <div style="width: 40px; height: 1px; background: ${style.accentColor}; opacity: 0.4; margin-bottom: 20px;"></div>
+      <div style="flex: 1;">
+        ${paragraphs.map(p => `<p style="font-family: ${style.fontFamily}; font-size: 11px; color: ${style.textColor}; line-height: 1.8; text-align: justify; margin: 0 0 12px 0;">${p}</p>`).join('')}
+      </div>
+      <div style="position: absolute; bottom: 40px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+        <span style="font-family: ${style.fontFamily}; font-size: 8px; color: ${style.accentColor}; opacity: 0.6;">${locations.length > 0 ? locations.join(' • ') : ''}</span>
+        <span style="font-family: ${style.fontFamily}; font-size: 9px; color: ${style.textColor}; opacity: 0.5;">${pageNumber}</span>
+      </div>
+    </div>
+  `;
+}
+
+export async function generateBookPDF(
+  book: Book,
+  entries: Entry[],
+  chapters: Chapter[]
+): Promise<void> {
   const bookEntries = entries
     .filter(e => book.entry_ids.includes(e.id))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Group entries by chapter
   const entriesByChapter = new Map<string | null, Entry[]>();
   bookEntries.forEach(entry => {
     const chapterId = entry.chapter_id;
@@ -298,62 +129,113 @@ const BookPDFDocument: React.FC<BookPDFProps> = ({ book, entries, chapters }) =>
     entriesByChapter.get(chapterId)!.push(entry);
   });
 
-  let pageNumber = 0; // Cover is unnumbered, content pages start at 1
+  let pageNumber = 0;
+  let pagesHTML = '';
 
-  return (
-    <Document>
-      {/* Cover Page */}
-      <CoverPage book={book} theme={book.theme} />
-      
-      {/* Entries organized by chapter */}
-      {Array.from(entriesByChapter.entries()).map(([chapterId, chapterEntries], chapterIdx) => {
-        const chapter = chapterId ? chapters.find(c => c.id === chapterId) : null;
-        
-        return (
-          <React.Fragment key={chapterId || 'no-chapter'}>
-            {/* Chapter divider if chapter exists */}
-            {chapter && <ChapterDividerPage chapter={chapter} theme={book.theme} />}
-            
-            {/* Entry pages */}
-            {chapterEntries.map((entry, entryIdx) => {
-              pageNumber++;
-              return <EntryPage key={entry.id} entry={entry} theme={book.theme} pageNumber={pageNumber} />;
-            })}
-          </React.Fragment>
-        );
-      })}
-    </Document>
-  );
-};
+  pagesHTML += generateCoverHTML(book, book.theme);
 
-// Main export function to generate and download PDF
-export async function generateBookPDF(
-  book: Book,
-  entries: Entry[],
-  chapters: Chapter[]
-): Promise<void> {
-  try {
-    const blob = await pdf(
-      <BookPDFDocument book={book} entries={entries} chapters={chapters} />
-    ).toBlob();
+  Array.from(entriesByChapter.entries()).forEach(([chapterId, chapterEntries]) => {
+    const chapter = chapterId ? chapters.find(c => c.id === chapterId) : null;
     
-    // Create download link
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    // Sanitize filename: replace non-alphanumeric with hyphen, collapse multiple hyphens, trim hyphens
-    const sanitizedTitle = book.title
-      .replace(/[^a-z0-9]+/gi, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .toLowerCase();
-    link.download = `${sanitizedTitle || 'untitled-book'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    throw error;
+    if (chapter) {
+      pagesHTML += generateChapterDividerHTML(chapter, book.theme);
+    }
+    
+    chapterEntries.forEach(entry => {
+      pageNumber++;
+      pagesHTML += generateEntryHTML(entry, book.theme, pageNumber);
+    });
+  });
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Could not open print window. Please allow popups for this site.');
   }
+
+  const sanitizedTitle = book.title
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'untitled-book';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${book.title}</title>
+      <style>
+        @media print {
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+          }
+          .page {
+            page-break-after: always;
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+          }
+          .page:last-child {
+            page-break-after: auto;
+          }
+        }
+        
+        @media screen {
+          body {
+            background: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+          }
+          .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+          }
+          .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+          }
+          .print-button:hover {
+            background: #4338ca;
+          }
+        }
+        
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      </style>
+    </head>
+    <body>
+      <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      ${pagesHTML}
+      <script>
+        document.title = '${sanitizedTitle}';
+      </script>
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
 }
