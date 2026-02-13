@@ -93,7 +93,7 @@ export function ChaptersScreen({
             <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground hidden sm:block">{t.chapters.title}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+            <Button size="sm" onClick={() => setIsDialogOpen(true)} aria-label={t.chapters.newChapter}>
               <Plus className="mr-0.5 sm:mr-1.5" weight="bold" size={16} />
               <span className="hidden sm:inline">{t.chapters.newChapter}</span>
               <span className="sm:hidden">New</span>
