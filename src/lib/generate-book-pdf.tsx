@@ -1,24 +1,9 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { Book, Entry, Chapter, BookTheme, BOOK_THEMES } from './types';
 import { getEntryTitle, formatDate } from './entries';
 
-// Register fonts (using system fonts for simplicity)
-Font.register({
-  family: 'serif',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/crimsontext/v19/wlp2gwHKFkZgtmSR3NB0oRJfbwhT.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/crimsontext/v19/wlppgwHKFkZgtmSR3NB0oRJvaAJvmg.woff2', fontWeight: 600 },
-  ]
-});
-
-Font.register({
-  family: 'sans-serif',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYAZ9hiA.woff2', fontWeight: 600 },
-  ]
-});
+// Note: Using built-in PDF fonts (Times-Roman, Helvetica) to avoid external font loading issues
 
 // Theme-specific styles
 const getThemeStyles = (theme: BookTheme) => {
@@ -37,7 +22,7 @@ const getThemeStyles = (theme: BookTheme) => {
       coverBg: '#fdfcfb',
       accentColor: '#4a5568',
       textColor: '#2d3748',
-      fontFamily: 'serif',
+      fontFamily: 'Times-Roman',
       titleSize: 32,
       subtitleSize: 16,
       coverPadding: 80
@@ -46,7 +31,7 @@ const getThemeStyles = (theme: BookTheme) => {
       coverBg: '#ffffff',
       accentColor: '#6366f1',
       textColor: '#111827',
-      fontFamily: 'sans-serif',
+      fontFamily: 'Helvetica',
       titleSize: 36,
       subtitleSize: 14,
       coverPadding: 60
@@ -55,7 +40,7 @@ const getThemeStyles = (theme: BookTheme) => {
       coverBg: '#faf8f3',
       accentColor: '#b45309',
       textColor: '#44403c',
-      fontFamily: 'serif',
+      fontFamily: 'Times-Roman',
       titleSize: 30,
       subtitleSize: 15,
       coverPadding: 70
@@ -64,7 +49,7 @@ const getThemeStyles = (theme: BookTheme) => {
       coverBg: '#fefefe',
       accentColor: '#6b7280',
       textColor: '#1f2937',
-      fontFamily: 'sans-serif',
+      fontFamily: 'Helvetica',
       titleSize: 28,
       subtitleSize: 14,
       coverPadding: 100
@@ -73,7 +58,7 @@ const getThemeStyles = (theme: BookTheme) => {
       coverBg: '#fef5f8',
       accentColor: '#ec4899',
       textColor: '#831843',
-      fontFamily: 'serif',
+      fontFamily: 'Times-Roman',
       titleSize: 34,
       subtitleSize: 16,
       coverPadding: 70
