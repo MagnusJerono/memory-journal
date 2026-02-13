@@ -338,21 +338,21 @@ Return ONLY valid JSON in this format:
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.25 }}
-                            className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-accent/10 to-accent/5 rounded-lg border-2 border-accent/30 shadow-lg relative overflow-hidden"
+                            className="mt-3 p-3 sm:p-4 bg-gradient-to-br from-violet-500/10 to-violet-500/5 rounded-2xl border-2 border-violet-500/30 shadow-lg relative overflow-hidden"
                             style={{
-                              boxShadow: '0 0 20px rgba(var(--color-accent-9), 0.15)',
+                              boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
                               animation: 'pulse-glow 2s ease-in-out infinite'
                             }}
                           >
                             {/* Animated background gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-accent/10 to-accent/5 animate-pulse opacity-50" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-purple-500/10 to-pink-400/5 animate-pulse opacity-50" />
                             
                             <div className="relative z-10">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-2.5 h-2.5 bg-destructive rounded-full animate-pulse shadow-lg" 
-                                        style={{ boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)' }} />
-                                  <span className="text-xs font-semibold text-accent">Recording</span>
+                                  <span className="w-2.5 h-2.5 bg-violet-500 rounded-full animate-pulse shadow-lg" 
+                                        style={{ boxShadow: '0 0 8px rgba(139, 92, 246, 0.5)' }} />
+                                  <span className="text-xs font-semibold text-violet-600 dark:text-violet-400">Recording</span>
                                   <span className="text-xs text-muted-foreground font-mono">
                                     {formatDuration(recordingDuration)}
                                   </span>
@@ -362,7 +362,7 @@ Return ONLY valid JSON in this format:
                                   variant="default"
                                   size="sm"
                                   onClick={() => handleRecording(index)}
-                                  className="bg-destructive hover:bg-destructive/90 text-white shadow-md h-7 px-3 text-xs"
+                                  className="bg-violet-500 hover:bg-violet-600 text-white shadow-md h-7 px-3 text-xs"
                                   aria-label="Stop recording"
                                 >
                                   <Stop weight="fill" className="h-3.5 w-3.5 mr-1.5" />
