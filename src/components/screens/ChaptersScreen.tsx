@@ -87,15 +87,16 @@ export function ChaptersScreen({
             <LogoHomeButton 
               isDarkMode={isDarkMode} 
               onClick={() => onNavigate({ type: 'home' })} 
-              size="sm"
+              size="md"
             />
-            <span className="text-border/50">|</span>
-            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.chapters.title}</h1>
+            <span className="text-border/50 hidden sm:inline">|</span>
+            <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground hidden sm:block">{t.chapters.title}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="mr-1.5" weight="bold" size={16} />
-              {t.chapters.newChapter}
+            <Button size="sm" onClick={() => setIsDialogOpen(true)} aria-label={t.chapters.newChapter}>
+              <Plus className="mr-0.5 sm:mr-1.5" weight="bold" size={16} />
+              <span className="hidden sm:inline">{t.chapters.newChapter}</span>
+              <span className="sm:hidden">New</span>
             </Button>
             <div className="hidden sm:block">
               <NavigationMenu 
@@ -114,7 +115,7 @@ export function ChaptersScreen({
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
         {activeChapters.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 24 }}
