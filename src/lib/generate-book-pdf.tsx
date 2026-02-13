@@ -338,7 +338,11 @@ export async function generateBookPDF(
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const sanitizedTitle = book.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    // Sanitize filename: replace non-alphanumeric with single hyphen, trim hyphens, fallback to 'untitled-book'
+    const sanitizedTitle = book.title
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
     link.download = `${sanitizedTitle || 'untitled-book'}.pdf`;
     document.body.appendChild(link);
     link.click();
