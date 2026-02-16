@@ -119,6 +119,32 @@ function AppContent() {
 
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + N for new memory
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        navigate({ type: 'prompts-new' });
+        return;
+      }
+      
+      // Escape to go home (but not when in input/textarea)
+      if (e.key === 'Escape') {
+        const activeElement = document.activeElement;
+        const isTyping = activeElement?.tagName === 'INPUT' || 
+                        activeElement?.tagName === 'TEXTAREA';
+        
+        if (!isTyping) {
+          navigate({ type: 'home' });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const renderScreen = () => {
     switch (currentView.type) {
       case 'home':

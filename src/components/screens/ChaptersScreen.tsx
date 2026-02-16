@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Books, CaretRight, PushPin, Archive } from '@phosphor-icons/react';
+import { Plus, Books, CaretRight, PushPin, Archive, Check } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { v4 as uuid } from 'uuid';
 import { SettingsPanel } from '@/components/SettingsPanel';
@@ -263,17 +263,31 @@ export function ChaptersScreen({
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">{t.chapters.color}</label>
               <div className="flex flex-wrap gap-2">
-                {CHAPTER_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setSelectedColor(color.value)}
-                    className={`w-9 h-9 rounded-full transition-all ${
-                      selectedColor === color.value ? 'ring-2 ring-offset-2 ring-foreground scale-110' : 'hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.color }}
-                    title={color.label}
-                  />
-                ))}
+                {CHAPTER_COLORS.map((color) => {
+                  const isSelected = selectedColor === color.value;
+                  // Determine if we need dark or light icon based on color brightness
+                  const isDarkColor = ['violet', 'slate'].includes(color.value);
+                  
+                  return (
+                    <button
+                      key={color.value}
+                      onClick={() => setSelectedColor(color.value)}
+                      className={`w-9 h-9 rounded-full transition-all flex items-center justify-center ${
+                        isSelected ? 'ring-2 ring-offset-2 ring-foreground scale-110' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color.color }}
+                      title={color.label}
+                      aria-label={`${color.label} ${isSelected ? '(selected)' : ''}`}
+                    >
+                      {isSelected && (
+                        <Check 
+                          weight="bold" 
+                          className={`w-5 h-5 ${isDarkColor ? 'text-white' : 'text-gray-900'}`}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border/30">
