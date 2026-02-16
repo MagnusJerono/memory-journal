@@ -162,16 +162,17 @@ export const DEFAULT_PROMPTS: Prompt[] = [
   { id: '16', text: 'What makes you feel most alive?', category: 'reflection' },
 ];
 
-export type NavigationTab = 'home' | 'prompts' | 'chapters' | 'search' | 'print';
+export type NavigationTab = 'home' | 'prompts' | 'chapters' | 'timeline' | 'search' | 'print';
 
 export type AppView = 
   | { type: 'home' }
   | { type: 'prompts' }
-  | { type: 'prompts-new'; promptId?: string }
+  | { type: 'prompts-new'; promptId?: string; returnTo?: AppView }
   | { type: 'chapters' }
   | { type: 'chapter-detail'; chapterId: string }
-  | { type: 'entry-read'; entryId: string }
-  | { type: 'entry-edit'; entryId: string }
+  | { type: 'timeline' }
+  | { type: 'entry-read'; entryId: string; returnTo?: AppView }
+  | { type: 'entry-edit'; entryId: string; returnTo?: AppView }
   | { type: 'search' }
   | { type: 'print' }
   | { type: 'print-builder'; bookId?: string; step: 1 | 2 | 3 | 4 };
