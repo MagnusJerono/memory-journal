@@ -141,7 +141,7 @@ export function AudioWaveform({
           clearTimeout(inactiveTimeoutRef.current);
         }
         inactiveTimeoutRef.current = setTimeout(() => {
-          if (!isActive && isAnimating === false) {
+          if (!isActive) {
             // Restart with low frame rate for breathing effect
             timeRef.current += 0.01; // Slower increment
             draw();

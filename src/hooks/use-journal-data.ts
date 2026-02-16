@@ -134,7 +134,7 @@ export function useJournalData() {
         return [...list, entry];
       });
     } catch (error) {
-      toast.error('Failed to save. Please try again.');
+      toast.error('Failed to save memory entry. Please try again.');
       throw error;
     }
   };
@@ -143,7 +143,7 @@ export function useJournalData() {
     try {
       setEntries((current) => (current || []).filter(e => e.id !== entryId));
     } catch (error) {
-      toast.error('Failed to delete. Please try again.');
+      toast.error('Failed to delete memory entry. Please try again.');
       throw error;
     }
   };
@@ -172,7 +172,7 @@ export function useJournalData() {
         return [...list, { ...chapter, order: list.length }];
       });
     } catch (error) {
-      toast.error('Failed to save. Please try again.');
+      toast.error('Failed to save chapter. Please try again.');
       throw error;
     }
   };
@@ -185,7 +185,7 @@ export function useJournalData() {
         return list.map(e => e.chapter_id === chapterId ? { ...e, chapter_id: null } : e);
       });
     } catch (error) {
-      toast.error('Failed to delete. Please try again.');
+      toast.error('Failed to delete chapter. Please try again.');
       throw error;
     }
   };
@@ -210,7 +210,7 @@ export function useJournalData() {
         );
       });
     } catch (error) {
-      toast.error('Failed to save. Please try again.');
+      toast.error('Failed to assign chapter. Please try again.');
       throw error;
     }
   };
