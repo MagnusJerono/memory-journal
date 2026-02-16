@@ -2,6 +2,7 @@ import { useKV } from '@github/spark/hooks';
 import { Entry, Chapter, Book } from '@/lib/types';
 import { useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
+import { toast } from 'sonner';
 
 // Starter content
 const createStarterChapters = (): Chapter[] => {
@@ -121,20 +122,30 @@ export function useJournalData() {
   const bookList = books || [];
 
   const handleSaveEntry = (entry: Entry) => {
-    setEntries((current) => {
-      const list = current || [];
-      const existing = list.findIndex(e => e.id === entry.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...entry, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, entry];
-    });
+    try {
+      setEntries((current) => {
+        const list = current || [];
+        const existing = list.findIndex(e => e.id === entry.id);
+        if (existing >= 0) {
+          const updated = [...list];
+          updated[existing] = { ...entry, updated_at: new Date().toISOString() };
+          return updated;
+        }
+        return [...list, entry];
+      });
+    } catch (error) {
+      toast.error('Failed to save memory entry. Please try again.');
+      throw error;
+    }
   };
 
   const handleDeleteEntry = (entryId: string) => {
-    setEntries((current) => (current || []).filter(e => e.id !== entryId));
+    try {
+      setEntries((current) => (current || []).filter(e => e.id !== entryId));
+    } catch (error) {
+      toast.error('Failed to delete memory entry. Please try again.');
+      throw error;
+    }
   };
 
   const handleToggleStar = (entryId: string) => {
@@ -149,24 +160,34 @@ export function useJournalData() {
   };
 
   const handleSaveChapter = (chapter: Chapter) => {
-    setChapters((current) => {
-      const list = current || [];
-      const existing = list.findIndex(c => c.id === chapter.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...chapter, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, { ...chapter, order: list.length }];
-    });
+    try {
+      setChapters((current) => {
+        const list = current || [];
+        const existing = list.findIndex(c => c.id === chapter.id);
+        if (existing >= 0) {
+          const updated = [...list];
+          updated[existing] = { ...chapter, updated_at: new Date().toISOString() };
+          return updated;
+        }
+        return [...list, { ...chapter, order: list.length }];
+      });
+    } catch (error) {
+      toast.error('Failed to save chapter. Please try again.');
+      throw error;
+    }
   };
 
   const handleDeleteChapter = (chapterId: string) => {
-    setChapters((current) => (current || []).filter(c => c.id !== chapterId));
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => e.chapter_id === chapterId ? { ...e, chapter_id: null } : e);
-    });
+    try {
+      setChapters((current) => (current || []).filter(c => c.id !== chapterId));
+      setEntries((current) => {
+        const list = current || [];
+        return list.map(e => e.chapter_id === chapterId ? { ...e, chapter_id: null } : e);
+      });
+    } catch (error) {
+      toast.error('Failed to delete chapter. Please try again.');
+      throw error;
+    }
   };
 
   const handleReorderChapters = (startIndex: number, endIndex: number) => {
@@ -179,14 +200,19 @@ export function useJournalData() {
   };
 
   const handleAssignChapter = (entryId: string, chapterId: string | null) => {
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => 
-        e.id === entryId 
-          ? { ...e, chapter_id: chapterId, updated_at: new Date().toISOString() }
-          : e
-      );
-    });
+    try {
+      setEntries((current) => {
+        const list = current || [];
+        return list.map(e => 
+          e.id === entryId 
+            ? { ...e, chapter_id: chapterId, updated_at: new Date().toISOString() }
+            : e
+        );
+      });
+    } catch (error) {
+      toast.error('Failed to assign chapter. Please try again.');
+      throw error;
+    }
   };
 
   const handleSaveBook = (book: Book) => {

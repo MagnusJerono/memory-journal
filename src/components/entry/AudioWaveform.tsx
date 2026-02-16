@@ -22,6 +22,7 @@ export function AudioWaveform({
   const animationRef = useRef<number | null>(null);
   const currentLevelRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
+  const inactiveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -121,11 +122,23 @@ export function AudioWaveform({
       ctx.globalAlpha = 1.0;
 
       // Check if animation should pause: inactive and level has settled near target
-      const hasSettled = Math.abs(currentLevelRef.current - targetLevel) < 0.01;
+      const hasSettled = Math.abs(currentLevelRef.current - targetLevel) < 0.001;
       if (!isActive && hasSettled) {
-        // Stop animation loop to save CPU
+        // Stop rAF loop to save CPU when inactive and settled
         isAnimating = false;
         animationRef.current = null;
+        
+        // Use setTimeout for gentle breathing animation at reduced frame rate (~10fps)
+        if (inactiveTimeoutRef.current) {
+          clearTimeout(inactiveTimeoutRef.current);
+        }
+        inactiveTimeoutRef.current = setTimeout(() => {
+          // Only restart if still inactive and animation hasn't been restarted
+          if (!isActive && isAnimating === false) {
+            timeRef.current += 0.01; // Slower increment
+            draw();
+          }
+        }, 100);
       } else if (isAnimating) {
         animationRef.current = requestAnimationFrame(draw);
       }
@@ -137,6 +150,9 @@ export function AudioWaveform({
       isAnimating = false;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      if (inactiveTimeoutRef.current) {
+        clearTimeout(inactiveTimeoutRef.current);
       }
     };
   }, [audioLevel, isActive, isDarkMode, height, getFrequencyData]);
