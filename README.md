@@ -8,11 +8,13 @@ An AI-powered personal memory journal built as a TypeScript/React app on GitHub 
 - ✨ **AI story generation with 7 tone options** — Transform your notes into polished stories with natural, casual, poetic, nostalgic, journalistic, humorous, or custom tones
 - 📸 **Photo attachments** — Add up to 10 photos per entry with intuitive drag-and-drop support
 - 📚 **Chapters for organizing memories** — Organize your journal with customizable chapters featuring icons, colors, and pin/archive capabilities
+- ⏰ **Timeline view** — Chronological view of all memories organized by year and month for easy browsing through time
 - 🔍 **Full-text search** — Quickly find any memory across all your entries
 - 📖 **Book/print builder** — Create beautiful printed memories with 5 themes: classic, modern, vintage, minimal, and romantic
 - 🌍 **Location tagging** — Add location context via search or GPS coordinates
 - 🌙 **Smart theming** — Auto/light/dark theme with automatic night-time detection
-- 🌐 **Internationalized UI** — Use the app in 11 languages: EN, DE, ES, FR, IT, PT, NL, PL, JA, KO, ZH
+- 🖥️ **Responsive design** — Desktop sidebar and mobile bottom navigation for seamless experience across devices
+- 🌐 **Internationalized UI** — Use the app in 7 languages: EN, DE, ES, FR, PT, ZH, JA
 - 💾 **Auto-save drafts** — Never lose your work with automatic draft saving
 - 🔥 **Writing streak tracking** — Stay motivated with visual streak tracking
 - 📝 **Journaling prompts** — Get inspired with prompts across 6 categories
@@ -35,36 +37,38 @@ src/
 ├── components/
 │   ├── screens/        # Main app screens
 │   │   ├── HomeScreen.tsx           # Home timeline view
-│   │   ├── EntryEditScreen.tsx      # Entry creation/editing
+│   │   ├── EntryEditScreen.tsx      # Entry creation/editing (with unsaved changes guard)
 │   │   ├── EntryReadScreen.tsx      # Entry reading view
 │   │   ├── ChaptersScreen.tsx       # Chapter management
+│   │   ├── ChapterDetailScreen.tsx  # Chapter detail view
+│   │   ├── TimelineScreen.tsx       # Chronological timeline view
 │   │   ├── SearchScreen.tsx         # Search interface
 │   │   ├── PrintScreen.tsx          # Print/book builder
 │   │   └── PromptsScreen.tsx        # Writing prompts
 │   ├── entry/          # Entry-related components
-│   │   ├── AudioWaveform.tsx        # Audio recording visualization
+│   │   ├── AudioWaveform.tsx        # Audio recording visualization (optimized)
 │   │   ├── EntryReadView.tsx        # Entry display component
 │   │   ├── LocationPanel.tsx        # Location picker
 │   │   └── RefinementPanel.tsx      # AI refinement controls
 │   ├── navigation/     # Navigation components
-│   │   ├── BottomNav.tsx            # Mobile bottom navigation
-│   │   ├── DesktopSidebar.tsx       # Desktop sidebar (if used)
-│   │   └── NavigationMenu.tsx       # Main navigation menu
+│   │   ├── BottomNav.tsx            # Mobile bottom navigation (6 tabs)
+│   │   ├── DesktopSidebar.tsx       # Desktop sidebar navigation
+│   │   └── NavigationMenu.tsx       # Hamburger navigation menu
 │   ├── ui/             # Shared UI primitives
 │   │   └── ...                      # Button, Dialog, Input, etc.
 │   ├── timeline/       # Timeline display components
 │   └── yearbook/       # Yearbook view components
 ├── hooks/              # Custom React hooks
 │   ├── use-speech-to-text.ts       # Speech recognition
-│   ├── use-language.ts             # i18n support
-│   ├── use-is-mobile.ts            # Responsive detection
+│   ├── use-language.tsx            # i18n support
+│   ├── use-mobile.ts               # Responsive detection
 │   ├── use-is-night.ts             # Night mode detection
 │   └── use-journal-data.ts         # Journal data management
 ├── lib/                # Core utilities and logic
 │   ├── types.ts                    # TypeScript definitions
 │   ├── entries.ts                  # Entry logic and AI generation
 │   ├── geocoding.ts                # Location services
-│   ├── i18n/                       # Translation files
+│   ├── i18n.ts                     # Translation files (7 languages)
 │   └── utils.ts                    # Helper utilities
 └── contexts/           # React contexts
     └── ThemeContext.tsx            # Theme management

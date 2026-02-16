@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
+import { DesktopSidebar } from './components/navigation/DesktopSidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useIsMobile } from './hooks/use-mobile';
@@ -13,10 +14,12 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { PromptsScreen } from './components/screens/PromptsScreen';
 import { ChaptersScreen } from './components/screens/ChaptersScreen';
 import { ChapterDetailScreen } from './components/screens/ChapterDetailScreen';
+import { TimelineScreen } from './components/screens/TimelineScreen';
 import { SearchScreen } from './components/screens/SearchScreen';
 import { PrintScreen } from './components/screens/PrintScreen';
 import { EntryReadScreen } from './components/screens/EntryReadScreen';
 import { EntryEditScreen } from './components/screens/EntryEditScreen';
+import { SettingsPanel } from './components/SettingsPanel';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
@@ -48,6 +51,24 @@ function AppContent() {
     setCurrentView(view);
   };
 
+  // Helper to generate unique keys for AnimatePresence
+  const getViewKey = (view: AppView): string => {
+    switch (view.type) {
+      case 'entry-read':
+        return `entry-read-${view.entryId}`;
+      case 'entry-edit':
+        return `entry-edit-${view.entryId}`;
+      case 'chapter-detail':
+        return `chapter-detail-${view.chapterId}`;
+      case 'prompts-new':
+        return `prompts-new-${view.promptId || 'default'}`;
+      case 'print-builder':
+        return `print-builder-${view.bookId || 'new'}-${view.step}`;
+      default:
+        return view.type;
+    }
+  };
+
   const getCurrentTab = (): NavigationTab => {
     switch (currentView.type) {
       case 'home':
@@ -58,6 +79,8 @@ function AppContent() {
       case 'chapters':
       case 'chapter-detail':
         return 'chapters';
+      case 'timeline':
+        return 'timeline';
       case 'search':
         return 'search';
       case 'print':
@@ -82,6 +105,9 @@ function AppContent() {
       case 'chapters':
         navigate({ type: 'chapters' });
         break;
+      case 'timeline':
+        navigate({ type: 'timeline' });
+        break;
       case 'search':
         navigate({ type: 'search' });
         break;
@@ -90,6 +116,8 @@ function AppContent() {
         break;
     }
   };
+
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
 
   const renderScreen = () => {
     switch (currentView.type) {
@@ -121,7 +149,7 @@ function AppContent() {
                 navigate({ type: 'entry-read', entryId: entry.id });
               }
             }}
-            onBack={() => navigate({ type: 'home' })}
+            onBack={() => navigate(currentView.returnTo || { type: 'home' })}
             onNavigate={navigate}
             onSaveChapter={saveChapter}
           />
@@ -152,6 +180,15 @@ function AppContent() {
             onSaveChapter={saveChapter}
             onDeleteChapter={deleteChapter}
             onToggleStar={toggleStar}
+          />
+        );
+
+      case 'timeline':
+        return (
+          <TimelineScreen
+            entries={entries}
+            chapters={chapters}
+            onNavigate={navigate}
           />
         );
 
@@ -189,14 +226,14 @@ function AppContent() {
             onSave={(entry) => {
               saveEntry(entry);
               if (!entry.is_draft) {
-                navigate({ type: 'entry-read', entryId: entry.id });
+                navigate({ type: 'entry-read', entryId: entry.id, returnTo: currentView.returnTo });
               }
             }}
-            onBack={() => navigate({ type: 'home' })}
+            onBack={() => navigate(currentView.returnTo || { type: 'home' })}
             onNavigate={navigate}
             onDelete={() => {
               deleteEntry(editEntry.id);
-              navigate({ type: 'home' });
+              navigate(currentView.returnTo || { type: 'home' });
             }}
             onSaveChapter={saveChapter}
           />
@@ -250,11 +287,21 @@ function AppContent() {
     <div className="min-h-screen relative">
       <DreamyBackground isDarkMode={isDarkMode} />
       
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <DesktopSidebar
+          currentTab={getCurrentTab()}
+          onTabChange={handleTabChange}
+          onSettingsClick={() => setSettingsPanelOpen(true)}
+          isDarkMode={isDarkMode}
+        />
+      )}
+      
       {/* Main Content with Page Transitions */}
-      <div className={`relative z-10 ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
+      <div className={`relative z-10 ${!isMobile ? 'ml-64' : ''} ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentView.type}
+            key={getViewKey(currentView)}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
@@ -273,6 +320,12 @@ function AppContent() {
           isDarkMode={isDarkMode}
         />
       )}
+
+      {/* Settings Panel Dialog */}
+      <SettingsPanel 
+        open={settingsPanelOpen}
+        onOpenChange={setSettingsPanelOpen}
+      />
 
       <Toaster position="bottom-center" />
     </div>

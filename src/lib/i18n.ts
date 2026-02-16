@@ -25,7 +25,7 @@ export function detectBrowserLanguage(): AppLanguage {
 }
 
 type TranslationKeys = {
-  nav: { home: string; prompts: string; chapters: string; search: string; print: string };
+  nav: { home: string; prompts: string; chapters: string; timeline: string; search: string; print: string };
   settings: { 
     title: string; description: string; language: string; languageDesc: string; autoDetect: string; autoDetectDesc: string;
     account: string; privacy: string; privacyDesc: string; exportData: string; exportDataDesc: string; 
@@ -49,6 +49,9 @@ type TranslationKeys = {
     title: string; description: string; newChapter: string; editChapter: string; deleteChapter: string;
     noChapters: string; noChaptersDesc: string; name: string; icon: string; color: string; 
     entries: string; pinned: string; archived: string;
+  };
+  timeline: {
+    title: string; empty: string; emptyDesc: string; memories: string;
   };
   search: {
     title: string; placeholder: string; noResults: string; noResultsDesc: string; recentSearches: string;
@@ -75,7 +78,7 @@ type TranslationKeys = {
 
 const translations: Record<AppLanguage, TranslationKeys> = {
   en: {
-    nav: { home: 'Home', prompts: 'Prompts', chapters: 'Chapters', search: 'Search', print: 'Print' },
+    nav: { home: 'Home', prompts: 'Prompts', chapters: 'Chapters', timeline: 'Timeline', search: 'Search', print: 'Print' },
     settings: { 
       title: 'Profile & Settings', description: 'Manage your Tightly experience', 
       language: 'Language', languageDesc: 'App display language', autoDetect: 'Auto-detect', autoDetectDesc: 'Use browser/device language',
@@ -111,6 +114,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: 'Delete Chapter', noChapters: 'No chapters yet', noChaptersDesc: 'Create chapters to organize your memories by theme',
       name: 'Name', icon: 'Icon', color: 'Color', entries: 'entries', pinned: 'Pinned', archived: 'Archived'
     },
+    timeline: {
+      title: 'Timeline', empty: 'Your timeline is empty', emptyDesc: 'Start capturing moments to see them here', memories: 'memories'
+    },
     search: {
       title: 'Search', placeholder: 'Search memories...', noResults: 'No results', noResultsDesc: 'Try different keywords',
       recentSearches: 'Recent searches'
@@ -138,7 +144,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'just now', minutesAgo: 'm ago', hoursAgo: 'h ago', daysAgo: 'd ago' }
   },
   de: {
-    nav: { home: 'Start', prompts: 'Impulse', chapters: 'Kapitel', search: 'Suche', print: 'Drucken' },
+    nav: { home: 'Start', prompts: 'Impulse', chapters: 'Kapitel', timeline: 'Zeitachse', search: 'Suche', print: 'Drucken' },
     settings: { 
       title: 'Profil & Einstellungen', description: 'Verwalte dein Tightly-Erlebnis', 
       language: 'Sprache', languageDesc: 'App-Anzeigesprache', autoDetect: 'Automatisch erkennen', autoDetectDesc: 'Browser-/Gerätesprache verwenden',
@@ -174,6 +180,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: 'Kapitel löschen', noChapters: 'Noch keine Kapitel', noChaptersDesc: 'Erstelle Kapitel um deine Erinnerungen thematisch zu ordnen',
       name: 'Name', icon: 'Symbol', color: 'Farbe', entries: 'Einträge', pinned: 'Angepinnt', archived: 'Archiviert'
     },
+    timeline: {
+      title: 'Zeitachse', empty: 'Deine Zeitachse ist leer', emptyDesc: 'Beginne Momente festzuhalten, um sie hier zu sehen', memories: 'Erinnerungen'
+    },
     search: {
       title: 'Suche', placeholder: 'Erinnerungen durchsuchen...', noResults: 'Keine Ergebnisse', noResultsDesc: 'Versuche andere Suchbegriffe',
       recentSearches: 'Letzte Suchen'
@@ -201,7 +210,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'gerade eben', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'T' }
   },
   es: {
-    nav: { home: 'Inicio', prompts: 'Sugerencias', chapters: 'Capítulos', search: 'Buscar', print: 'Imprimir' },
+    nav: { home: 'Inicio', prompts: 'Sugerencias', chapters: 'Capítulos', timeline: 'Cronología', search: 'Buscar', print: 'Imprimir' },
     settings: { 
       title: 'Perfil y Ajustes', description: 'Gestiona tu experiencia Tightly', 
       language: 'Idioma', languageDesc: 'Idioma de la aplicación', autoDetect: 'Auto-detectar', autoDetectDesc: 'Usar idioma del navegador/dispositivo',
@@ -237,6 +246,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: 'Eliminar Capítulo', noChapters: 'Sin capítulos aún', noChaptersDesc: 'Crea capítulos para organizar tus recuerdos por tema',
       name: 'Nombre', icon: 'Icono', color: 'Color', entries: 'entradas', pinned: 'Fijado', archived: 'Archivado'
     },
+    timeline: {
+      title: 'Cronología', empty: 'Tu cronología está vacía', emptyDesc: 'Comienza a capturar momentos para verlos aquí', memories: 'recuerdos'
+    },
     search: {
       title: 'Buscar', placeholder: 'Buscar recuerdos...', noResults: 'Sin resultados', noResultsDesc: 'Prueba con otras palabras',
       recentSearches: 'Búsquedas recientes'
@@ -264,7 +276,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'ahora mismo', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'd' }
   },
   fr: {
-    nav: { home: 'Accueil', prompts: 'Inspirations', chapters: 'Chapitres', search: 'Rechercher', print: 'Imprimer' },
+    nav: { home: 'Accueil', prompts: 'Inspirations', chapters: 'Chapitres', timeline: 'Chronologie', search: 'Rechercher', print: 'Imprimer' },
     settings: { 
       title: 'Profil & Paramètres', description: 'Gérez votre expérience Tightly', 
       language: 'Langue', languageDesc: "Langue d'affichage", autoDetect: 'Auto-détecter', autoDetectDesc: 'Utiliser la langue du navigateur/appareil',
@@ -300,6 +312,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: 'Supprimer le Chapitre', noChapters: 'Aucun chapitre encore', noChaptersDesc: 'Créez des chapitres pour organiser vos souvenirs par thème',
       name: 'Nom', icon: 'Icône', color: 'Couleur', entries: 'entrées', pinned: 'Épinglé', archived: 'Archivé'
     },
+    timeline: {
+      title: 'Chronologie', empty: 'Votre chronologie est vide', emptyDesc: 'Commencez à capturer des moments pour les voir ici', memories: 'souvenirs'
+    },
     search: {
       title: 'Rechercher', placeholder: 'Rechercher des souvenirs...', noResults: 'Aucun résultat', noResultsDesc: 'Essayez d\'autres mots-clés',
       recentSearches: 'Recherches récentes'
@@ -327,7 +342,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'à l\'instant', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'j' }
   },
   pt: {
-    nav: { home: 'Início', prompts: 'Sugestões', chapters: 'Capítulos', search: 'Buscar', print: 'Imprimir' },
+    nav: { home: 'Início', prompts: 'Sugestões', chapters: 'Capítulos', timeline: 'Linha do Tempo', search: 'Buscar', print: 'Imprimir' },
     settings: { 
       title: 'Perfil e Configurações', description: 'Gerencie sua experiência Tightly', 
       language: 'Idioma', languageDesc: 'Idioma do aplicativo', autoDetect: 'Auto-detectar', autoDetectDesc: 'Usar idioma do navegador/dispositivo',
@@ -363,6 +378,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: 'Excluir Capítulo', noChapters: 'Nenhum capítulo ainda', noChaptersDesc: 'Crie capítulos para organizar suas memórias por tema',
       name: 'Nome', icon: 'Ícone', color: 'Cor', entries: 'entradas', pinned: 'Fixado', archived: 'Arquivado'
     },
+    timeline: {
+      title: 'Linha do Tempo', empty: 'Sua linha do tempo está vazia', emptyDesc: 'Comece a capturar momentos para vê-los aqui', memories: 'memórias'
+    },
     search: {
       title: 'Buscar', placeholder: 'Buscar memórias...', noResults: 'Sem resultados', noResultsDesc: 'Tente outras palavras',
       recentSearches: 'Buscas recentes'
@@ -390,7 +408,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'agora mesmo', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'd' }
   },
   zh: {
-    nav: { home: '首页', prompts: '提示', chapters: '章节', search: '搜索', print: '打印' },
+    nav: { home: '首页', prompts: '提示', chapters: '章节', timeline: '时间线', search: '搜索', print: '打印' },
     settings: { 
       title: '个人资料与设置', description: '管理您的Tightly体验', 
       language: '语言', languageDesc: '应用显示语言', autoDetect: '自动检测', autoDetectDesc: '使用浏览器/设备语言',
@@ -426,6 +444,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       deleteChapter: '删除章节', noChapters: '暂无章节', noChaptersDesc: '创建章节按主题组织您的回忆',
       name: '名称', icon: '图标', color: '颜色', entries: '条目', pinned: '已置顶', archived: '已归档'
     },
+    timeline: {
+      title: '时间线', empty: '您的时间线为空', emptyDesc: '开始捕捉时刻以在此查看', memories: '个回忆'
+    },
     search: {
       title: '搜索', placeholder: '搜索回忆...', noResults: '无结果', noResultsDesc: '尝试其他关键词',
       recentSearches: '最近搜索'
@@ -453,7 +474,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: '刚刚', minutesAgo: '分钟前', hoursAgo: '小时前', daysAgo: '天前' }
   },
   ja: {
-    nav: { home: 'ホーム', prompts: 'プロンプト', chapters: 'チャプター', search: '検索', print: '印刷' },
+    nav: { home: 'ホーム', prompts: 'プロンプト', chapters: 'チャプター', timeline: 'タイムライン', search: '検索', print: '印刷' },
     settings: { 
       title: 'プロフィールと設定', description: 'Tightly体験を管理', 
       language: '言語', languageDesc: 'アプリの表示言語', autoDetect: '自動検出', autoDetectDesc: 'ブラウザ/デバイスの言語を使用',
@@ -488,6 +509,9 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       title: 'チャプター', description: '思い出を整理', newChapter: '新しいチャプター', editChapter: 'チャプターを編集',
       deleteChapter: 'チャプターを削除', noChapters: 'チャプターはまだありません', noChaptersDesc: 'テーマ別に思い出を整理するチャプターを作成',
       name: '名前', icon: 'アイコン', color: '色', entries: 'エントリ', pinned: 'ピン留め', archived: 'アーカイブ済み'
+    },
+    timeline: {
+      title: 'タイムライン', empty: 'タイムラインは空です', emptyDesc: 'ここで表示するために瞬間をキャプチャし始めます', memories: '件の思い出'
     },
     search: {
       title: '検索', placeholder: '思い出を検索...', noResults: '結果なし', noResultsDesc: '別のキーワードを試してください',
