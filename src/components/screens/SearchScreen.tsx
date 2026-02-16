@@ -149,6 +149,7 @@ export function SearchScreen({
                           <img
                             src={entry.photos[0].storage_url}
                             alt=""
+                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                         </div>

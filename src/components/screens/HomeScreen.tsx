@@ -388,6 +388,7 @@ export function HomeScreen({
                       <img
                         src={onThisDayEntries[0].photos[0].storage_url}
                         alt=""
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -432,6 +433,7 @@ export function HomeScreen({
                               <img
                                 src={entry.photos[0].storage_url}
                                 alt=""
+                                loading="lazy"
                                 className="w-full h-full object-cover"
                               />
                             </div>
@@ -483,6 +485,7 @@ export function HomeScreen({
                         <img
                           src={entry.photos[0].storage_url}
                           alt=""
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -37,6 +37,8 @@ export function AudioWaveform({
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
+    let isAnimating = true;
+
     const draw = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);
 
@@ -118,12 +120,21 @@ export function AudioWaveform({
       // Reset global alpha
       ctx.globalAlpha = 1.0;
 
-      animationRef.current = requestAnimationFrame(draw);
+      // Check if animation should pause: inactive and level has settled near target
+      const hasSettled = Math.abs(currentLevelRef.current - targetLevel) < 0.01;
+      if (!isActive && hasSettled) {
+        // Stop animation loop to save CPU
+        isAnimating = false;
+        animationRef.current = null;
+      } else if (isAnimating) {
+        animationRef.current = requestAnimationFrame(draw);
+      }
     };
 
     draw();
 
     return () => {
+      isAnimating = false;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
