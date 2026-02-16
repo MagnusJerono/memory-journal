@@ -39,14 +39,6 @@ export function AudioWaveform({
     ctx.scale(dpr, dpr);
 
     let isAnimating = true;
-    
-    // Helper to start animation if not already running
-    const startAnimation = () => {
-      if (!isAnimating && !animationRef.current) {
-        isAnimating = true;
-        draw();
-      }
-    };
 
     const draw = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);

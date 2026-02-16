@@ -36,12 +36,12 @@ export const CHAPTER_ICONS: { value: ChapterIcon; label: string; emoji: string }
 ];
 
 export const CHAPTER_COLORS = [
-  { value: 'rose', label: 'Rose', color: 'oklch(0.65 0.2 350)' },
-  { value: 'amber', label: 'Amber', color: 'oklch(0.75 0.18 75)' },
-  { value: 'emerald', label: 'Emerald', color: 'oklch(0.65 0.17 160)' },
-  { value: 'sky', label: 'Sky', color: 'oklch(0.65 0.15 230)' },
-  { value: 'violet', label: 'Violet', color: 'oklch(0.60 0.2 280)' },
-  { value: 'slate', label: 'Slate', color: 'oklch(0.55 0.03 250)' },
+  { value: 'rose', label: 'Rose', color: 'oklch(0.65 0.2 350)', isDark: false },
+  { value: 'amber', label: 'Amber', color: 'oklch(0.75 0.18 75)', isDark: false },
+  { value: 'emerald', label: 'Emerald', color: 'oklch(0.65 0.17 160)', isDark: false },
+  { value: 'sky', label: 'Sky', color: 'oklch(0.65 0.15 230)', isDark: false },
+  { value: 'violet', label: 'Violet', color: 'oklch(0.60 0.2 280)', isDark: true },
+  { value: 'slate', label: 'Slate', color: 'oklch(0.55 0.03 250)', isDark: true },
 ];
 
 export interface Entry {

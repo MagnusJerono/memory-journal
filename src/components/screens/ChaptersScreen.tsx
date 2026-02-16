@@ -265,8 +265,6 @@ export function ChaptersScreen({
               <div className="flex flex-wrap gap-2">
                 {CHAPTER_COLORS.map((color) => {
                   const isSelected = selectedColor === color.value;
-                  // Determine if we need dark or light icon based on color brightness
-                  const isDarkColor = ['violet', 'slate'].includes(color.value);
                   
                   return (
                     <button
@@ -282,7 +280,7 @@ export function ChaptersScreen({
                       {isSelected && (
                         <Check 
                           weight="bold" 
-                          className={`w-5 h-5 ${isDarkColor ? 'text-white' : 'text-gray-900'}`}
+                          className={`w-5 h-5 ${color.isDark ? 'text-white' : 'text-gray-900'}`}
                         />
                       )}
                     </button>
