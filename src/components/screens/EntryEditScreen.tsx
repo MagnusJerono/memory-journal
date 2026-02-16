@@ -146,6 +146,7 @@ export function EntryEditScreen({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
   const [showSavedIndicator, setShowSavedIndicator] = useState(false);
+  const [isUnsavedChangesDialogOpen, setIsUnsavedChangesDialogOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -153,6 +154,17 @@ export function EntryEditScreen({
   const locationInputRef = useRef<HTMLInputElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const locationSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Track initial values for dirty checking
+  const initialValues = useRef({
+    date: entry ? new Date(entry.date + 'T00:00:00').toISOString() : new Date().toISOString(),
+    title: entry?.title_user || '',
+    transcript: entry?.transcript || '',
+    photos: entry?.photos || [],
+    manualLocations: entry?.manual_locations || [],
+    story: entry?.story_ai || '',
+    chapterId: entry?.chapter_id || null,
+  });
 
   const {
     isListening,
@@ -411,7 +423,38 @@ export function EntryEditScreen({
     }
   };
 
+  // Check if form has unsaved changes
+  const isFormDirty = () => {
+    const initial = initialValues.current;
+    return (
+      date.toISOString() !== initial.date ||
+      title !== initial.title ||
+      transcript !== initial.transcript ||
+      photos.length !== initial.photos.length ||
+      manualLocations.length !== initial.manualLocations.length ||
+      story !== initial.story ||
+      chapterId !== initial.chapterId
+    );
+  };
+
+  const handleBack = () => {
+    if (isFormDirty()) {
+      setIsUnsavedChangesDialogOpen(true);
+    } else {
+      onBack();
+    }
+  };
+
   const handleSave = () => {
+    // Data validation: at least one field must have content
+    const hasContent = transcript.trim() || title.trim() || story.trim();
+    if (!hasContent) {
+      toast.error('Please add some content before saving', {
+        description: 'Add a transcript, title, or story to save this memory'
+      });
+      return;
+    }
+
     const entryId = entry?.id || uuid();
     const now = new Date().toISOString();
     
@@ -532,7 +575,7 @@ export function EntryEditScreen({
                 <span className="text-border/50">|</span>
               </>
             )}
-            <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
               <CaretLeft className="w-5 h-5" weight="bold" />
             </Button>
             <h1 className="font-serif text-lg font-semibold text-foreground">
@@ -1248,6 +1291,36 @@ export function EntryEditScreen({
         )}
       </main>
 
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={isUnsavedChangesDialogOpen} onOpenChange={setIsUnsavedChangesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+          </p>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsUnsavedChangesDialogOpen(false)}
+            >
+              Keep Editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setIsUnsavedChangesDialogOpen(false);
+                onBack();
+              }}
+            >
+              Discard Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Entry Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
