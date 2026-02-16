@@ -25,7 +25,7 @@ interface MonthGroup {
 }
 
 export function TimelineScreen({ entries, chapters, onNavigate }: TimelineScreenProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isDarkMode } = useTheme();
   const currentYear = new Date().getFullYear();
   const [collapsedYears, setCollapsedYears] = useState<Set<number>>(new Set());
@@ -88,9 +88,10 @@ export function TimelineScreen({ entries, chapters, onNavigate }: TimelineScreen
     return chapter ? chapter.name : null;
   }
 
-  function getMonthLabel(monthIdx: number, year: number, locale?: string): string {
+  function getMonthLabel(monthIdx: number, year: number): string {
     const dt = new Date(year, monthIdx, 1);
-    return dt.toLocaleDateString(locale, { month: 'long' });
+    // Use the current app language for month formatting
+    return dt.toLocaleDateString(language || 'en', { month: 'long' });
   }
 
   return (

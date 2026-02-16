@@ -14,7 +14,7 @@ An AI-powered personal memory journal built as a TypeScript/React app on GitHub 
 - 🌍 **Location tagging** — Add location context via search or GPS coordinates
 - 🌙 **Smart theming** — Auto/light/dark theme with automatic night-time detection
 - 🖥️ **Responsive design** — Desktop sidebar and mobile bottom navigation for seamless experience across devices
-- 🌐 **Internationalized UI** — Use the app in 7 languages: EN, DE, ES, FR, IT, PT, ZH, JA
+- 🌐 **Internationalized UI** — Use the app in 7 languages: EN, DE, ES, FR, PT, ZH, JA
 - 💾 **Auto-save drafts** — Never lose your work with automatic draft saving
 - 🔥 **Writing streak tracking** — Stay motivated with visual streak tracking
 - 📝 **Journaling prompts** — Get inspired with prompts across 6 categories

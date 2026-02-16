@@ -445,7 +445,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       name: '名称', icon: '图标', color: '颜色', entries: '条目', pinned: '已置顶', archived: '已归档'
     },
     timeline: {
-      title: '时间线', empty: '您的时间线为空', emptyDesc: '开始捕捉时刻以在此查看', memories: '条回忆'
+      title: '时间线', empty: '您的时间线为空', emptyDesc: '开始捕捉时刻以在此查看', memories: '个回忆'
     },
     search: {
       title: '搜索', placeholder: '搜索回忆...', noResults: '无结果', noResultsDesc: '尝试其他关键词',
