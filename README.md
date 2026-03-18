@@ -91,7 +91,69 @@ npm install
 npm run dev
 ```
 
-**Note:** This application is designed for the GitHub Spark runtime and uses `@github/spark/hooks` for data persistence. Some features may require the GitHub Spark environment to function properly.
+### AI Outside Spark
+
+AI calls now use an API-first client with Spark fallback:
+
+- Frontend calls `POST /api/llm/complete` by default
+- If that endpoint is unavailable and Spark exists, the app falls back to `window.spark.llm(...)`
+
+To run AI outside Spark, configure:
+
+```bash
+OPENAI_API_KEY=your_key_here
+# Optional override from frontend
+VITE_LLM_API_ENDPOINT=/api/llm/complete
+
+# Optional LLM guardrails (defaults shown)
+FREE_AI_LIMIT_10M=10
+FREE_AI_LIMIT_DAY=50
+PREMIUM_AI_LIMIT_10M=60
+PREMIUM_AI_LIMIT_DAY=500
+MAX_LLM_PROMPT_CHARS=12000
+
+# Optional premium identity mapping (comma-separated user IDs)
+PREMIUM_USER_IDS=user_123,user_456
+
+# Optional strict mode: reject LLM requests without x-user-id
+REQUIRE_AUTH_FOR_LLM=false
+```
+
+Vercel endpoint implementation lives in `api/llm/complete.ts`.
+
+Rate-limit behavior for `POST /api/llm/complete`:
+
+- Identity source priority: `x-user-id` header, then request IP fallback
+- Tier source: `x-user-tier: premium` header or `PREMIUM_USER_IDS`
+- Response headers include remaining quotas:
+    - `X-RateLimit-Tier`
+    - `X-RateLimit-Remaining-10m`
+    - `X-RateLimit-Remaining-Day`
+- When limited, endpoint returns `429` with `Retry-After`
+
+Auth user lookup also uses API-first with Spark fallback:
+
+- Frontend resolves user via `GET /api/auth/me`
+- If unavailable and Spark exists, falls back to `window.spark.user()`
+
+Current placeholder endpoint is `api/auth/me.ts` and returns `{ user: null }` until wired to Supabase/Auth provider.
+
+Settings preferences (notifications/email/auto-save and personal writing voice) now use API-first persistence with local fallback:
+
+- Frontend uses `src/lib/preferences-client.ts`
+- Endpoint: `GET/PUT /api/preferences`
+- Fallback: browser `localStorage` if API is unavailable
+
+Optional env override:
+
+```bash
+VITE_PREFERENCES_API_ENDPOINT=/api/preferences
+
+# Optional strict mode: reject preferences calls without x-user-id
+REQUIRE_AUTH_FOR_PREFERENCES=false
+```
+
+**Note:** Data persistence is still Spark-coupled via `@github/spark/hooks` and will be migrated in a later phase.
 
 ## 📄 License
 

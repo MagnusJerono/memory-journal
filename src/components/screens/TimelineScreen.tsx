@@ -27,7 +27,6 @@ interface MonthGroup {
 export function TimelineScreen({ entries, chapters, onNavigate }: TimelineScreenProps) {
   const { t, language } = useLanguage();
   const { isDarkMode } = useTheme();
-  const currentYear = new Date().getFullYear();
   const [collapsedYears, setCollapsedYears] = useState<Set<number>>(new Set());
 
   // Organize entries by year and month
@@ -100,7 +99,7 @@ export function TimelineScreen({ entries, chapters, onNavigate }: TimelineScreen
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <LogoHomeButton onNavigate={onNavigate} isDarkMode={isDarkMode} />
+            <LogoHomeButton onClick={() => onNavigate({ type: 'home' })} isDarkMode={isDarkMode} />
             <div className="h-6 w-px bg-border/30 hidden sm:block" />
             <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight hidden sm:block">
               {t.timeline.title}

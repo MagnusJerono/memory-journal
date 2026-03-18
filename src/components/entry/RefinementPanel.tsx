@@ -9,6 +9,7 @@ import { AudioWaveform } from './AudioWaveform';
 import { cn, formatDuration } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
+import { parseAIJson, requestLLM } from '@/lib/ai-client';
 
 const SPEECH_LANGUAGES = [
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
@@ -187,8 +188,8 @@ Return ONLY valid JSON in this format:
   "questions": ["Question 1?", "Question 2?", "Question 3?"]
 }`;
         
-        const response = await window.spark.llm(fullPrompt, 'gpt-4o-mini', true);
-        const result = JSON.parse(response) as { questions: string[] };
+        const response = await requestLLM({ prompt: fullPrompt, model: 'gpt-4o-mini', jsonMode: true });
+        const result = parseAIJson<{ questions: string[] }>(response, 'refinement question generation');
         
         if (result.questions && Array.isArray(result.questions)) {
           setExtraPrompts(prev => [...prev, ...result.questions.slice(0, 3)]);
@@ -362,7 +363,7 @@ Return ONLY valid JSON in this format:
                                   type="button"
                                   variant="default"
                                   size="sm"
-                                  onClick={() => handleRecording(index)}
+                                  onClick={() => toggleRecording(index)}
                                   className="bg-violet-500 hover:bg-violet-600 text-white shadow-md h-7 px-3 text-xs"
                                   aria-label="Stop recording"
                                 >

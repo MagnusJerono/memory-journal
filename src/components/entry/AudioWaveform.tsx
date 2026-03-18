@@ -22,7 +22,7 @@ export function AudioWaveform({
   const animationRef = useRef<number | null>(null);
   const currentLevelRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
-  const inactiveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inactiveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;

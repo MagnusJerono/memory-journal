@@ -1,5 +1,6 @@
 import { Entry, StoryTone, STORY_LANGUAGES, LocationSuggestion } from './types';
 import { v4 as uuid } from 'uuid';
+import { parseAIJson, requestLLM } from './ai-client';
 
 export interface AIGenerationResult {
   title: string;
@@ -83,8 +84,8 @@ Return ONLY valid JSON in this exact format:
 If you cannot identify any specific locations, return empty locations array but describe what you see.`;
 
   try {
-    const response = await window.spark.llm(promptText, 'gpt-4o', true);
-    const result = JSON.parse(response) as ImageAnalysisResult;
+    const response = await requestLLM({ prompt: promptText, model: 'gpt-4o', jsonMode: true });
+    const result = parseAIJson<ImageAnalysisResult>(response, 'image location analysis');
     
     if (!Array.isArray(result.locations)) {
       result.locations = [];
@@ -258,8 +259,8 @@ export async function generateAIContent(
 User input:
 ${userContent}`;
 
-  const response = await window.spark.llm(fullPrompt, 'gpt-4o', true);
-  const result = JSON.parse(response) as AIGenerationResult;
+  const response = await requestLLM({ prompt: fullPrompt, model: 'gpt-4o', jsonMode: true });
+  const result = parseAIJson<AIGenerationResult>(response, 'story generation');
   
   if (imageAnalysis && imageAnalysis.locations.length > 0) {
     if (!result.location_suggestions) {

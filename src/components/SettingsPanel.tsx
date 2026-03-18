@@ -40,20 +40,18 @@ import {
 import { motion } from 'framer-motion';
 import { AccordionSettingsSection } from './AccordionSettingsSection';
 import { useEffect, useState } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getCurrentUser, type AppUser } from '@/lib/auth-client';
+import { useSettingsPreferences } from '@/hooks/use-settings-preferences';
 
 interface SettingsPanelProps {
-  themeMode: ThemeMode;
-  onThemeModeChange: (mode: ThemeMode) => void;
-  isDarkMode: boolean;
-  isNightTime: boolean;
+  themeMode?: ThemeMode;
+  onThemeModeChange?: (mode: ThemeMode) => void;
+  isDarkMode?: boolean;
+  isNightTime?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   triggerButton?: React.ReactNode;
-}
-
-interface UserPreferences {
-  notifications: boolean;
-  emailUpdates: boolean;
-  autoSave: boolean;
 }
 
 export function SettingsPanel({ 
@@ -61,15 +59,23 @@ export function SettingsPanel({
   onThemeModeChange, 
   isDarkMode,
   isNightTime,
+  open,
+  onOpenChange,
   triggerButton
 }: SettingsPanelProps) {
-  const [user, setUser] = useState<{ login: string; avatarUrl: string; email?: string } | null>(null);
-  const [preferences, setPreferences] = useKV<UserPreferences>('user-preferences', {
-    notifications: true,
-    emailUpdates: false,
-    autoSave: true
-  });
-  const [personalVoiceSample, setPersonalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
+  const theme = useTheme();
+  const resolvedThemeMode = themeMode ?? theme.themeMode;
+  const resolvedOnThemeModeChange = onThemeModeChange ?? theme.setThemeMode;
+  const resolvedIsDarkMode = isDarkMode ?? theme.isDarkMode;
+  const resolvedIsNightTime = isNightTime ?? theme.isNightTime;
+  const showTrigger = triggerButton !== undefined || open === undefined;
+  const [user, setUser] = useState<AppUser | null>(null);
+  const {
+    preferences,
+    personalVoiceSample,
+    updatePreference,
+    setPersonalVoiceSample,
+  } = useSettingsPreferences();
   
   // State for managing expanded sections
   const [expandedSections, setExpandedSections] = useState({
@@ -83,27 +89,14 @@ export function SettingsPanel({
   const { language, setLanguage, autoDetect, setAutoDetect, t } = useLanguage();
 
   useEffect(() => {
-    window.spark.user().then((u) => {
-      if (u) {
-        setUser({ login: u.login, avatarUrl: u.avatarUrl, email: u.email });
-      }
-    }).catch(() => {});
+    getCurrentUser().then((currentUser) => {
+      setUser(currentUser);
+    }).catch(() => {
+      setUser(null);
+    });
   }, []);
 
-  const updatePreference = (key: keyof UserPreferences, value: boolean) => {
-    setPreferences((current) => ({
-      notifications: current?.notifications ?? true,
-      emailUpdates: current?.emailUpdates ?? false,
-      autoSave: current?.autoSave ?? true,
-      [key]: value
-    }));
-  };
-
-  const currentPreferences = preferences ?? {
-    notifications: true,
-    emailUpdates: false,
-    autoSave: true
-  };
+  const currentPreferences = preferences;
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -113,26 +106,28 @@ export function SettingsPanel({
   };
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        {triggerButton || (
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 relative"
-          >
-            {user?.avatarUrl ? (
-              <img 
-                src={user.avatarUrl} 
-                alt={user.login}
-                className="w-7 h-7 rounded-full ring-2 ring-border/50"
-              />
-            ) : (
-              <User weight="duotone" className="w-5 h-5" />
-            )}
-          </Button>
-        )}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      {showTrigger && (
+        <SheetTrigger asChild>
+          {triggerButton || (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/50 relative"
+            >
+              {user?.avatarUrl ? (
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.login}
+                  className="w-7 h-7 rounded-full ring-2 ring-border/50"
+                />
+              ) : (
+                <User weight="duotone" className="w-5 h-5" />
+              )}
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent className="bg-card/95 backdrop-blur-xl border-border/50 overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">{t.settings.title}</SheetTitle>
@@ -182,7 +177,7 @@ export function SettingsPanel({
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                 <span className="text-sm text-muted-foreground">{t.settings.currentMode}</span>
                 <span className="flex items-center gap-2 text-sm font-medium">
-                  {isDarkMode ? (
+                  {resolvedIsDarkMode ? (
                   <>
                     <Moon weight="fill" className="w-4 h-4 text-primary" />
                     {t.settings.night}
@@ -196,37 +191,37 @@ export function SettingsPanel({
               </span>
             </div>
 
-            {themeMode === 'auto' && (
+            {resolvedThemeMode === 'auto' && (
               <p className="text-xs text-muted-foreground px-1">
-                {isNightTime 
+                {resolvedIsNightTime 
                   ? "It's after sunset – night mode is active" 
                   : "It's daytime – light mode is active"}
               </p>
             )}
 
             <RadioGroup 
-              value={themeMode} 
-              onValueChange={(v) => onThemeModeChange(v as ThemeMode)}
+              value={resolvedThemeMode} 
+              onValueChange={(v) => resolvedOnThemeModeChange(v as ThemeMode)}
               className="space-y-2"
             >
               <motion.label 
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  themeMode === 'auto' 
+                  resolvedThemeMode === 'auto' 
                     ? 'border-primary bg-primary/10' 
                     : 'border-border/50 hover:border-border'
                 }`}
               >
                 <RadioGroupItem value="auto" id="auto" className="sr-only" />
-                <div className={`p-2.5 rounded-lg ${themeMode === 'auto' ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                  <CircleHalf weight="duotone" className={`w-5 h-5 ${themeMode === 'auto' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div className={`p-2.5 rounded-lg ${resolvedThemeMode === 'auto' ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                  <CircleHalf weight="duotone" className={`w-5 h-5 ${resolvedThemeMode === 'auto' ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{t.settings.automatic}</p>
                   <p className="text-xs text-muted-foreground">{t.settings.automaticDesc}</p>
                 </div>
-                {themeMode === 'auto' && (
+                {resolvedThemeMode === 'auto' && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -239,20 +234,20 @@ export function SettingsPanel({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  themeMode === 'light' 
+                  resolvedThemeMode === 'light' 
                     ? 'border-primary bg-primary/10' 
                     : 'border-border/50 hover:border-border'
                 }`}
               >
                 <RadioGroupItem value="light" id="light" className="sr-only" />
-                <div className={`p-2.5 rounded-lg ${themeMode === 'light' ? 'bg-amber-500/20' : 'bg-muted/50'}`}>
-                  <Sun weight="duotone" className={`w-5 h-5 ${themeMode === 'light' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <div className={`p-2.5 rounded-lg ${resolvedThemeMode === 'light' ? 'bg-amber-500/20' : 'bg-muted/50'}`}>
+                  <Sun weight="duotone" className={`w-5 h-5 ${resolvedThemeMode === 'light' ? 'text-amber-500' : 'text-muted-foreground'}`} />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{t.settings.alwaysLight}</p>
                   <p className="text-xs text-muted-foreground">{t.settings.alwaysLightDesc}</p>
                 </div>
-                {themeMode === 'light' && (
+                {resolvedThemeMode === 'light' && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -265,20 +260,20 @@ export function SettingsPanel({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  themeMode === 'dark' 
+                  resolvedThemeMode === 'dark' 
                     ? 'border-primary bg-primary/10' 
                     : 'border-border/50 hover:border-border'
                 }`}
               >
                 <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                <div className={`p-2.5 rounded-lg ${themeMode === 'dark' ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                  <Moon weight="duotone" className={`w-5 h-5 ${themeMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div className={`p-2.5 rounded-lg ${resolvedThemeMode === 'dark' ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                  <Moon weight="duotone" className={`w-5 h-5 ${resolvedThemeMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{t.settings.alwaysNight}</p>
                   <p className="text-xs text-muted-foreground">{t.settings.alwaysNightDesc}</p>
                 </div>
-                {themeMode === 'dark' && (
+                {resolvedThemeMode === 'dark' && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}

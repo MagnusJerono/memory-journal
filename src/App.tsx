@@ -23,7 +23,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
   const {
     entries,
@@ -349,6 +349,10 @@ function AppContent() {
 
       {/* Settings Panel Dialog */}
       <SettingsPanel 
+        themeMode={themeMode}
+        onThemeModeChange={setThemeMode}
+        isDarkMode={isDarkMode}
+        isNightTime={isNightTime}
         open={settingsPanelOpen}
         onOpenChange={setSettingsPanelOpen}
       />
