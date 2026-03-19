@@ -1,6 +1,14 @@
 import { Book, Entry, Chapter, BookTheme, BOOK_THEMES } from './types';
 import { getEntryTitle, formatDate } from './entries';
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const getThemeStyles = (theme: BookTheme) => {
   const styles: Record<BookTheme, {
     coverBg: string;
@@ -162,7 +170,7 @@ export async function generateBookPDF(
     <!DOCTYPE html>
     <html>
     <head>
-      <title>${book.title}</title>
+      <title>${escapeHtml(book.title)}</title>
       <style>
         @media print {
           @page {
