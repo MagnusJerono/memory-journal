@@ -11,6 +11,9 @@
         "optimize": "vite optimize",
         "preview": "vite preview"
     },
+    "engines": {
+        "node": ">=20.0.0"
+    },
     "dependencies": {
         "@github/spark": ">=0.43.1 <1",
         "@heroicons/react": "^2.2.0",
