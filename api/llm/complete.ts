@@ -4,39 +4,26 @@ type RequestBody = {
   jsonMode?: boolean;
 };
 
+import { extractUser } from '../_lib/auth';
 import { checkAndConsumeRateLimit, inferTier } from '../_lib/rate-limit';
 import { recordUsageEvent } from '../_lib/usage-log';
 
 type ChatResponse = {
-  choices?: Array<{
+  choices?: Array<{ 
     message?: {
       content?: string;
     };
-  }>;
+  }>; 
 };
 
 const MAX_PROMPT_CHARS = Number(process.env.MAX_LLM_PROMPT_CHARS ?? 12000);
 const REQUIRE_AUTH_FOR_LLM = process.env.REQUIRE_AUTH_FOR_LLM === 'true';
 
-function normalizeIdentity(rawIdentity: string): string {
-  return rawIdentity.trim().toLowerCase().slice(0, 128);
-}
-
-function getIdentity(req: any): string {
-  const headerIdentity = req.headers?.['x-user-id'] as string | undefined;
-  if (headerIdentity && headerIdentity.trim().length > 0) {
-    return normalizeIdentity(headerIdentity);
-  }
-
-  const forwardedFor = (req.headers?.['x-forwarded-for'] as string | undefined) ?? '';
-  const firstForwarded = forwardedFor.split(',')[0]?.trim();
-  const fallbackIp = firstForwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
-  return normalizeIdentity(`ip:${fallbackIp}`);
-}
-
-function hasAuthenticatedIdentity(req: any): boolean {
-  const headerIdentity = req.headers?.['x-user-id'] as string | undefined;
-  return Boolean(headerIdentity && headerIdentity.trim().length > 0);
+function normalizeIpIdentity(req: any): string {
+  const forwardedFor = (req.headers?.['x-forwarded-for'] as string | undefined) ?? ''; 
+  const firstForwarded = forwardedFor.split(',')[0]?.trim(); 
+  const ip = firstForwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+  return `ip:${ip}`.trim().toLowerCase().slice(0, 128);
 }
 
 function getExplicitTier(req: any): string | undefined {
@@ -59,12 +46,15 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    if (REQUIRE_AUTH_FOR_LLM && !hasAuthenticatedIdentity(req)) {
+    const authUser = await extractUser(req);
+
+    if (REQUIRE_AUTH_FOR_LLM && !authUser) {
       res.status(401).json({ error: 'Authentication required for AI requests' });
       return;
     }
 
-    const identity = getIdentity(req);
+    // Use the authenticated identity when available; fall back to IP for anonymous rate limiting.
+    const identity = authUser ? authUser.id : normalizeIpIdentity(req);
     const tier = inferTier(identity, getExplicitTier(req));
     const limit = checkAndConsumeRateLimit(identity, tier);
 

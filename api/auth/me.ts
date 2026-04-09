@@ -1,5 +1,10 @@
-export default async function handler(_req: any, res: any) {
-  // Placeholder route for non-Spark auth providers (Supabase/Auth.js/etc.).
-  // Return { user } when wired to a real auth backend.
-  res.status(200).json({ user: null });
+import { extractUser } from '../_lib/auth';
+
+export default async function handler(req: any, res: any) {
+  const user = await extractUser(req);
+  if (!user) {
+    res.status(200).json({ user: null });
+    return;
+  }
+  res.status(200).json({ user: { login: user.id, avatarUrl: '', email: undefined } });
 }

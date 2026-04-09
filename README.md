@@ -1,6 +1,6 @@
-# Tightly — "Hold them tight"
+# Memory Journal — "Hold them tight"
 
-An AI-powered personal memory journal built as a TypeScript/React app on GitHub Spark. Users can record memories via text or speech-to-text, attach photos, and have AI transform their notes into polished stories with highlights, tags, and location suggestions.
+An AI-powered personal memory journal built with React 19, TypeScript, and Vite. Users can record memories via text or speech-to-text, attach photos, and have AI transform their notes into polished stories with highlights, tags, and location suggestions.
 
 ## ✨ Key Features
 
@@ -22,139 +22,179 @@ An AI-powered personal memory journal built as a TypeScript/React app on GitHub 
 ## 🛠️ Tech Stack
 
 - **React 19** — Latest React with modern features
-- **TypeScript** — Full type safety throughout the application
-- **Vite** — Fast build tooling and development server
-- **Tailwind CSS** — Utility-first CSS framework for styling
+- **TypeScript 5** — Full type safety throughout the application
+- **Vite 7** — Fast build tooling and development server
+- **Tailwind CSS 4** — Utility-first CSS framework for styling
 - **Radix UI** — Accessible component primitives
 - **Framer Motion** — Smooth animations and transitions
 - **Phosphor Icons** — Beautiful icon library
-- **GitHub Spark** — Uses `@github/spark/hooks` for data persistence
+- **OpenAI** — AI-powered story generation (`gpt-4o-mini` by default)
+- **GitHub Spark** — Uses `@github/spark/hooks` for data persistence (optional)
+
+## 📋 Prerequisites
+
+- **Node.js 20+** (see `engines` field in `package.json`)
+- **npm** (or yarn/pnpm)
+- An **OpenAI API key** for AI features
+
+## 🚀 Setup Instructions
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/MagnusJerono/memory-journal.git
+cd memory-journal
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment variables
+cp .env.example .env
+# Edit .env and fill in your values (see Environment Variables section below)
+
+# 4. Start the development server
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+## 🧑‍💻 Local Development
+
+```bash
+npm run dev      # Start Vite dev server with HMR
+npm run build    # TypeScript check + production build
+npm run preview  # Preview the production build locally
+npm run lint     # Run ESLint
+```
+
+## 📦 Building for Production
+
+```bash
+npm run build
+```
+
+This runs `tsc -b && vite build`. The output goes to `dist/`.
+
+## 🌍 Environment Variables
+
+Copy `.env.example` to `.env` and fill in the required values:
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | ✅ Yes | Your OpenAI API key for AI story generation |
+| `SUPABASE_URL` | When using Supabase auth | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | When using Supabase auth | Service role key for server-side JWT validation |
+| `VITE_SUPABASE_URL` | When using Supabase auth | Supabase URL (exposed to browser) |
+| `VITE_SUPABASE_ANON_KEY` | When using Supabase auth | Supabase anon key (exposed to browser) |
+| `FREE_AI_LIMIT_10M` | No | Free-tier max requests per 10 min (default: 10) |
+| `FREE_AI_LIMIT_DAY` | No | Free-tier max requests per day (default: 50) |
+| `PREMIUM_AI_LIMIT_10M` | No | Premium max requests per 10 min (default: 60) |
+| `PREMIUM_AI_LIMIT_DAY` | No | Premium max requests per day (default: 500) |
+| `PREMIUM_USER_IDS` | No | Comma-separated user IDs with premium limits |
+| `MAX_LLM_PROMPT_CHARS` | No | Max prompt size in characters (default: 12000) |
+| `REQUIRE_AUTH_FOR_LLM` | No | Reject unauthenticated AI requests (`true`/`false`) |
+| `REQUIRE_AUTH_FOR_PREFERENCES` | No | Reject unauthenticated preference requests |
+| `VITE_LLM_API_ENDPOINT` | No | Override AI endpoint URL (default: `/api/llm/complete`) |
+| `VITE_AUTH_USER_ENDPOINT` | No | Override auth endpoint URL (default: `/api/auth/me`) |
+| `VITE_PREFERENCES_API_ENDPOINT` | No | Override preferences endpoint URL |
+
+## 🚢 Deployment Guide (Vercel)
+
+1. **Push to GitHub** — Vercel auto-deploys on push to `main`.
+2. **Connect your repo** in the [Vercel dashboard](https://vercel.com/new).
+3. **Set environment variables** in *Project → Settings → Environment Variables*:
+   - `OPENAI_API_KEY` — required for AI features
+   - `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` — if using Supabase auth
+   - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — if using Supabase on the frontend
+   - Rate-limit variables as needed
+4. **Deploy** — Vercel uses `vercel.json` for build config (`tsc -b && vite build`).
+
+The `api/` directory is automatically deployed as Vercel Serverless Functions.
 
 ## 📁 Project Structure
 
 ```
-src/
-├── components/
-│   ├── screens/        # Main app screens
-│   │   ├── HomeScreen.tsx           # Home timeline view
-│   │   ├── EntryEditScreen.tsx      # Entry creation/editing (with unsaved changes guard)
-│   │   ├── EntryReadScreen.tsx      # Entry reading view
-│   │   ├── ChaptersScreen.tsx       # Chapter management
-│   │   ├── ChapterDetailScreen.tsx  # Chapter detail view
-│   │   ├── TimelineScreen.tsx       # Chronological timeline view
-│   │   ├── SearchScreen.tsx         # Search interface
-│   │   ├── PrintScreen.tsx          # Print/book builder
-│   │   └── PromptsScreen.tsx        # Writing prompts
-│   ├── entry/          # Entry-related components
-│   │   ├── AudioWaveform.tsx        # Audio recording visualization (optimized)
-│   │   ├── EntryReadView.tsx        # Entry display component
-│   │   ├── LocationPanel.tsx        # Location picker
-│   │   └── RefinementPanel.tsx      # AI refinement controls
-│   ├── navigation/     # Navigation components
-│   │   ├── BottomNav.tsx            # Mobile bottom navigation (6 tabs)
-│   │   ├── DesktopSidebar.tsx       # Desktop sidebar navigation
-│   │   └── NavigationMenu.tsx       # Hamburger navigation menu
-│   ├── ui/             # Shared UI primitives
-│   │   └── ...                      # Button, Dialog, Input, etc.
-│   ├── timeline/       # Timeline display components
-│   └── yearbook/       # Yearbook view components
-├── hooks/              # Custom React hooks
-│   ├── use-speech-to-text.ts       # Speech recognition
-│   ├── use-language.tsx            # i18n support
-│   ├── use-mobile.ts               # Responsive detection
-│   ├── use-is-night.ts             # Night mode detection
-│   └── use-journal-data.ts         # Journal data management
-├── lib/                # Core utilities and logic
-│   ├── types.ts                    # TypeScript definitions
-│   ├── entries.ts                  # Entry logic and AI generation
-│   ├── geocoding.ts                # Location services
-│   ├── i18n.ts                     # Translation files (7 languages)
-│   └── utils.ts                    # Helper utilities
-└── contexts/           # React contexts
-    └── ThemeContext.tsx            # Theme management
+├── api/                          # Vercel serverless functions
+│   ├── _lib/
+│   │   ├── auth.ts              # Shared JWT / identity auth helper
+│   │   ├── rate-limit.ts        # Per-user rate limiting (free/premium tiers)
+│   │   └── usage-log.ts         # Usage tracking and cost estimation
+│   ├── auth/
+│   │   └── me.ts                # GET /api/auth/me — current user identity
+│   ├── llm/
+│   │   └── complete.ts          # POST /api/llm/complete — OpenAI proxy
+│   └── preferences.ts           # GET/PUT /api/preferences — user preferences
+└── src/
+    ├── components/
+    │   ├── screens/             # Main app screens
+    │   ├── entry/               # Entry-related components
+    │   ├── navigation/          # Navigation components
+    │   ├── timeline/            # Timeline components
+    │   └── ui/                  # Radix UI / shadcn primitives
+    ├── contexts/                # React context providers
+    ├── hooks/                   # Custom React hooks
+    └── lib/                     # Core utilities and logic
+        ├── types.ts             # TypeScript type definitions
+        ├── entries.ts           # Entry logic and AI generation
+        ├── auth-client.ts       # Client-side auth helper
+        ├── ai-client.ts         # OpenAI API client with Spark fallback
+        ├── preferences-client.ts# Preferences API client
+        ├── generate-book-pdf.tsx# PDF/print generation (XSS-safe)
+        └── utils.ts             # Shared utilities
 ```
 
-## 🚀 Getting Started
+## 🔐 Security Notes
 
-### Prerequisites
+### Authentication
+- All API endpoints support **Authorization: Bearer \<token\>** and fall back to the `x-user-id` header (used by the GitHub Spark runtime).
+- When `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, Bearer tokens are verified against Supabase's auth API — invalid JWTs are rejected with a 401.
+- Set `REQUIRE_AUTH_FOR_LLM=true` and `REQUIRE_AUTH_FOR_PREFERENCES=true` to reject any request that cannot be identified.
 
-- Node.js (v18 or higher recommended)
-- npm or yarn
+### Rate Limiting
+- `POST /api/llm/complete` enforces per-user rate limits to prevent OpenAI cost abuse.
+- Free tier defaults: **10 requests / 10 min**, **50 requests / day**.
+- Premium tier defaults: **60 requests / 10 min**, **500 requests / day**.
+- Exceeded limits return `429` with a `Retry-After` header.
 
-### Installation
+### XSS Protection
+- All user-controlled content (book titles, chapter names, entry text, locations) is HTML-escaped before being written into the PDF generation window.
 
-```bash
-# Install dependencies
-npm install
+## ✅ Production Deployment Checklist
 
-# Start development server
-npm run dev
+- [ ] `OPENAI_API_KEY` set in Vercel environment variables
+- [ ] `REQUIRE_AUTH_FOR_LLM=true` once Supabase auth is wired up
+- [ ] `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` configured for JWT validation
+- [ ] Review rate limits (`FREE_AI_LIMIT_*`, `PREMIUM_AI_LIMIT_*`) for your usage tier
+- [ ] Confirm `PREMIUM_USER_IDS` is set for any users who need higher quotas
+- [ ] Ensure `.env` is not committed (it is in `.gitignore`)
+- [ ] Verify `vercel.json` build command matches `package.json` build script
+
+## 🔌 API Reference
+
+### `POST /api/llm/complete`
+Proxies a prompt to OpenAI with rate limiting.
+
+**Headers:**
+- `Authorization: Bearer <token>` or `x-user-id: <userId>` — user identity
+- `x-user-tier: premium` — opt-in to premium rate limits
+- `Content-Type: application/json`
+
+**Body:**
+```json
+{ "prompt": "string", "model": "gpt-4o-mini", "jsonMode": false }
 ```
 
-### AI Outside Spark
-
-AI calls now use an API-first client with Spark fallback:
-
-- Frontend calls `POST /api/llm/complete` by default
-- If that endpoint is unavailable and Spark exists, the app falls back to `window.spark.llm(...)`
-
-To run AI outside Spark, configure:
-
-```bash
-OPENAI_API_KEY=your_key_here
-# Optional override from frontend
-VITE_LLM_API_ENDPOINT=/api/llm/complete
-
-# Optional LLM guardrails (defaults shown)
-FREE_AI_LIMIT_10M=10
-FREE_AI_LIMIT_DAY=50
-PREMIUM_AI_LIMIT_10M=60
-PREMIUM_AI_LIMIT_DAY=500
-MAX_LLM_PROMPT_CHARS=12000
-
-# Optional premium identity mapping (comma-separated user IDs)
-PREMIUM_USER_IDS=user_123,user_456
-
-# Optional strict mode: reject LLM requests without x-user-id
-REQUIRE_AUTH_FOR_LLM=false
+**Response:**
+```json
+{ "text": "...", "usage": { "estimatedCostUsd": 0.0001 } }
 ```
 
-Vercel endpoint implementation lives in `api/llm/complete.ts`.
+### `GET /api/auth/me`
+Returns the authenticated user identity from request headers.
 
-Rate-limit behavior for `POST /api/llm/complete`:
-
-- Identity source priority: `x-user-id` header, then request IP fallback
-- Tier source: `x-user-tier: premium` header or `PREMIUM_USER_IDS`
-- Response headers include remaining quotas:
-    - `X-RateLimit-Tier`
-    - `X-RateLimit-Remaining-10m`
-    - `X-RateLimit-Remaining-Day`
-- When limited, endpoint returns `429` with `Retry-After`
-
-Auth user lookup also uses API-first with Spark fallback:
-
-- Frontend resolves user via `GET /api/auth/me`
-- If unavailable and Spark exists, falls back to `window.spark.user()`
-
-Current placeholder endpoint is `api/auth/me.ts` and returns `{ user: null }` until wired to Supabase/Auth provider.
-
-Settings preferences (notifications/email/auto-save and personal writing voice) now use API-first persistence with local fallback:
-
-- Frontend uses `src/lib/preferences-client.ts`
-- Endpoint: `GET/PUT /api/preferences`
-- Fallback: browser `localStorage` if API is unavailable
-
-Optional env override:
-
-```bash
-VITE_PREFERENCES_API_ENDPOINT=/api/preferences
-
-# Optional strict mode: reject preferences calls without x-user-id
-REQUIRE_AUTH_FOR_PREFERENCES=false
-```
-
-**Note:** Data persistence is still Spark-coupled via `@github/spark/hooks` and will be migrated in a later phase.
+### `GET /PUT /api/preferences`
+Retrieves or updates per-user preferences and personal writing voice sample.
 
 ## 📄 License
 
-⚠️ **No license file currently exists in this repository.** Please add an appropriate license to clarify usage rights and distribution terms.
+See [LICENSE](LICENSE) for details.
+

@@ -1,6 +1,16 @@
 import { Book, Entry, Chapter, BookTheme, BOOK_THEMES } from './types';
 import { getEntryTitle, formatDate } from './entries';
 
+/** Escapes a string for safe insertion into an HTML context. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const getThemeStyles = (theme: BookTheme) => {
   const styles: Record<BookTheme, {
     coverBg: string;
@@ -59,12 +69,14 @@ const MAX_FOOTER_LOCATIONS = 2;
 
 function generateCoverHTML(book: Book, theme: BookTheme): string {
   const style = getThemeStyles(theme);
-  
+  const title = escapeHtml(book.title);
+  const subtitle = book.subtitle ? escapeHtml(book.subtitle) : null;
+
   return `
     <div class="page cover-page" style="background: ${style.coverBg}; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 80px;">
       <div style="width: 100px; height: 3px; background: ${style.accentColor}; margin-bottom: 30px;"></div>
-      <h1 style="font-family: ${style.fontFamily}; font-size: ${style.titleSize}px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 20px 0;">${book.title}</h1>
-      ${book.subtitle ? `<p style="font-family: ${style.fontFamily}; font-size: ${style.subtitleSize}px; color: ${style.textColor}; opacity: 0.7; text-align: center; margin: 0 0 40px 0;">${book.subtitle}</p>` : ''}
+      <h1 style="font-family: ${style.fontFamily}; font-size: ${style.titleSize}px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 20px 0;">${title}</h1>
+      ${subtitle ? `<p style="font-family: ${style.fontFamily}; font-size: ${style.subtitleSize}px; color: ${style.textColor}; opacity: 0.7; text-align: center; margin: 0 0 40px 0;">${subtitle}</p>` : ''}
       <div style="width: 100px; height: 3px; background: ${style.accentColor}; margin: 30px 0;"></div>
       <p style="font-family: ${style.fontFamily}; font-size: 12px; color: ${style.textColor}; opacity: 0.6; text-align: center;">${book.entry_ids.length} Memories</p>
     </div>
@@ -73,19 +85,21 @@ function generateCoverHTML(book: Book, theme: BookTheme): string {
 
 function generateChapterDividerHTML(chapter: Chapter, theme: BookTheme): string {
   const style = getThemeStyles(theme);
-  
+  const name = escapeHtml(chapter.name);
+  const description = chapter.description ? escapeHtml(chapter.description) : null;
+
   return `
     <div class="page chapter-divider" style="background: ${style.coverBg}; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 60px;">
       <div style="width: 80px; height: 2px; background: ${style.accentColor}; margin-bottom: 30px;"></div>
-      <h2 style="font-family: ${style.fontFamily}; font-size: 28px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 15px 0;">${chapter.name}</h2>
-      ${chapter.description ? `<p style="font-family: ${style.fontFamily}; font-size: 14px; color: ${style.textColor}; opacity: 0.6; text-align: center; max-width: 300px;">${chapter.description}</p>` : ''}
+      <h2 style="font-family: ${style.fontFamily}; font-size: 28px; font-weight: bold; color: ${style.textColor}; text-align: center; margin: 0 0 15px 0;">${name}</h2>
+      ${description ? `<p style="font-family: ${style.fontFamily}; font-size: 14px; color: ${style.textColor}; opacity: 0.6; text-align: center; max-width: 300px;">${description}</p>` : ''}
     </div>
   `;
 }
 
 function generateEntryHTML(entry: Entry, theme: BookTheme, pageNumber: number): string {
   const style = getThemeStyles(theme);
-  const title = getEntryTitle(entry);
+  const title = escapeHtml(getEntryTitle(entry));
   const story = entry.story_ai || entry.transcript || '';
   
   const locations = [...new Set([
@@ -97,14 +111,14 @@ function generateEntryHTML(entry: Entry, theme: BookTheme, pageNumber: number): 
 
   return `
     <div class="page entry-page" style="background: #ffffff; padding: 60px; padding-bottom: 80px; display: flex; flex-direction: column; height: 100%; position: relative; box-sizing: border-box;">
-      <p style="font-family: ${style.fontFamily}; font-size: 10px; color: ${style.accentColor}; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px;">${formatDate(entry.date)}</p>
+      <p style="font-family: ${style.fontFamily}; font-size: 10px; color: ${style.accentColor}; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px;">${escapeHtml(formatDate(entry.date))}</p>
       <h3 style="font-family: ${style.fontFamily}; font-size: 18px; font-weight: bold; color: ${style.textColor}; margin: 0 0 20px 0;">${title}</h3>
       <div style="width: 40px; height: 1px; background: ${style.accentColor}; opacity: 0.4; margin-bottom: 20px;"></div>
       <div style="flex: 1;">
-        ${paragraphs.map(p => `<p style="font-family: ${style.fontFamily}; font-size: 11px; color: ${style.textColor}; line-height: 1.8; text-align: justify; margin: 0 0 12px 0;">${p}</p>`).join('')}
+        ${paragraphs.map(p => `<p style="font-family: ${style.fontFamily}; font-size: 11px; color: ${style.textColor}; line-height: 1.8; text-align: justify; margin: 0 0 12px 0;">${escapeHtml(p)}</p>`).join('')}
       </div>
       <div style="position: absolute; bottom: 40px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-        <span style="font-family: ${style.fontFamily}; font-size: 8px; color: ${style.accentColor}; opacity: 0.6;">${locations.length > 0 ? locations.join(' • ') : ''}</span>
+        <span style="font-family: ${style.fontFamily}; font-size: 8px; color: ${style.accentColor}; opacity: 0.6;">${locations.length > 0 ? locations.map(l => escapeHtml(l)).join(' • ') : ''}</span>
         <span style="font-family: ${style.fontFamily}; font-size: 9px; color: ${style.textColor}; opacity: 0.5;">${pageNumber}</span>
       </div>
     </div>
@@ -162,7 +176,7 @@ export async function generateBookPDF(
     <!DOCTYPE html>
     <html>
     <head>
-      <title>${book.title}</title>
+      <title>${escapeHtml(book.title)}</title>
       <style>
         @media print {
           @page {

@@ -1,3 +1,5 @@
+import { extractUser } from './_lib/auth';
+
 type UserPreferences = {
   notifications?: boolean;
   emailUpdates?: boolean;
@@ -24,25 +26,11 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 const REQUIRE_AUTH_FOR_PREFERENCES = process.env.REQUIRE_AUTH_FOR_PREFERENCES === 'true';
 const store = new Map<string, StoredPreferences>();
 
-function normalizeIdentity(rawIdentity: string): string {
-  return rawIdentity.trim().toLowerCase().slice(0, 128);
-}
-
-function getIdentity(req: any): string {
-  const headerIdentity = req.headers?.['x-user-id'] as string | undefined;
-  if (headerIdentity && headerIdentity.trim().length > 0) {
-    return normalizeIdentity(headerIdentity);
-  }
-
+function normalizeIpIdentity(req: any): string {
   const forwardedFor = (req.headers?.['x-forwarded-for'] as string | undefined) ?? '';
   const firstForwarded = forwardedFor.split(',')[0]?.trim();
-  const fallbackIp = firstForwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
-  return normalizeIdentity(`ip:${fallbackIp}`);
-}
-
-function hasAuthenticatedIdentity(req: any): boolean {
-  const headerIdentity = req.headers?.['x-user-id'] as string | undefined;
-  return Boolean(headerIdentity && headerIdentity.trim().length > 0);
+  const ip = firstForwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
+  return `ip:${ip}`.trim().toLowerCase().slice(0, 128);
 }
 
 function mergePreferences(preferences?: UserPreferences): UserPreferences {
@@ -69,12 +57,15 @@ function getStored(identity: string): StoredPreferences {
 }
 
 export default async function handler(req: any, res: any) {
-  if (REQUIRE_AUTH_FOR_PREFERENCES && !hasAuthenticatedIdentity(req)) {
+  const authUser = await extractUser(req);
+
+  if (REQUIRE_AUTH_FOR_PREFERENCES && !authUser) {
     res.status(401).json({ error: 'Authentication required for preferences' });
     return;
   }
 
-  const identity = getIdentity(req);
+  // Use the authenticated identity when available; fall back to IP for anonymous access.
+  const identity = authUser ? authUser.id : normalizeIpIdentity(req);
 
   if (req.method === 'GET') {
     const current = getStored(identity);
