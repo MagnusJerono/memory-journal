@@ -70,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }, []);
 
+  // getToken reads the access_token from React state that is already loaded
+  // by the useEffect above, so it is safe to keep synchronous.
   const getToken = useCallback((): string | null => {
     return session?.access_token ?? null;
   }, [session]);

@@ -31,7 +31,7 @@ export function AuthScreen() {
       if (err) {
         setError(err.message);
       } else {
-        setInfo('Account created! Check your email to confirm your address, then sign in.');
+        setInfo('Account created! You can now sign in.');
         setMode('login');
         setPassword('');
       }

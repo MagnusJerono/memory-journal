@@ -86,6 +86,9 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       return {
+        // Use email as the login identifier; fall back to the internal UUID only
+        // when no email is present (e.g. OAuth providers). This value is used
+        // for the x-user-id header (API identity), not displayed in the UI.
         login: user.email ?? user.id,
         avatarUrl: '',
         email: user.email,
