@@ -20,22 +20,15 @@ function resolveAuthEndpoint(): string {
 /**
  * Returns the current Supabase session JWT, or null when not signed in /
  * Supabase is not configured.
+ *
+ * Uses the official async `getSession()` API to avoid relying on the
+ * internal localStorage key format, which can vary across Supabase versions.
  */
-export function getAuthToken(): string | null {
-  // supabase.auth.session() is sync in v2 — access via the cached session.
-  // We read from the global client which holds the in-memory session.
+export async function getAuthToken(): Promise<string | null> {
   if (!supabase) return null;
-  // getSession() is async; for a synchronous fast-path we look at the stored
-  // access_token that the Supabase client persists in localStorage.
   try {
-    const storageKey = Object.keys(localStorage).find((k) =>
-      k.startsWith('sb-') && k.endsWith('-auth-token'),
-    );
-    if (!storageKey) return null;
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { access_token?: string };
-    return parsed.access_token ?? null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
   } catch {
     return null;
   }
@@ -43,7 +36,7 @@ export function getAuthToken(): string | null {
 
 async function getUserFromApi(): Promise<AppUser | null> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  const token = getAuthToken();
+  const token = await getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -93,7 +86,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       return {
-        login: user.id,
+        login: user.email ?? user.id,
         avatarUrl: '',
         email: user.email,
       };

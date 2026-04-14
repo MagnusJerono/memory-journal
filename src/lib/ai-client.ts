@@ -22,7 +22,7 @@ async function buildRequestHeaders(): Promise<Record<string, string>> {
   };
 
   // Prefer the Supabase JWT as a proper Bearer token (verified server-side).
-  const token = getAuthToken();
+  const token = await getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   } else {

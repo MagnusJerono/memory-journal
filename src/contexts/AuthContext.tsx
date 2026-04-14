@@ -48,13 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    if (!supabase) return { error: { message: 'Supabase is not configured', name: 'ConfigError', status: 500 } as AuthError };
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
     const { error } = await supabase.auth.signUp({ email, password });
     return { error };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    if (!supabase) return { error: { message: 'Supabase is not configured', name: 'ConfigError', status: 500 } as AuthError };
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   }, []);
