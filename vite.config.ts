@@ -23,8 +23,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           motion: ['framer-motion'],
-          charts: ['recharts', 'd3'],
-          three: ['three'],
+          charts: ['recharts'],
         },
       },
     },
