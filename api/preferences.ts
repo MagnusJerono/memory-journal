@@ -24,7 +24,96 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 const REQUIRE_AUTH_FOR_PREFERENCES = process.env.REQUIRE_AUTH_FOR_PREFERENCES === 'true';
-const store = new Map<string, StoredPreferences>();
+
+// In-memory fallback when Supabase is not configured.
+const memoryStore = new Map<string, StoredPreferences>();
+
+// ── Supabase helpers ───────────────────────────────────────────────────────────
+
+function supabaseConfig(): { url: string; key: string } | null {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return { url, key };
+}
+
+type SupabasePrefsRow = {
+  user_id: string;
+  notifications: boolean;
+  email_updates: boolean;
+  auto_save: boolean;
+  personal_voice_sample: string;
+  updated_at: string;
+};
+
+async function supabaseFetch(
+  config: { url: string; key: string },
+  method: string,
+  path: string,
+  body?: unknown,
+  extraHeaders?: Record<string, string>,
+): Promise<Response> {
+  return fetch(`${config.url}/rest/v1/${path}`, {
+    method,
+    headers: {
+      apikey: config.key,
+      Authorization: `Bearer ${config.key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...extraHeaders,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+async function loadFromSupabase(
+  config: { url: string; key: string },
+  userId: string,
+): Promise<StoredPreferences | null> {
+  const resp = await supabaseFetch(
+    config,
+    'GET',
+    `user_preferences?user_id=eq.${encodeURIComponent(userId)}&select=*`,
+  );
+  if (!resp.ok) return null;
+  const rows = (await resp.json()) as SupabasePrefsRow[];
+  if (!rows || rows.length === 0) return null;
+  const row = rows[0];
+  return {
+    preferences: {
+      notifications: row.notifications ?? DEFAULT_PREFERENCES.notifications,
+      emailUpdates: row.email_updates ?? DEFAULT_PREFERENCES.emailUpdates,
+      autoSave: row.auto_save ?? DEFAULT_PREFERENCES.autoSave,
+    },
+    personalVoiceSample: row.personal_voice_sample ?? '',
+    updatedAt: row.updated_at ?? new Date().toISOString(),
+  };
+}
+
+async function saveToSupabase(
+  config: { url: string; key: string },
+  userId: string,
+  data: StoredPreferences,
+): Promise<boolean> {
+  const row: SupabasePrefsRow = {
+    user_id: userId,
+    notifications: data.preferences.notifications ?? DEFAULT_PREFERENCES.notifications!,
+    email_updates: data.preferences.emailUpdates ?? DEFAULT_PREFERENCES.emailUpdates!,
+    auto_save: data.preferences.autoSave ?? DEFAULT_PREFERENCES.autoSave!,
+    personal_voice_sample: data.personalVoiceSample,
+    updated_at: data.updatedAt,
+  };
+  const resp = await supabaseFetch(
+    config,
+    'POST',
+    'user_preferences?on_conflict=user_id',
+    row,
+    { Prefer: 'resolution=merge-duplicates' },
+  );
+  return resp.ok || resp.status === 201;
+}
+
+// ── Shared logic ───────────────────────────────────────────────────────────────
 
 function normalizeIpIdentity(req: any): string {
   const forwardedFor = (req.headers?.['x-forwarded-for'] as string | undefined) ?? '';
@@ -41,20 +130,19 @@ function mergePreferences(preferences?: UserPreferences): UserPreferences {
   };
 }
 
-function getStored(identity: string): StoredPreferences {
-  const existing = store.get(identity);
-  if (existing) {
-    return existing;
-  }
-
+function getMemoryStored(identity: string): StoredPreferences {
+  const existing = memoryStore.get(identity);
+  if (existing) return existing;
   const next: StoredPreferences = {
-    preferences: DEFAULT_PREFERENCES,
+    preferences: { ...DEFAULT_PREFERENCES },
     personalVoiceSample: '',
     updatedAt: new Date().toISOString(),
   };
-  store.set(identity, next);
+  memoryStore.set(identity, next);
   return next;
 }
+
+// ── Handler ────────────────────────────────────────────────────────────────────
 
 export default async function handler(req: any, res: any) {
   const authUser = await extractUser(req);
@@ -64,11 +152,21 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  // Use the authenticated identity when available; fall back to IP for anonymous access.
   const identity = authUser ? authUser.id : normalizeIpIdentity(req);
+  const db = supabaseConfig();
 
   if (req.method === 'GET') {
-    const current = getStored(identity);
+    let current: StoredPreferences;
+    if (db) {
+      try {
+        current = (await loadFromSupabase(db, identity)) ?? getMemoryStored(identity);
+      } catch {
+        current = getMemoryStored(identity);
+      }
+    } else {
+      current = getMemoryStored(identity);
+    }
+
     res.status(200).json({
       preferences: mergePreferences(current.preferences),
       personalVoiceSample: current.personalVoiceSample,
@@ -79,19 +177,39 @@ export default async function handler(req: any, res: any) {
 
   if (req.method === 'PUT') {
     const body = (req.body || {}) as PreferencesPayload;
-    const current = getStored(identity);
+
+    // Load current values first so we can merge properly.
+    let current: StoredPreferences;
+    if (db) {
+      try {
+        current = (await loadFromSupabase(db, identity)) ?? getMemoryStored(identity);
+      } catch {
+        current = getMemoryStored(identity);
+      }
+    } else {
+      current = getMemoryStored(identity);
+    }
 
     const next: StoredPreferences = {
       preferences: body.preferences
         ? mergePreferences({ ...current.preferences, ...body.preferences })
         : current.preferences,
-      personalVoiceSample: typeof body.personalVoiceSample === 'string'
-        ? body.personalVoiceSample
-        : current.personalVoiceSample,
+      personalVoiceSample:
+        typeof body.personalVoiceSample === 'string'
+          ? body.personalVoiceSample
+          : current.personalVoiceSample,
       updatedAt: new Date().toISOString(),
     };
 
-    store.set(identity, next);
+    // Persist — Supabase first, memory fallback always updated.
+    memoryStore.set(identity, next);
+    if (db) {
+      try {
+        await saveToSupabase(db, identity, next);
+      } catch {
+        // Memory store already has the latest; Supabase will sync next time.
+      }
+    }
 
     res.status(200).json({
       ok: true,

@@ -8,7 +8,7 @@ import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useKV } from '@github/spark/hooks';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
@@ -25,8 +25,8 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { t } = useLanguage();
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
-  const [hasSeenWelcome, setHasSeenWelcome] = useKV<boolean>('tightly-has-seen-welcome', false);
-  const [lastOTDToastDate, setLastOTDToastDate] = useKV<string>('tightly-last-otd-toast-date', '');
+  const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>('tightly-has-seen-welcome', false);
+  const [lastOTDToastDate, setLastOTDToastDate] = useLocalStorage<string>('tightly-last-otd-toast-date', '');
   
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
