@@ -46,18 +46,37 @@ type SupabasePrefsRow = {
   updated_at: string;
 };
 
+/**
+ * Makes an authenticated request to the Supabase REST API.
+ *
+ * When a userToken (the caller's Supabase JWT) is provided it is used as the
+ * Authorization header so that Row Level Security policies are enforced for
+ * that specific user. SUPABASE_ANON_KEY is used as the API key so PostgREST
+ * evaluates the request in the `authenticated` role.
+ *
+ * When no userToken is present (unauthenticated fallback) the service-role key
+ * is used, which bypasses RLS. In practice this path should only be reached
+ * when REQUIRE_AUTH_FOR_PREFERENCES is false.
+ */
 async function supabaseFetch(
   config: { url: string; key: string },
   method: string,
   path: string,
   body?: unknown,
   extraHeaders?: Record<string, string>,
+  userToken?: string,
 ): Promise<Response> {
+  // Use the anon key as apikey when we have a user token so PostgREST applies
+  // RLS. Fall back to the service-role key for unauthenticated paths.
+  const anonKey = process.env.SUPABASE_ANON_KEY ?? config.key;
+  const apikey = userToken ? anonKey : config.key;
+  const authorization = userToken ? `Bearer ${userToken}` : `Bearer ${config.key}`;
+
   return fetch(`${config.url}/rest/v1/${path}`, {
     method,
     headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
+      apikey,
+      Authorization: authorization,
       'Content-Type': 'application/json',
       Accept: 'application/json',
       ...extraHeaders,
@@ -69,11 +88,15 @@ async function supabaseFetch(
 async function loadFromSupabase(
   config: { url: string; key: string },
   userId: string,
+  userToken?: string,
 ): Promise<StoredPreferences | null> {
   const resp = await supabaseFetch(
     config,
     'GET',
     `user_preferences?user_id=eq.${encodeURIComponent(userId)}&select=*`,
+    undefined,
+    undefined,
+    userToken,
   );
   if (!resp.ok) return null;
   const rows = (await resp.json()) as SupabasePrefsRow[];
@@ -94,6 +117,7 @@ async function saveToSupabase(
   config: { url: string; key: string },
   userId: string,
   data: StoredPreferences,
+  userToken?: string,
 ): Promise<boolean> {
   const row: SupabasePrefsRow = {
     user_id: userId,
@@ -109,6 +133,7 @@ async function saveToSupabase(
     'user_preferences?on_conflict=user_id',
     row,
     { Prefer: 'resolution=merge-duplicates' },
+    userToken,
   );
   return resp.ok || resp.status === 201;
 }
@@ -153,13 +178,21 @@ export default async function handler(req: any, res: any) {
   }
 
   const identity = authUser ? authUser.id : normalizeIpIdentity(req);
+
+  // Extract the raw bearer token so Supabase RLS can be enforced using the
+  // caller's own JWT rather than the service-role key.
+  const bearerToken =
+    (req.headers?.['authorization'] as string | undefined)
+      ?.replace(/^Bearer\s+/i, '')
+      .trim() || undefined;
+
   const db = supabaseConfig();
 
   if (req.method === 'GET') {
     let current: StoredPreferences;
     if (db) {
       try {
-        current = (await loadFromSupabase(db, identity)) ?? getMemoryStored(identity);
+        current = (await loadFromSupabase(db, identity, bearerToken)) ?? getMemoryStored(identity);
       } catch {
         current = getMemoryStored(identity);
       }
@@ -178,11 +211,10 @@ export default async function handler(req: any, res: any) {
   if (req.method === 'PUT') {
     const body = (req.body || {}) as PreferencesPayload;
 
-    // Load current values first so we can merge properly.
     let current: StoredPreferences;
     if (db) {
       try {
-        current = (await loadFromSupabase(db, identity)) ?? getMemoryStored(identity);
+        current = (await loadFromSupabase(db, identity, bearerToken)) ?? getMemoryStored(identity);
       } catch {
         current = getMemoryStored(identity);
       }
@@ -201,11 +233,10 @@ export default async function handler(req: any, res: any) {
       updatedAt: new Date().toISOString(),
     };
 
-    // Persist — Supabase first, memory fallback always updated.
     memoryStore.set(identity, next);
     if (db) {
       try {
-        await saveToSupabase(db, identity, next);
+        await saveToSupabase(db, identity, next, bearerToken);
       } catch {
         // Memory store already has the latest; Supabase will sync next time.
       }
