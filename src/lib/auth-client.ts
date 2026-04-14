@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export interface AppUser {
   login: string;
   avatarUrl: string;
@@ -15,11 +17,34 @@ function resolveAuthEndpoint(): string {
   return endpoint && endpoint.trim().length > 0 ? endpoint : DEFAULT_AUTH_ENDPOINT;
 }
 
+/**
+ * Returns the current Supabase session JWT, or null when not signed in /
+ * Supabase is not configured.
+ *
+ * Uses the official async `getSession()` API to avoid relying on the
+ * internal localStorage key format, which can vary across Supabase versions.
+ */
+export async function getAuthToken(): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function getUserFromApi(): Promise<AppUser | null> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const token = await getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(resolveAuthEndpoint(), {
     method: 'GET',
     credentials: 'include',
-    headers: { Accept: 'application/json' },
+    headers,
   });
 
   if (!response.ok) {
@@ -56,6 +81,23 @@ async function getUserFromSpark(): Promise<AppUser | null> {
 }
 
 export async function getCurrentUser(): Promise<AppUser | null> {
+  // If Supabase is configured, use the session user directly — no round-trip.
+  if (supabase) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      return {
+        // Use email as the login identifier; fall back to the internal UUID only
+        // when no email is present (e.g. OAuth providers). This value is used
+        // for the x-user-id header (API identity), not displayed in the UI.
+        login: user.email ?? user.id,
+        avatarUrl: '',
+        email: user.email,
+      };
+    }
+    return null;
+  }
+
+  // Fallback: call the API endpoint (handles Spark / x-user-id environments).
   try {
     return await getUserFromApi();
   } catch {

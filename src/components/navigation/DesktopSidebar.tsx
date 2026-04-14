@@ -1,4 +1,4 @@
-import { NavigationTab, AppView } from '@/lib/types';
+import { NavigationTab } from '@/lib/types';
 import { 
   House, 
   Sparkle, 
@@ -6,11 +6,14 @@ import {
   Clock,
   MagnifyingGlass, 
   Printer,
-  Gear
+  Gear,
+  SignOut
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 interface DesktopSidebarProps {
   currentTab: NavigationTab;
@@ -21,6 +24,7 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, isDarkMode }: DesktopSidebarProps) {
   const { t } = useLanguage();
+  const { signOut, user } = useAuth();
   
   const tabs: { id: NavigationTab; labelKey: keyof typeof t.nav; Icon: typeof House }[] = [
     { id: 'home', labelKey: 'home', Icon: House },
@@ -92,8 +96,8 @@ export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, isDar
         })}
       </nav>
 
-      {/* Settings Button */}
-      <div className="p-4 border-t border-border/30">
+      {/* Settings & Logout */}
+      <div className="p-4 border-t border-border/30 space-y-1">
         <Button
           variant="ghost"
           onClick={onSettingsClick}
@@ -102,6 +106,16 @@ export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, isDar
           <Gear weight="duotone" className="w-5 h-5" />
           <span>{t.settings.title}</span>
         </Button>
+        {supabase && user && (
+          <Button
+            variant="ghost"
+            onClick={() => signOut()}
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+          >
+            <SignOut weight="duotone" className="w-5 h-5" />
+            <span>Sign out</span>
+          </Button>
+        )}
       </div>
     </aside>
   );
