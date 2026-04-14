@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
@@ -69,9 +69,9 @@ function AppContent() {
     }
   }, [isDarkMode]);
 
-  const navigate = (view: AppView) => {
+  const navigate = useCallback((view: AppView) => {
     setCurrentView(view);
-  };
+  }, []);
 
   // Helper to generate unique keys for AnimatePresence
   const getViewKey = (view: AppView): string => {

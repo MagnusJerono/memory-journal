@@ -4,7 +4,7 @@ export interface UserPreferences {
   autoSave: boolean;
 }
 
-import { getCurrentUser } from './auth-client';
+import { getCurrentUser, getAuthToken } from './auth-client';
 
 export interface SettingsData {
   preferences: UserPreferences;
@@ -33,13 +33,20 @@ let apiUsable: boolean | null = null;
 async function buildRequestHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {};
 
-  try {
-    const user = await getCurrentUser();
-    if (user?.login) {
-      headers['x-user-id'] = user.login;
+  // Prefer the Supabase JWT as a Bearer token (verified server-side).
+  const token = await getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    // Fallback: send user login as x-user-id (anonymous / legacy environments).
+    try {
+      const user = await getCurrentUser();
+      if (user?.login) {
+        headers['x-user-id'] = user.login;
+      }
+    } catch {
+      // Keep anonymous fallback behavior.
     }
-  } catch {
-    // Keep anonymous fallback behavior.
   }
 
   return headers;
