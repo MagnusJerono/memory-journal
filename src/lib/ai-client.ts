@@ -1,6 +1,6 @@
 type LLMModel = 'gpt-4o' | 'gpt-4o-mini' | string;
 
-import { getCurrentUser } from './auth-client';
+import { getCurrentUser, getAuthToken } from './auth-client';
 
 interface LLMRequest {
   prompt: string;
@@ -21,13 +21,20 @@ async function buildRequestHeaders(): Promise<Record<string, string>> {
     'Content-Type': 'application/json',
   };
 
-  try {
-    const user = await getCurrentUser();
-    if (user?.login) {
-      headers['x-user-id'] = user.login;
+  // Prefer the Supabase JWT as a proper Bearer token (verified server-side).
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    // Fallback: send user login as x-user-id (Spark / anonymous environments).
+    try {
+      const user = await getCurrentUser();
+      if (user?.login) {
+        headers['x-user-id'] = user.login;
+      }
+    } catch {
+      // Keep anonymous behavior when auth is unavailable.
     }
-  } catch {
-    // Keep anonymous behavior when auth is unavailable.
   }
 
   try {

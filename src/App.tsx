@@ -5,13 +5,16 @@ import { BottomNav } from './components/navigation/BottomNav';
 import { DesktopSidebar } from './components/navigation/DesktopSidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useIsMobile } from './hooks/use-mobile';
 import { LanguageProvider } from './hooks/use-language.tsx';
 import { useJournalData } from './hooks/use-journal-data';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from './lib/supabase';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { SettingsPanel } from './components/SettingsPanel';
+import { AuthScreen } from './components/screens/AuthScreen';
 
 // Lazy-load heavier screens that are not needed on the initial render.
 const PromptsScreen = lazy(() =>
@@ -40,6 +43,7 @@ const EntryEditScreen = lazy(() =>
 );
 
 function AppContent() {
+  const { session, loading: authLoading } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
@@ -327,6 +331,20 @@ function AppContent() {
 
   const showBottomNav = !['entry-edit', 'prompts-new', 'print-builder'].includes(currentView.type);
 
+  // When Supabase is configured, require authentication before showing the app.
+  if (supabase) {
+    if (authLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
+      );
+    }
+    if (!session) {
+      return <AuthScreen />;
+    }
+  }
+
   return (
     <div className="min-h-screen relative">
       <DreamyBackground isDarkMode={isDarkMode} />
@@ -385,9 +403,11 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <AppContent />
-      </LanguageProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
