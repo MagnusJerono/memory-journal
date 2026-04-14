@@ -44,7 +44,7 @@ import { v4 as uuid } from 'uuid';
 import { cn, formatDuration } from '@/lib/utils';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { AudioWaveform } from '@/components/entry/AudioWaveform';
-import { useKV } from '@github/spark/hooks';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
@@ -132,11 +132,11 @@ export function EntryEditScreen({
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [speechLanguage, setSpeechLanguage] = useKV<string>('tightly-speech-language', 'en-US');
-  const [storyTone, setStoryTone] = useKV<StoryTone>('tightly-story-tone', 'natural');
-  const [storyLanguage, setStoryLanguage] = useKV<string>('tightly-story-language', 'en');
-  const [customTonePrompt, setCustomTonePrompt] = useKV<string>('tightly-custom-tone', '');
-  const [personalVoiceSample] = useKV<string>('tightly-personal-voice-sample', '');
+  const [speechLanguage, setSpeechLanguage] = useLocalStorage<string>('tightly-speech-language', 'en-US');
+  const [storyTone, setStoryTone] = useLocalStorage<StoryTone>('tightly-story-tone', 'natural');
+  const [storyLanguage, setStoryLanguage] = useLocalStorage<string>('tightly-story-language', 'en');
+  const [customTonePrompt, setCustomTonePrompt] = useLocalStorage<string>('tightly-custom-tone', '');
+  const [personalVoiceSample] = useLocalStorage<string>('tightly-personal-voice-sample', '');
   const [isDragging, setIsDragging] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
@@ -211,6 +211,9 @@ export function EntryEditScreen({
       setShowLocationDropdown(results.length > 0);
     } catch {
       setLocationResults([]);
+      toast.error('Location search unavailable', {
+        description: 'Could not reach the geocoding service. Try again or add the location manually.',
+      });
     } finally {
       setIsSearchingLocation(false);
     }
@@ -415,9 +418,27 @@ export function EntryEditScreen({
         themes: new Set(aiResult.tags.themes.map((_, idx) => idx))
       });
       
-      toast.success('Your memory came to life ✨');
-    } catch {
-      toast.error('Something went wrong — try again');
+      if (aiResult.imageAnalysisFailed) {
+        toast.warning('Photo analysis skipped', {
+          description: 'Could not analyze your photos for locations — you can add them manually.',
+        });
+      } else {
+        toast.success('Your memory came to life ✨');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('rate') || message.includes('429')) {
+        toast.error('AI limit reached', {
+          description: 'You have hit the usage limit. Please wait a few minutes and try again.',
+        });
+      } else if (message.includes('No AI provider') || message.includes('LLM API')) {
+        toast.error('AI is currently unavailable', {
+          description: 'Could not reach the AI service. Check your connection and try again.',
+          action: { label: 'Retry', onClick: () => void handleGenerate() },
+        });
+      } else {
+        toast.error('Something went wrong — try again');
+      }
     } finally {
       setIsGenerating(false);
     }

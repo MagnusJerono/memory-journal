@@ -15,6 +15,8 @@ export interface AIGenerationResult {
   location_suggestions: LocationSuggestion[];
   missing_info_questions: string[];
   uncertain_claims: string[];
+  /** Set to true when image analysis was attempted but failed. */
+  imageAnalysisFailed?: boolean;
 }
 
 const TONE_INSTRUCTIONS: Record<Exclude<StoryTone, 'custom'>, string> = {
@@ -44,6 +46,8 @@ interface GenerationOptions {
 export interface ImageAnalysisResult {
   locations: LocationSuggestion[];
   description: string;
+  /** True when the AI call failed; locations will be empty but generation can continue. */
+  failed?: boolean;
 }
 
 function getLanguageName(code: string): string {
@@ -98,7 +102,7 @@ If you cannot identify any specific locations, return empty locations array but 
     return result;
   } catch (error) {
     console.error('Image analysis failed:', error);
-    return { locations: [], description: '' };
+    return { locations: [], description: '', failed: true };
   }
 }
 
@@ -272,6 +276,10 @@ ${userContent}`;
         result.location_suggestions.push(loc);
       }
     });
+  }
+
+  if (imageAnalysis?.failed) {
+    result.imageAnalysisFailed = true;
   }
   
   return validateAIResult(result);

@@ -1,4 +1,4 @@
-import { useKV } from '@github/spark/hooks';
+import { useLocalStorage } from './use-local-storage';
 import { Entry, Chapter, Book } from '@/lib/types';
 import { useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
@@ -85,10 +85,10 @@ const createSampleEntry = (adventuresChapterId: string): Entry => {
 };
 
 export function useJournalData() {
-  const [entries, setEntries] = useKV<Entry[]>('tightly-entries', []);
-  const [chapters, setChapters] = useKV<Chapter[]>('tightly-chapters', []);
-  const [books, setBooks] = useKV<Book[]>('tightly-books', []);
-  const [hasSeeded, setHasSeeded] = useKV<boolean>('tightly-has-seeded-content', false);
+  const [entries, setEntries] = useLocalStorage<Entry[]>('tightly-entries', []);
+  const [chapters, setChapters] = useLocalStorage<Chapter[]>('tightly-chapters', []);
+  const [books, setBooks] = useLocalStorage<Book[]>('tightly-books', []);
+  const [hasSeeded, setHasSeeded] = useLocalStorage<boolean>('tightly-has-seeded-content', false);
 
   // Seed initial content on first load only
   useEffect(() => {

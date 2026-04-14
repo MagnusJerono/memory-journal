@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { useLocalStorage } from './use-local-storage';
 import { AppLanguage, detectBrowserLanguage, getTranslations } from '@/lib/i18n';
 
 type TranslationKeys = ReturnType<typeof getTranslations>;
@@ -19,7 +19,7 @@ interface LanguageProviderProps {
 }
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [storedPrefs, setStoredPrefs] = useKV<{ language: AppLanguage; autoDetect: boolean } | null>(
+  const [storedPrefs, setStoredPrefs] = useLocalStorage<{ language: AppLanguage; autoDetect: boolean } | null>(
     'tightly-language-prefs',
     null
   );

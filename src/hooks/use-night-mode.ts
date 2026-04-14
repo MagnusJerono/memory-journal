@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { useLocalStorage } from './use-local-storage';
 import { ThemeMode } from '@/lib/types';
 
 function getSunTimes(): { sunrise: Date; sunset: Date } {
@@ -28,7 +28,7 @@ function isNightTime(): boolean {
 }
 
 export function useNightMode() {
-  const [themeMode, setThemeMode] = useKV<ThemeMode>('tightly-theme-mode', 'auto');
+  const [themeMode, setThemeMode] = useLocalStorage<ThemeMode>('tightly-theme-mode', 'auto');
   const [isNight, setIsNight] = useState(isNightTime());
   
   useEffect(() => {

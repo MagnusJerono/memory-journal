@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AppView, NavigationTab } from './lib/types';
 import { DreamyBackground } from './components/DreamyBackground';
 import { BottomNav } from './components/navigation/BottomNav';
@@ -11,15 +11,33 @@ import { useJournalData } from './hooks/use-journal-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { HomeScreen } from './components/screens/HomeScreen';
-import { PromptsScreen } from './components/screens/PromptsScreen';
-import { ChaptersScreen } from './components/screens/ChaptersScreen';
-import { ChapterDetailScreen } from './components/screens/ChapterDetailScreen';
-import { TimelineScreen } from './components/screens/TimelineScreen';
-import { SearchScreen } from './components/screens/SearchScreen';
-import { PrintScreen } from './components/screens/PrintScreen';
-import { EntryReadScreen } from './components/screens/EntryReadScreen';
-import { EntryEditScreen } from './components/screens/EntryEditScreen';
 import { SettingsPanel } from './components/SettingsPanel';
+
+// Lazy-load heavier screens that are not needed on the initial render.
+const PromptsScreen = lazy(() =>
+  import('./components/screens/PromptsScreen').then((m) => ({ default: m.PromptsScreen })),
+);
+const ChaptersScreen = lazy(() =>
+  import('./components/screens/ChaptersScreen').then((m) => ({ default: m.ChaptersScreen })),
+);
+const ChapterDetailScreen = lazy(() =>
+  import('./components/screens/ChapterDetailScreen').then((m) => ({ default: m.ChapterDetailScreen })),
+);
+const TimelineScreen = lazy(() =>
+  import('./components/screens/TimelineScreen').then((m) => ({ default: m.TimelineScreen })),
+);
+const SearchScreen = lazy(() =>
+  import('./components/screens/SearchScreen').then((m) => ({ default: m.SearchScreen })),
+);
+const PrintScreen = lazy(() =>
+  import('./components/screens/PrintScreen').then((m) => ({ default: m.PrintScreen })),
+);
+const EntryReadScreen = lazy(() =>
+  import('./components/screens/EntryReadScreen').then((m) => ({ default: m.EntryReadScreen })),
+);
+const EntryEditScreen = lazy(() =>
+  import('./components/screens/EntryEditScreen').then((m) => ({ default: m.EntryEditScreen })),
+);
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
@@ -325,17 +343,19 @@ function AppContent() {
       
       {/* Main Content with Page Transitions */}
       <div className={`relative z-10 ${!isMobile ? 'ml-64' : ''} ${showBottomNav && isMobile ? 'pb-20' : ''}`}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={getViewKey(currentView)}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-          >
-            {renderScreen()}
-          </motion.div>
-        </AnimatePresence>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={getViewKey(currentView)}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              {renderScreen()}
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
       </div>
 
       {/* Mobile Bottom Navigation */}
