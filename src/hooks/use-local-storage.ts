@@ -37,8 +37,8 @@ export function useLocalStorage<T = string>(
             : newValue;
         try {
           window.localStorage.setItem(key, JSON.stringify(next));
-        } catch {
-          // Ignore write errors (e.g. private browsing quota)
+        } catch (err) {
+          console.error(`[useLocalStorage] Failed to write key "${key}":`, err);
         }
         return next;
       });

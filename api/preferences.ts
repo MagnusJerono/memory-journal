@@ -97,9 +97,9 @@ async function saveToSupabase(
 ): Promise<boolean> {
   const row: SupabasePrefsRow = {
     user_id: userId,
-    notifications: data.preferences.notifications ?? DEFAULT_PREFERENCES.notifications!,
-    email_updates: data.preferences.emailUpdates ?? DEFAULT_PREFERENCES.emailUpdates!,
-    auto_save: data.preferences.autoSave ?? DEFAULT_PREFERENCES.autoSave!,
+    notifications: data.preferences.notifications ?? DEFAULT_PREFERENCES.notifications,
+    email_updates: data.preferences.emailUpdates ?? DEFAULT_PREFERENCES.emailUpdates,
+    auto_save: data.preferences.autoSave ?? DEFAULT_PREFERENCES.autoSave,
     personal_voice_sample: data.personalVoiceSample,
     updated_at: data.updatedAt,
   };

@@ -420,7 +420,7 @@ export function EntryEditScreen({
       
       if (aiResult.imageAnalysisFailed) {
         toast.warning('Photo analysis skipped', {
-          description: 'Could not analyse your photos for locations — you can add them manually.',
+          description: 'Could not analyze your photos for locations — you can add them manually.',
         });
       } else {
         toast.success('Your memory came to life ✨');
