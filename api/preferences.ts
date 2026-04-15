@@ -17,7 +17,7 @@ type StoredPreferences = {
   updatedAt: string;
 };
 
-const DEFAULT_PREFERENCES: UserPreferences = {
+const DEFAULT_PREFERENCES: Required<UserPreferences> = {
   notifications: true,
   emailUpdates: false,
   autoSave: true,
