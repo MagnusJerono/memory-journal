@@ -4,9 +4,9 @@ type RequestBody = {
   jsonMode?: boolean;
 };
 
-import { extractUser } from '../_lib/auth';
-import { checkAndConsumeRateLimit, inferTier } from '../_lib/rate-limit';
-import { recordUsageEvent } from '../_lib/usage-log';
+import { extractUser } from '../_lib/auth.js';
+import { checkAndConsumeRateLimit, inferTier } from '../_lib/rate-limit.js';
+import { recordUsageEvent } from '../_lib/usage-log.js';
 
 type ChatResponse = {
   choices?: Array<{ 
