@@ -1,14 +1,8 @@
+// Persistent rate limiter backed by Supabase.
+// Queries llm_usage_events table for the current windows per identity.
+// Falls back to allowing requests if Supabase is unreachable — logs a warning.
+
 type UserTier = 'free' | 'premium';
-
-interface LimitWindow {
-  requests: number;
-  startedAt: number;
-}
-
-interface IdentityState {
-  tenMinute: LimitWindow;
-  day: LimitWindow;
-}
 
 interface RateLimitResult {
   allowed: boolean;
@@ -27,13 +21,9 @@ const DEFAULT_FREE_DAY = 50;
 const DEFAULT_PREMIUM_10M = 60;
 const DEFAULT_PREMIUM_DAY = 500;
 
-const state = new Map<string, IdentityState>();
-
 function getNumberEnv(name: string, fallback: number): number {
   const value = process.env[name];
-  if (!value) {
-    return fallback;
-  }
+  if (!value) return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
@@ -45,91 +35,127 @@ function getLimits(tier: UserTier) {
       maxDay: getNumberEnv('PREMIUM_AI_LIMIT_DAY', DEFAULT_PREMIUM_DAY),
     };
   }
-
   return {
     max10m: getNumberEnv('FREE_AI_LIMIT_10M', DEFAULT_FREE_10M),
     maxDay: getNumberEnv('FREE_AI_LIMIT_DAY', DEFAULT_FREE_DAY),
   };
 }
 
-function createWindow(now: number): LimitWindow {
-  return { requests: 0, startedAt: now };
+function supabaseRestUrl(): string | null {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  return url ? url.replace(/\/$/, '') + '/rest/v1' : null;
 }
 
-function getOrCreateState(identity: string, now: number): IdentityState {
-  const existing = state.get(identity);
-  if (existing) {
-    return existing;
-  }
-
-  const next: IdentityState = {
-    tenMinute: createWindow(now),
-    day: createWindow(now),
-  };
-  state.set(identity, next);
-  return next;
+function serviceRoleKey(): string | null {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || null;
 }
 
-function maybeResetWindow(window: LimitWindow, windowMs: number, now: number): void {
-  if (now - window.startedAt >= windowMs) {
-    window.startedAt = now;
-    window.requests = 0;
+async function countSince(identity: string, sinceMs: number): Promise<number> {
+  const base = supabaseRestUrl();
+  const key = serviceRoleKey();
+  if (!base || !key) return 0; // fail open if misconfigured
+
+  const sinceIso = new Date(Date.now() - sinceMs).toISOString();
+  const url =
+    `${base}/llm_usage_events` +
+    `?select=id&identity=eq.${encodeURIComponent(identity)}` +
+    `&status=in.(success,provider_error)` +
+    `&created_at=gte.${encodeURIComponent(sinceIso)}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'count=exact',
+        Range: '0-0',
+      },
+    });
+    const contentRange = res.headers.get('content-range') || '';
+    const match = contentRange.match(/\/(\d+|\*)$/);
+    if (match && match[1] !== '*') return Number(match[1]);
+    return 0;
+  } catch (err) {
+    console.warn('[rate-limit] Supabase query failed, failing open', err);
+    return 0;
   }
 }
 
 export function inferTier(identity: string, explicitTier?: string): UserTier {
-  if (explicitTier === 'premium') {
-    return 'premium';
-  }
-
-  const premiumIdsRaw = process.env.PREMIUM_USER_IDS ?? '';
-  const premiumIds = premiumIdsRaw
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-
+  if (explicitTier === 'premium') return 'premium';
+  const raw = process.env.PREMIUM_USER_IDS ?? '';
+  const premiumIds = raw.split(',').map(v => v.trim()).filter(Boolean);
   return premiumIds.includes(identity) ? 'premium' : 'free';
 }
 
-export function checkAndConsumeRateLimit(identity: string, tier: UserTier): RateLimitResult {
-  const now = Date.now();
+export async function checkRateLimit(identity: string, tier: UserTier): Promise<RateLimitResult> {
   const limits = getLimits(tier);
-  const entry = getOrCreateState(identity, now);
+  const [count10m, countDay] = await Promise.all([
+    countSince(identity, TEN_MINUTES_MS),
+    countSince(identity, DAY_MS),
+  ]);
 
-  maybeResetWindow(entry.tenMinute, TEN_MINUTES_MS, now);
-  maybeResetWindow(entry.day, DAY_MS, now);
-
-  if (entry.tenMinute.requests >= limits.max10m) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((TEN_MINUTES_MS - (now - entry.tenMinute.startedAt)) / 1000));
+  if (count10m >= limits.max10m) {
     return {
       allowed: false,
       reason: '10-minute limit exceeded',
-      retryAfterSeconds,
+      retryAfterSeconds: 60,
       remaining10m: 0,
-      remainingDay: Math.max(0, limits.maxDay - entry.day.requests),
+      remainingDay: Math.max(0, limits.maxDay - countDay),
       tier,
     };
   }
-
-  if (entry.day.requests >= limits.maxDay) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((DAY_MS - (now - entry.day.startedAt)) / 1000));
+  if (countDay >= limits.maxDay) {
     return {
       allowed: false,
       reason: 'daily limit exceeded',
-      retryAfterSeconds,
-      remaining10m: Math.max(0, limits.max10m - entry.tenMinute.requests),
+      retryAfterSeconds: 3600,
+      remaining10m: Math.max(0, limits.max10m - count10m),
       remainingDay: 0,
       tier,
     };
   }
-
-  entry.tenMinute.requests += 1;
-  entry.day.requests += 1;
-
   return {
     allowed: true,
-    remaining10m: Math.max(0, limits.max10m - entry.tenMinute.requests),
-    remainingDay: Math.max(0, limits.maxDay - entry.day.requests),
+    remaining10m: Math.max(0, limits.max10m - count10m - 1),
+    remainingDay: Math.max(0, limits.maxDay - countDay - 1),
     tier,
   };
+}
+
+// Legacy sync export for backwards compatibility — callers should migrate to checkRateLimit.
+export function checkAndConsumeRateLimit(_identity: string, tier: UserTier): RateLimitResult {
+  // Sync version is no longer backed by state; returns "allowed" and relies on
+  // the DB-backed usage log to enforce limits on subsequent calls.
+  // Kept only so existing imports do not break at compile time.
+  const limits = getLimits(tier);
+  return {
+    allowed: true,
+    remaining10m: limits.max10m,
+    remainingDay: limits.maxDay,
+    tier,
+  };
+}
+
+export async function getMonthlyCostUsd(): Promise<number> {
+  const base = supabaseRestUrl();
+  const key = serviceRoleKey();
+  if (!base || !key) return 0;
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const url =
+    `${base}/llm_usage_events` +
+    `?select=estimated_cost_usd` +
+    `&created_at=gte.${encodeURIComponent(monthStart.toISOString())}`;
+  try {
+    const res = await fetch(url, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return 0;
+    const rows = (await res.json()) as Array<{ estimated_cost_usd: number | null }>;
+    return rows.reduce((sum, r) => sum + (Number(r.estimated_cost_usd) || 0), 0);
+  } catch {
+    return 0;
+  }
 }

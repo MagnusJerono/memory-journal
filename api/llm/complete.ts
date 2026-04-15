@@ -11,7 +11,7 @@ function byteSize(s: string): number {
 }
 
 import { extractUser } from '../_lib/auth.js';
-import { checkAndConsumeRateLimit, inferTier } from '../_lib/rate-limit.js';
+import { checkRateLimit, inferTier, getMonthlyCostUsd } from '../_lib/rate-limit.js';
 import { recordUsageEvent } from '../_lib/usage-log.js';
 
 type ChatResponse = {
@@ -69,7 +69,7 @@ export default async function handler(req: any, res: any) {
     // Use the authenticated identity when available; fall back to IP for anonymous rate limiting.
     const identity = authUser ? authUser.id : normalizeIpIdentity(req);
     const tier = inferTier(identity, getExplicitTier(req));
-    const limit = checkAndConsumeRateLimit(identity, tier);
+    const limit = await checkRateLimit(identity, tier);
 
     res.setHeader('X-RateLimit-Tier', tier);
     res.setHeader('X-RateLimit-Remaining-10m', String(limit.remaining10m));
@@ -80,8 +80,9 @@ export default async function handler(req: any, res: any) {
         res.setHeader('Retry-After', String(limit.retryAfterSeconds));
       }
       recordUsageEvent({
-        identity,
-        tier,
+      identity,
+      userId: authUser?.id ?? null,
+      tier,
         model: 'unknown',
         status: 'rate_limited',
         promptChars: 0,
@@ -103,8 +104,9 @@ export default async function handler(req: any, res: any) {
 
     if (!prompt) {
       recordUsageEvent({
-        identity,
-        tier,
+      identity,
+      userId: authUser?.id ?? null,
+      tier,
         model,
         status: 'invalid_input',
         promptChars: 0,
@@ -115,8 +117,9 @@ export default async function handler(req: any, res: any) {
 
     if (prompt.length > MAX_PROMPT_CHARS) {
       recordUsageEvent({
-        identity,
-        tier,
+      identity,
+      userId: authUser?.id ?? null,
+      tier,
         model,
         status: 'invalid_input',
         promptChars: prompt.length,
@@ -126,6 +129,23 @@ export default async function handler(req: any, res: any) {
         maxPromptChars: MAX_PROMPT_CHARS,
       });
       return;
+    }
+
+    
+    const monthlyBudget = Number(process.env.MONTHLY_OPENAI_BUDGET_USD ?? 20);
+    const monthlyCost = await getMonthlyCostUsd();
+    if (monthlyCost >= monthlyBudget) {
+      await recordUsageEvent({
+        identity,
+        userId: authUser?.id ?? null,
+        tier,
+        model,
+        status: 'budget_exceeded',
+        promptChars: prompt.length,
+      });
+      return res.status(503).json({
+        error: 'Monthly AI budget exhausted. Please try again next month.',
+      });
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -145,8 +165,9 @@ export default async function handler(req: any, res: any) {
     if (!response.ok) {
       const errorText = await response.text();
       recordUsageEvent({
-        identity,
-        tier,
+      identity,
+      userId: authUser?.id ?? null,
+      tier,
         model,
         status: 'provider_error',
         promptChars: prompt.length,
@@ -159,8 +180,9 @@ export default async function handler(req: any, res: any) {
     const text = data.choices?.[0]?.message?.content;
     if (!text) {
       recordUsageEvent({
-        identity,
-        tier,
+      identity,
+      userId: authUser?.id ?? null,
+      tier,
         model,
         status: 'provider_error',
         promptChars: prompt.length,
@@ -171,6 +193,7 @@ export default async function handler(req: any, res: any) {
 
     const usage = recordUsageEvent({
       identity,
+      userId: authUser?.id ?? null,
       tier,
       model,
       status: 'success',
