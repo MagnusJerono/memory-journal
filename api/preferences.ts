@@ -1,4 +1,4 @@
-import { extractUser } from './_lib/auth';
+import { extractUser } from './_lib/auth.js';
 
 type UserPreferences = {
   notifications?: boolean;
