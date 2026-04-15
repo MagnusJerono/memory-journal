@@ -4,6 +4,12 @@ type RequestBody = {
   jsonMode?: boolean;
 };
 
+const MAX_INPUT_BYTES = 8 * 1024; // 8KB per request
+
+function byteSize(s: string): number {
+  return new TextEncoder().encode(s).length;
+}
+
 import { extractUser } from '../_lib/auth.js';
 import { checkAndConsumeRateLimit, inferTier } from '../_lib/rate-limit.js';
 import { recordUsageEvent } from '../_lib/usage-log.js';
@@ -40,6 +46,13 @@ function getOpenAIKey(): string {
 }
 
 export default async function handler(req: any, res: any) {
+  try {
+    const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? '');
+    if (byteSize(raw) > MAX_INPUT_BYTES) {
+      return res.status(413).json({ error: 'Request body too large' });
+    }
+  } catch { /* ignore */ }
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
