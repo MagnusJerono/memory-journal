@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
-import { searchLocations, getCurrentLocation, GeocodingResult } from '@/lib/geocoding';
+import { searchLocations, getCurrentLocation, GeocodingResult, GeocodingServiceError } from '@/lib/geocoding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -216,11 +216,16 @@ export function EntryEditScreen({
       const results = await searchLocations(query);
       setLocationResults(results);
       setShowLocationDropdown(results.length > 0);
-    } catch {
+    } catch (error) {
       setLocationResults([]);
-      toast.error('Location search unavailable', {
-        description: 'Could not reach the geocoding service. Try again or add the location manually.',
-      });
+      setShowLocationDropdown(false);
+      if (error instanceof GeocodingServiceError) {
+        toast.error('Location search unavailable', {
+          description: 'Could not reach the geocoding service. Try again or add the location manually.',
+        });
+      } else {
+        console.error('Location search failed:', error);
+      }
     } finally {
       setIsSearchingLocation(false);
     }
@@ -314,9 +319,19 @@ export function EntryEditScreen({
       if (location && !manualLocations.includes(location.displayName)) {
         setManualLocations(prev => [...prev, location.displayName]);
         toast.success(`Added: ${location.name}`);
+      } else if (!location) {
+        toast.error('Could not determine location', {
+          description: 'Please check your browser permissions',
+        });
       }
-    } catch {
-      toast.error('Location access denied');
+    } catch (error) {
+      if (error instanceof GeocodingServiceError) {
+        toast.error('Location service unavailable', {
+          description: 'We could not look up your current location. Try again in a moment or enter it manually.',
+        });
+      } else {
+        toast.error('Location access denied');
+      }
     } finally {
       setIsGettingLocation(false);
     }
