@@ -38,11 +38,24 @@ import {
   Palette
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { AccordionSettingsSection } from './AccordionSettingsSection';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getCurrentUser, type AppUser } from '@/lib/auth-client';
 import { useSettingsPreferences } from '@/hooks/use-settings-preferences';
+import { useAuth } from '@/contexts/AuthContext';
+import * as db from '@/lib/db';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface SettingsPanelProps {
   themeMode?: ThemeMode;
@@ -64,12 +77,17 @@ export function SettingsPanel({
   triggerButton
 }: SettingsPanelProps) {
   const theme = useTheme();
+  const { user: authUser, signOut, getToken } = useAuth();
   const resolvedThemeMode = themeMode ?? theme.themeMode;
   const resolvedOnThemeModeChange = onThemeModeChange ?? theme.setThemeMode;
   const resolvedIsDarkMode = isDarkMode ?? theme.isDarkMode;
   const resolvedIsNightTime = isNightTime ?? theme.isNightTime;
   const showTrigger = triggerButton !== undefined || open === undefined;
   const [user, setUser] = useState<AppUser | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const {
     preferences,
     personalVoiceSample,
@@ -103,6 +121,85 @@ export function SettingsPanel({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      onOpenChange?.(false);
+      toast.success('Signed out');
+    } catch (err) {
+      console.error('Sign out failed', err);
+      toast.error('Could not sign out');
+    }
+  };
+
+  const handleExport = async () => {
+    if (!authUser?.id) {
+      toast.error('Sign in to export your memories');
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const [entries, chapters, books] = await Promise.all([
+        db.fetchEntries(authUser.id),
+        db.fetchChapters(authUser.id),
+        db.fetchBooks(authUser.id),
+      ]);
+      const payload = {
+        exported_at: new Date().toISOString(),
+        user_id: authUser.id,
+        entries,
+        chapters,
+        books,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `tightly-export-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Export ready');
+    } catch (err) {
+      console.error('Export failed', err);
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const token = getToken();
+    if (!token) {
+      toast.error('Sign in to delete your account');
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const resp = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data?.error || `Delete failed (${resp.status})`);
+      }
+      toast.success('Account deleted');
+      setDeleteOpen(false);
+      await signOut();
+      onOpenChange?.(false);
+    } catch (err) {
+      console.error('Account deletion failed', err);
+      toast.error(err instanceof Error ? err.message : 'Account deletion failed');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -438,7 +535,7 @@ export function SettingsPanel({
                 label={t.settings.privacy}
                 description={t.settings.privacyDesc}
                 action={
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setPrivacyOpen(true)}>
                     {t.settings.view}
                   </Button>
                 }
@@ -448,8 +545,8 @@ export function SettingsPanel({
                 label={t.settings.exportData}
                 description={t.settings.exportDataDesc}
                 action={
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">
-                    {t.settings.export}
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleExport} disabled={isExporting || !authUser}>
+                    {isExporting ? '…' : t.settings.export}
                   </Button>
                 }
               />
@@ -457,6 +554,8 @@ export function SettingsPanel({
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={handleSignOut}
+                  disabled={!authUser}
                 >
                   <SignOut weight="duotone" className="w-4 h-4 mr-3" />
                   {t.settings.signOut}
@@ -464,6 +563,8 @@ export function SettingsPanel({
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={!authUser}
                 >
                   <Trash weight="duotone" className="w-4 h-4 mr-3" />
                   {t.settings.deleteAccount}
@@ -497,6 +598,45 @@ export function SettingsPanel({
           </AccordionSettingsSection>
         </div>
       </SheetContent>
+
+      <AlertDialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Your privacy</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>Your memories, photos, and voice samples belong to you. They are stored encrypted in Supabase and only accessible with your account.</p>
+                <p>We use AI to help shape your stories. Entry text may be sent to OpenAI for transcription and story drafting. We never sell your data or share it with advertisers.</p>
+                <p>You can export everything at any time, or permanently delete your account from this screen.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setPrivacyOpen(false)}>Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes your entries, chapters, books, photos, and account. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting…' : 'Delete forever'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
