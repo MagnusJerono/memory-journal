@@ -11,8 +11,17 @@ interface AuthState {
 interface AuthActions {
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   getToken: () => string | null;
+  /**
+   * True when the current session was initiated by clicking a password
+   * recovery link. Consumers (e.g. the AuthScreen) use this to prompt the
+   * user to set a new password.
+   */
+  isPasswordRecovery: boolean;
 }
 
 type AuthContextValue = AuthState & AuthActions;
@@ -23,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -38,10 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Subscribe to future auth state changes.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -52,7 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const err = new Error('Supabase is not configured') as AuthError;
       return { error: err };
     }
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
     return { error };
   }, []);
 
@@ -65,9 +82,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    return { error };
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    return { error };
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
+    const { error } = await supabase.auth.updateUser({ password });
+    if (!error) {
+      setIsPasswordRecovery(false);
+    }
+    return { error };
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    setIsPasswordRecovery(false);
   }, []);
 
   // getToken reads the access_token from React state that is already loaded
@@ -77,7 +130,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signUp, signIn, signOut, getToken }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        loading,
+        signUp,
+        signIn,
+        signInWithMagicLink,
+        resetPassword,
+        updatePassword,
+        signOut,
+        getToken,
+        isPasswordRecovery,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

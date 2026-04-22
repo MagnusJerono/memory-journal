@@ -81,10 +81,10 @@ Copy `.env.example` to `.env` and fill in the required values:
 | Variable | Required | Description |
 |---|---|---|
 | `OPENAI_API_KEY` | ✅ Yes | Your OpenAI API key for AI story generation |
-| `SUPABASE_URL` | When using Supabase auth | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | When using Supabase auth | Service role key for server-side JWT validation |
-| `VITE_SUPABASE_URL` | When using Supabase auth | Supabase URL (exposed to browser) |
-| `VITE_SUPABASE_ANON_KEY` | When using Supabase auth | Supabase anon key (exposed to browser) |
+| `SUPABASE_URL` *or* `NEXT_PUBLIC_SUPABASE_URL` | When using Supabase auth | Supabase project URL (server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` *or* `SUPABASE_SECRET_KEY` | When using Supabase auth | Server-side key for JWT validation |
+| `VITE_SUPABASE_URL` *or* `NEXT_PUBLIC_SUPABASE_URL` | When using Supabase auth | Supabase URL (exposed to browser) |
+| `VITE_SUPABASE_ANON_KEY` *or* `NEXT_PUBLIC_SUPABASE_ANON_KEY` | When using Supabase auth | Supabase anon key (exposed to browser) |
 | `FREE_AI_LIMIT_10M` | No | Free-tier max requests per 10 min (default: 10) |
 | `FREE_AI_LIMIT_DAY` | No | Free-tier max requests per day (default: 50) |
 | `PREMIUM_AI_LIMIT_10M` | No | Premium max requests per 10 min (default: 60) |
@@ -103,8 +103,7 @@ Copy `.env.example` to `.env` and fill in the required values:
 2. **Connect your repo** in the [Vercel dashboard](https://vercel.com/new).
 3. **Set environment variables** in *Project → Settings → Environment Variables*:
    - `OPENAI_API_KEY` — required for AI features
-   - `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` — if using Supabase auth
-   - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — if using Supabase on the frontend
+   - Supabase: either install the **Vercel ↔ Supabase marketplace integration** (auto-injects `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`, etc.) *or* set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` manually. The app reads either naming convention.
    - Rate-limit variables as needed
 4. **Deploy** — Vercel uses `vercel.json` for build config (`tsc -b && vite build`).
 

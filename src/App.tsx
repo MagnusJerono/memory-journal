@@ -43,7 +43,7 @@ const EntryEditScreen = lazy(() =>
 );
 
 function AppContent() {
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, isPasswordRecovery } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
@@ -340,7 +340,7 @@ function AppContent() {
         </div>
       );
     }
-    if (!session) {
+    if (!session || isPasswordRecovery) {
       return <AuthScreen />;
     }
   }
