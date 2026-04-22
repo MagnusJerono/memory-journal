@@ -260,7 +260,7 @@ export function EntryEditScreen({
     }
 
     const autoSaveInterval = setInterval(() => {
-      const entryId = entry?.id || uuid();
+      const entryId = entry?.id || entryIdRef.current;
       const now = new Date().toISOString();
       
       const draftEntry: Entry = {
