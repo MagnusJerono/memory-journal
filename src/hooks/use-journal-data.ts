@@ -1,206 +1,256 @@
-import { useLocalStorage } from './use-local-storage';
-import { Entry, Chapter, Book } from '@/lib/types';
-import { useEffect } from 'react';
-import { v4 as uuid } from 'uuid';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Entry, Chapter, Book } from '@/lib/types';
+import * as db from '@/lib/db';
 
-// Starter content
-const createStarterChapters = (): Chapter[] => {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: uuid(),
-      name: 'Growing Up',
-      description: 'Childhood and family memories',
-      color: 'oklch(0.75 0.18 75)', // amber
-      icon: 'house',
-      is_pinned: false,
-      is_archived: false,
-      order: 0,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: uuid(),
-      name: 'Adventures',
-      description: 'Travel and experiences',
-      color: 'oklch(0.65 0.17 160)', // emerald
-      icon: 'airplane',
-      is_pinned: false,
-      is_archived: false,
-      order: 1,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: uuid(),
-      name: 'People I Love',
-      description: 'Relationships and connections',
-      color: 'oklch(0.65 0.2 350)', // rose
-      icon: 'heart',
-      is_pinned: false,
-      is_archived: false,
-      order: 2,
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-};
+/*
+ * Central hook for journal data. Reads come from three parallel queries,
+ * writes go through optimistic mutations. The public API mirrors the old
+ * localStorage-backed hook so screens didn't need to change.
+ */
+
+const STALE_TIME = 30_000;
+
+function now() {
+  return new Date().toISOString();
+}
 
 export function useJournalData() {
-  const [entries, setEntries] = useLocalStorage<Entry[]>('tightly-entries', []);
-  const [chapters, setChapters] = useLocalStorage<Chapter[]>('tightly-chapters', []);
-  const [books, setBooks] = useLocalStorage<Book[]>('tightly-books', []);
-  const [hasSeeded, setHasSeeded] = useLocalStorage<boolean>('tightly-has-seeded-content', false);
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const userId = user?.id;
+  const enabled = Boolean(userId && supabase);
 
-  // Seed starter chapters on first load only. No sample entry.
-  useEffect(() => {
-    if (!hasSeeded && (!chapters || chapters.length === 0)) {
-      setChapters(createStarterChapters());
-      setHasSeeded(true);
-    }
-  }, [hasSeeded, setHasSeeded, setChapters, chapters]);
+  const entriesKey = ['entries', userId] as const;
+  const chaptersKey = ['chapters', userId] as const;
+  const booksKey = ['books', userId] as const;
 
-  const entryList = (entries || []).map(e => ({
-    ...e,
-    is_starred: e.is_starred ?? false,
-    is_draft: e.is_draft ?? false,
-    chapter_id: e.chapter_id ?? null,
-    prompt_used: e.prompt_used ?? null,
-  }));
-  
-  const chapterList = (chapters || []).map(c => ({
-    ...c,
-    is_pinned: c.is_pinned ?? false,
-    is_archived: c.is_archived ?? false,
-    order: c.order ?? 0,
-  }));
+  const entriesQuery = useQuery({
+    queryKey: entriesKey,
+    queryFn: () => db.fetchEntries(userId!),
+    enabled,
+    staleTime: STALE_TIME,
+  });
 
-  const bookList = books || [];
+  const chaptersQuery = useQuery({
+    queryKey: chaptersKey,
+    queryFn: () => db.fetchChapters(userId!),
+    enabled,
+    staleTime: STALE_TIME,
+  });
 
-  const handleSaveEntry = (entry: Entry) => {
-    try {
-      setEntries((current) => {
-        const list = current || [];
-        const existing = list.findIndex(e => e.id === entry.id);
-        if (existing >= 0) {
-          const updated = [...list];
-          updated[existing] = { ...entry, updated_at: new Date().toISOString() };
-          return updated;
-        }
-        return [...list, entry];
-      });
-    } catch (error) {
+  const booksQuery = useQuery({
+    queryKey: booksKey,
+    queryFn: () => db.fetchBooks(userId!),
+    enabled,
+    staleTime: STALE_TIME,
+  });
+
+  // --- Entries ---
+
+  const saveEntryMutation = useMutation({
+    mutationFn: async (entry: Entry) => {
+      if (!userId) throw new Error('Not signed in');
+      const stamped: Entry = { ...entry, updated_at: now() };
+      await db.upsertEntry(userId, stamped);
+      return stamped;
+    },
+    onMutate: async (entry) => {
+      await qc.cancelQueries({ queryKey: entriesKey });
+      const prev = qc.getQueryData<Entry[]>(entriesKey) ?? [];
+      const idx = prev.findIndex(e => e.id === entry.id);
+      const next = idx >= 0
+        ? prev.map(e => (e.id === entry.id ? { ...entry, updated_at: now() } : e))
+        : [{ ...entry, updated_at: now() }, ...prev];
+      qc.setQueryData(entriesKey, next);
+      return { prev };
+    },
+    onError: (_err, _entry, ctx) => {
+      if (ctx?.prev) qc.setQueryData(entriesKey, ctx.prev);
       toast.error('Failed to save memory entry. Please try again.');
-      throw error;
-    }
-  };
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
 
-  const handleDeleteEntry = (entryId: string) => {
-    try {
-      setEntries((current) => (current || []).filter(e => e.id !== entryId));
-    } catch (error) {
+  const deleteEntryMutation = useMutation({
+    mutationFn: (entryId: string) => db.deleteEntry(entryId),
+    onMutate: async (entryId) => {
+      await qc.cancelQueries({ queryKey: entriesKey });
+      const prev = qc.getQueryData<Entry[]>(entriesKey) ?? [];
+      qc.setQueryData(entriesKey, prev.filter(e => e.id !== entryId));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(entriesKey, ctx.prev);
       toast.error('Failed to delete memory entry. Please try again.');
-      throw error;
-    }
-  };
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
 
-  const handleToggleStar = (entryId: string) => {
-    setEntries((current) => {
-      const list = current || [];
-      return list.map(e => 
-        e.id === entryId 
-          ? { ...e, is_starred: !e.is_starred, updated_at: new Date().toISOString() }
-          : e
+  const toggleStarMutation = useMutation({
+    mutationFn: async (entryId: string) => {
+      const current = (qc.getQueryData<Entry[]>(entriesKey) ?? []).find(e => e.id === entryId);
+      const next = !(current?.is_starred ?? false);
+      await db.setEntryStar(entryId, next);
+      return { entryId, next };
+    },
+    onMutate: async (entryId) => {
+      await qc.cancelQueries({ queryKey: entriesKey });
+      const prev = qc.getQueryData<Entry[]>(entriesKey) ?? [];
+      qc.setQueryData(
+        entriesKey,
+        prev.map(e => (e.id === entryId ? { ...e, is_starred: !e.is_starred, updated_at: now() } : e))
       );
-    });
-  };
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(entriesKey, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
 
-  const handleSaveChapter = (chapter: Chapter) => {
-    try {
-      setChapters((current) => {
-        const list = current || [];
-        const existing = list.findIndex(c => c.id === chapter.id);
-        if (existing >= 0) {
-          const updated = [...list];
-          updated[existing] = { ...chapter, updated_at: new Date().toISOString() };
-          return updated;
-        }
-        return [...list, { ...chapter, order: list.length }];
-      });
-    } catch (error) {
-      toast.error('Failed to save chapter. Please try again.');
-      throw error;
-    }
-  };
-
-  const handleDeleteChapter = (chapterId: string) => {
-    try {
-      setChapters((current) => (current || []).filter(c => c.id !== chapterId));
-      setEntries((current) => {
-        const list = current || [];
-        return list.map(e => e.chapter_id === chapterId ? { ...e, chapter_id: null } : e);
-      });
-    } catch (error) {
-      toast.error('Failed to delete chapter. Please try again.');
-      throw error;
-    }
-  };
-
-  const handleReorderChapters = (startIndex: number, endIndex: number) => {
-    setChapters((current) => {
-      const list = [...(current || [])];
-      const [moved] = list.splice(startIndex, 1);
-      list.splice(endIndex, 0, moved);
-      return list.map((c, idx) => ({ ...c, order: idx }));
-    });
-  };
-
-  const handleAssignChapter = (entryId: string, chapterId: string | null) => {
-    try {
-      setEntries((current) => {
-        const list = current || [];
-        return list.map(e => 
-          e.id === entryId 
-            ? { ...e, chapter_id: chapterId, updated_at: new Date().toISOString() }
-            : e
-        );
-      });
-    } catch (error) {
+  const assignChapterMutation = useMutation({
+    mutationFn: ({ entryId, chapterId }: { entryId: string; chapterId: string | null }) =>
+      db.setEntryChapter(entryId, chapterId),
+    onMutate: async ({ entryId, chapterId }) => {
+      await qc.cancelQueries({ queryKey: entriesKey });
+      const prev = qc.getQueryData<Entry[]>(entriesKey) ?? [];
+      qc.setQueryData(
+        entriesKey,
+        prev.map(e => (e.id === entryId ? { ...e, chapter_id: chapterId, updated_at: now() } : e))
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(entriesKey, ctx.prev);
       toast.error('Failed to assign chapter. Please try again.');
-      throw error;
-    }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
+
+  // --- Chapters ---
+
+  const saveChapterMutation = useMutation({
+    mutationFn: async (chapter: Chapter) => {
+      if (!userId) throw new Error('Not signed in');
+      const stamped = { ...chapter, updated_at: now() };
+      await db.upsertChapter(userId, stamped);
+      return stamped;
+    },
+    onMutate: async (chapter) => {
+      await qc.cancelQueries({ queryKey: chaptersKey });
+      const prev = qc.getQueryData<Chapter[]>(chaptersKey) ?? [];
+      const exists = prev.some(c => c.id === chapter.id);
+      const next = exists
+        ? prev.map(c => (c.id === chapter.id ? { ...chapter, updated_at: now() } : c))
+        : [...prev, { ...chapter, order: chapter.order ?? prev.length }];
+      qc.setQueryData(chaptersKey, next);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(chaptersKey, ctx.prev);
+      toast.error('Failed to save chapter. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: chaptersKey }),
+  });
+
+  const deleteChapterMutation = useMutation({
+    mutationFn: (chapterId: string) => db.deleteChapter(chapterId),
+    onMutate: async (chapterId) => {
+      await qc.cancelQueries({ queryKey: chaptersKey });
+      await qc.cancelQueries({ queryKey: entriesKey });
+      const prevChapters = qc.getQueryData<Chapter[]>(chaptersKey) ?? [];
+      const prevEntries = qc.getQueryData<Entry[]>(entriesKey) ?? [];
+      qc.setQueryData(chaptersKey, prevChapters.filter(c => c.id !== chapterId));
+      qc.setQueryData(
+        entriesKey,
+        prevEntries.map(e => (e.chapter_id === chapterId ? { ...e, chapter_id: null } : e))
+      );
+      return { prevChapters, prevEntries };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prevChapters) qc.setQueryData(chaptersKey, ctx.prevChapters);
+      if (ctx?.prevEntries) qc.setQueryData(entriesKey, ctx.prevEntries);
+      toast.error('Failed to delete chapter. Please try again.');
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: chaptersKey });
+      qc.invalidateQueries({ queryKey: entriesKey });
+    },
+  });
+
+  const reorderChaptersMutation = useMutation({
+    mutationFn: (updates: { id: string; order: number }[]) => db.reorderChapters(updates),
+    onSettled: () => qc.invalidateQueries({ queryKey: chaptersKey }),
+  });
+
+  const reorderChapters = (startIndex: number, endIndex: number) => {
+    const prev = qc.getQueryData<Chapter[]>(chaptersKey) ?? [];
+    const list = [...prev];
+    const [moved] = list.splice(startIndex, 1);
+    list.splice(endIndex, 0, moved);
+    const reordered = list.map((c, idx) => ({ ...c, order: idx }));
+    qc.setQueryData(chaptersKey, reordered);
+    reorderChaptersMutation.mutate(reordered.map(c => ({ id: c.id, order: c.order })));
   };
 
-  const handleSaveBook = (book: Book) => {
-    setBooks((current) => {
-      const list = current || [];
-      const existing = list.findIndex(b => b.id === book.id);
-      if (existing >= 0) {
-        const updated = [...list];
-        updated[existing] = { ...book, updated_at: new Date().toISOString() };
-        return updated;
-      }
-      return [...list, book];
-    });
-  };
+  // --- Books ---
 
-  const handleDeleteBook = (bookId: string) => {
-    setBooks((current) => (current || []).filter(b => b.id !== bookId));
-  };
+  const saveBookMutation = useMutation({
+    mutationFn: async (book: Book) => {
+      if (!userId) throw new Error('Not signed in');
+      const stamped = { ...book, updated_at: now() };
+      await db.upsertBook(userId, stamped);
+      return stamped;
+    },
+    onMutate: async (book) => {
+      await qc.cancelQueries({ queryKey: booksKey });
+      const prev = qc.getQueryData<Book[]>(booksKey) ?? [];
+      const exists = prev.some(b => b.id === book.id);
+      const next = exists
+        ? prev.map(b => (b.id === book.id ? { ...book, updated_at: now() } : b))
+        : [{ ...book, updated_at: now() }, ...prev];
+      qc.setQueryData(booksKey, next);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(booksKey, ctx.prev);
+      toast.error('Failed to save book. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: booksKey }),
+  });
+
+  const deleteBookMutation = useMutation({
+    mutationFn: (bookId: string) => db.deleteBook(bookId),
+    onMutate: async (bookId) => {
+      await qc.cancelQueries({ queryKey: booksKey });
+      const prev = qc.getQueryData<Book[]>(booksKey) ?? [];
+      qc.setQueryData(booksKey, prev.filter(b => b.id !== bookId));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(booksKey, ctx.prev);
+      toast.error('Failed to delete book. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: booksKey }),
+  });
 
   return {
-    entries: entryList,
-    chapters: chapterList,
-    books: bookList,
-    saveEntry: handleSaveEntry,
-    deleteEntry: handleDeleteEntry,
-    toggleStar: handleToggleStar,
-    saveChapter: handleSaveChapter,
-    deleteChapter: handleDeleteChapter,
-    reorderChapters: handleReorderChapters,
-    assignChapter: handleAssignChapter,
-    saveBook: handleSaveBook,
-    deleteBook: handleDeleteBook,
+    entries: entriesQuery.data ?? [],
+    chapters: chaptersQuery.data ?? [],
+    books: booksQuery.data ?? [],
+    isLoading: entriesQuery.isLoading || chaptersQuery.isLoading || booksQuery.isLoading,
+    saveEntry: (entry: Entry) => saveEntryMutation.mutate(entry),
+    deleteEntry: (entryId: string) => deleteEntryMutation.mutate(entryId),
+    toggleStar: (entryId: string) => toggleStarMutation.mutate(entryId),
+    saveChapter: (chapter: Chapter) => saveChapterMutation.mutate(chapter),
+    deleteChapter: (chapterId: string) => deleteChapterMutation.mutate(chapterId),
+    reorderChapters,
+    assignChapter: (entryId: string, chapterId: string | null) =>
+      assignChapterMutation.mutate({ entryId, chapterId }),
+    saveBook: (book: Book) => saveBookMutation.mutate(book),
+    deleteBook: (bookId: string) => deleteBookMutation.mutate(bookId),
   };
 }

@@ -48,6 +48,8 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { useAuth } from '@/contexts/AuthContext';
+import { uploadEntryPhoto, getSignedPhotoUrl } from '@/lib/photos';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -99,9 +101,14 @@ export function EntryEditScreen({
 }: EntryEditScreenProps) {
   const { isDarkMode } = useTheme();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const isNewEntry = !entry;
   const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;
+
+  // Stable id for this editing session — used as the storage path segment for
+  // any photos uploaded before the entry row is saved.
+  const entryIdRef = useRef<string>(entry?.id ?? uuid());
 
   const [date, setDate] = useState<Date>(entry ? new Date(entry.date + 'T00:00:00') : new Date());
   const [title, setTitle] = useState(entry?.title_user || '');
@@ -323,26 +330,44 @@ export function EntryEditScreen({
   const processImageFiles = useCallback((files: File[]) => {
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
-    const newPhotos: Photo[] = [];
+    if (!user) {
+      toast.error('Please sign in to upload photos.');
+      return;
+    }
     const maxPhotos = 10 - photos.length;
     const filesToProcess = imageFiles.slice(0, maxPhotos);
-    filesToProcess.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const url = event.target?.result as string;
-        newPhotos.push({
-          id: uuid(),
-          entry_id: '',
-          storage_url: url,
-          created_at: new Date().toISOString()
-        });
-        if (newPhotos.length === filesToProcess.length) {
-          setPhotos(prev => [...prev, ...newPhotos]);
+
+    void Promise.all(
+      filesToProcess.map(async (file) => {
+        try {
+          const { storage_path, width, height, bytes } = await uploadEntryPhoto(
+            user.id,
+            entryIdRef.current,
+            file,
+          );
+          const storage_url = await getSignedPhotoUrl(storage_path);
+          const photo: Photo = {
+            id: uuid(),
+            entry_id: entryIdRef.current,
+            storage_path,
+            storage_url,
+            width,
+            height,
+            bytes,
+            created_at: new Date().toISOString(),
+          };
+          return photo;
+        } catch (err) {
+          console.error('Photo upload failed', err);
+          toast.error(`Failed to upload ${file.name}`);
+          return null;
         }
-      };
-      reader.readAsDataURL(file);
+      }),
+    ).then((results) => {
+      const uploaded = results.filter((p): p is Photo => p !== null);
+      if (uploaded.length) setPhotos(prev => [...prev, ...uploaded]);
     });
-  }, [photos.length]);
+  }, [photos.length, user]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -476,7 +501,7 @@ export function EntryEditScreen({
       return;
     }
 
-    const entryId = entry?.id || uuid();
+    const entryId = entry?.id || entryIdRef.current;
     const now = new Date().toISOString();
     
     const savedEntry: Entry = {
