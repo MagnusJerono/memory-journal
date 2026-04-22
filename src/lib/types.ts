@@ -75,7 +75,14 @@ export interface Entry {
 export interface Photo {
   id: string;
   entry_id: string;
+  // Canonical location inside the Supabase Storage bucket: "{user_id}/{entry_id}/{file}".
+  storage_path: string;
+  // Short-lived signed URL for <img src>. Populated by the data layer on read,
+  // and by the uploader (object URL or signed URL) during create.
   storage_url: string;
+  width?: number | null;
+  height?: number | null;
+  bytes?: number | null;
   created_at: string;
 }
 
