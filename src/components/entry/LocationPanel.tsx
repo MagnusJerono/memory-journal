@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { LocationSuggestion } from '@/lib/types';
-import { searchLocations, getCurrentLocation, GeocodingResult } from '@/lib/geocoding';
+import { searchLocations, getCurrentLocation, GeocodingResult, GeocodingServiceError } from '@/lib/geocoding';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,8 +104,15 @@ export function LocationPanel({
       setSearchResults(results);
       setShowDropdown(results.length > 0);
     } catch (error) {
-      console.error('Search failed:', error);
       setSearchResults([]);
+      setShowDropdown(false);
+      if (error instanceof GeocodingServiceError) {
+        toast.error('Location search unavailable', {
+          description: 'We could not reach the map service. Try again or type the location manually.',
+        });
+      } else {
+        console.error('Search failed:', error);
+      }
     } finally {
       setIsSearching(false);
     }
@@ -195,10 +202,16 @@ export function LocationPanel({
           description: 'Please check your browser permissions'
         });
       }
-    } catch {
-      toast.error('Location access denied', {
-        description: 'Enable location access in your browser settings'
-      });
+    } catch (error) {
+      if (error instanceof GeocodingServiceError) {
+        toast.error('Location service unavailable', {
+          description: 'We could not look up your current location. Try again in a moment or enter it manually.',
+        });
+      } else {
+        toast.error('Location access denied', {
+          description: 'Enable location access in your browser settings'
+        });
+      }
     } finally {
       setIsGettingLocation(false);
     }

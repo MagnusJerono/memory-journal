@@ -92,14 +92,26 @@ function formatDisplayName(result: NominatimResult): string {
   return parts.slice(0, 3).join(', ');
 }
 
+/**
+ * Thrown when the Nominatim geocoding service is unreachable or returns a
+ * non-2xx status. Callers can catch this to surface a user-facing toast.
+ */
+export class GeocodingServiceError extends Error {
+  constructor(message: string, public cause?: unknown) {
+    super(message);
+    this.name = 'GeocodingServiceError';
+  }
+}
+
 export async function searchLocations(query: string): Promise<GeocodingResult[]> {
   if (!query || query.trim().length < 2) {
     return [];
   }
 
+  let response: Response;
   try {
     const encodedQuery = encodeURIComponent(query.trim());
-    const response = await fetch(
+    response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&addressdetails=1&limit=8&namedetails=1`,
       {
         headers: {
@@ -108,42 +120,43 @@ export async function searchLocations(query: string): Promise<GeocodingResult[]>
         }
       }
     );
-
-    if (!response.ok) {
-      console.error('Geocoding request failed:', response.status);
-      return [];
-    }
-
-    const data: NominatimResult[] = await response.json();
-    
-    const results: GeocodingResult[] = data.map(item => ({
-      name: extractBestName(item),
-      displayName: formatDisplayName(item),
-      type: mapNominatimType(item.class, item.type),
-      lat: parseFloat(item.lat),
-      lon: parseFloat(item.lon),
-      importance: item.importance,
-      country: item.address?.country,
-      city: item.address?.city || item.address?.town || item.address?.village,
-      state: item.address?.state
-    }));
-
-    const seen = new Set<string>();
-    return results.filter(r => {
-      const key = r.displayName.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
   } catch (error) {
-    console.error('Geocoding error:', error);
-    return [];
+    console.error('Geocoding network error:', error);
+    throw new GeocodingServiceError('Location service unreachable', error);
   }
+
+  if (!response.ok) {
+    console.error('Geocoding request failed:', response.status);
+    throw new GeocodingServiceError(`Location service returned ${response.status}`);
+  }
+
+  const data: NominatimResult[] = await response.json();
+
+  const results: GeocodingResult[] = data.map(item => ({
+    name: extractBestName(item),
+    displayName: formatDisplayName(item),
+    type: mapNominatimType(item.class, item.type),
+    lat: parseFloat(item.lat),
+    lon: parseFloat(item.lon),
+    importance: item.importance,
+    country: item.address?.country,
+    city: item.address?.city || item.address?.town || item.address?.village,
+    state: item.address?.state
+  }));
+
+  const seen = new Set<string>();
+  return results.filter(r => {
+    const key = r.displayName.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function reverseGeocode(lat: number, lon: number): Promise<GeocodingResult | null> {
+  let response: Response;
   try {
-    const response = await fetch(
+    response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=16`,
       {
         headers: {
@@ -152,29 +165,32 @@ export async function reverseGeocode(lat: number, lon: number): Promise<Geocodin
         }
       }
     );
-
-    if (!response.ok) {
-      console.error('Reverse geocoding failed:', response.status);
-      return null;
-    }
-
-    const data: NominatimResult = await response.json();
-    
-    return {
-      name: extractBestName(data),
-      displayName: formatDisplayName(data),
-      type: mapNominatimType(data.class, data.type),
-      lat: parseFloat(data.lat),
-      lon: parseFloat(data.lon),
-      importance: data.importance || 0.5,
-      country: data.address?.country,
-      city: data.address?.city || data.address?.town || data.address?.village,
-      state: data.address?.state
-    };
   } catch (error) {
-    console.error('Reverse geocoding error:', error);
+    console.error('Reverse geocoding network error:', error);
+    throw new GeocodingServiceError('Location service unreachable', error);
+  }
+
+  if (!response.ok) {
+    console.error('Reverse geocoding failed:', response.status);
+    throw new GeocodingServiceError(`Location service returned ${response.status}`);
+  }
+
+  const data: NominatimResult = await response.json();
+  if (!data || typeof data.lat !== 'string' || typeof data.lon !== 'string') {
     return null;
   }
+
+  return {
+    name: extractBestName(data),
+    displayName: formatDisplayName(data),
+    type: mapNominatimType(data.class, data.type),
+    lat: parseFloat(data.lat),
+    lon: parseFloat(data.lon),
+    importance: data.importance || 0.5,
+    country: data.address?.country,
+    city: data.address?.city || data.address?.town || data.address?.village,
+    state: data.address?.state
+  };
 }
 
 export function getCurrentPosition(): Promise<GeolocationPosition> {
@@ -192,11 +208,8 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
 }
 
 export async function getCurrentLocation(): Promise<GeocodingResult | null> {
-  try {
-    const position = await getCurrentPosition();
-    return await reverseGeocode(position.coords.latitude, position.coords.longitude);
-  } catch (error) {
-    console.error('Failed to get current location:', error);
-    return null;
-  }
+  // Allow GeolocationPositionError and GeocodingServiceError to propagate so
+  // callers can show distinct user-visible messages.
+  const position = await getCurrentPosition();
+  return reverseGeocode(position.coords.latitude, position.coords.longitude);
 }
