@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import type { Session, User, AuthError, Provider } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-export type OAuthProvider = Extract<Provider, 'google' | 'apple' | 'github'>;
+export type OAuthProvider = Extract<Provider, 'google' | 'github'>;
 
 interface AuthState {
   session: Session | null;
