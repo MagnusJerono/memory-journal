@@ -16,6 +16,7 @@ import { supabase } from './lib/supabase';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { SettingsPanel } from './components/SettingsPanel';
 import { AuthScreen } from './components/screens/AuthScreen';
+import { OnboardingTour, useOnboardingCompleted } from './components/onboarding/OnboardingTour';
 
 // Lazy-load heavier screens that are not needed on the initial render.
 const PromptsScreen = lazy(() =>
@@ -48,6 +49,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
+  const [onboardingCompleted] = useOnboardingCompleted();
   const {
     entries,
     chapters,
@@ -141,6 +143,13 @@ function AppContent() {
   };
 
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const hasEntries = entries.some((e) => !e.is_draft);
+  const showOnboarding =
+    !!session &&
+    !isPasswordRecovery &&
+    !onboardingCompleted &&
+    !hasEntries &&
+    currentView.type === 'home';
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -397,6 +406,9 @@ function AppContent() {
       />
 
       <Toaster position="bottom-center" />
+      {showOnboarding && (
+        <OnboardingTour onStartWriting={() => navigate({ type: 'prompts-new' })} />
+      )}
     </div>
   );
 }
