@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import type { Session, User, AuthError } from '@supabase/supabase-js';
+import type { Session, User, AuthError, Provider } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+
+export type OAuthProvider = Extract<Provider, 'google' | 'apple' | 'github'>;
 
 interface AuthState {
   session: Session | null;
@@ -12,6 +14,7 @@ interface AuthActions {
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>;
+  signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
@@ -94,6 +97,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const signInWithOAuth = useCallback(async (provider: OAuthProvider) => {
+    if (!supabase) {
+      const err = new Error('Supabase is not configured') as AuthError;
+      return { error: err };
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin },
+    });
+    return { error };
+  }, []);
+
   const resetPassword = useCallback(async (email: string) => {
     if (!supabase) {
       const err = new Error('Supabase is not configured') as AuthError;
@@ -138,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signInWithMagicLink,
+        signInWithOAuth,
         resetPassword,
         updatePassword,
         signOut,

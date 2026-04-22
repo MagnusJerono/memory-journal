@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, type OAuthProvider } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DreamyBackground } from '../DreamyBackground';
 import { Input } from '../ui/input';
@@ -28,6 +28,7 @@ export function AuthScreen() {
     signIn,
     signUp,
     signInWithMagicLink,
+    signInWithOAuth,
     resetPassword,
     updatePassword,
     isPasswordRecovery,
@@ -40,6 +41,7 @@ export function AuthScreen() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState<Feedback | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
 
   // When the user arrives via a recovery link, Supabase emits
   // PASSWORD_RECOVERY on the auth-state subscription. Switch to the reset
@@ -134,6 +136,17 @@ export function AuthScreen() {
     // the main UI because the session is still active.
   };
 
+  const handleOAuth = async (provider: OAuthProvider) => {
+    setError(null);
+    setOauthLoading(provider);
+    const { error: err } = await signInWithOAuth(provider);
+    if (err) {
+      setOauthLoading(null);
+      setError(friendlyAuthError(err));
+    }
+    // On success, the browser is redirected to the provider. No cleanup needed.
+  };
+
   // --- rendering ---------------------------------------------------------
 
   const header = (() => {
@@ -206,7 +219,10 @@ export function AuthScreen() {
 
           {/* --- Sign in --------------------------------------------------- */}
           {mode === 'signin' && (
-            <form onSubmit={handleSignIn} className="space-y-4">
+            <>
+              <OAuthButtons onClick={handleOAuth} loading={oauthLoading} />
+              <Divider label="or continue with email" />
+              <form onSubmit={handleSignIn} className="space-y-4">
               <EmailField value={email} onChange={setEmail} />
               <div>
                 <div className="flex items-baseline justify-between mb-1">
@@ -253,11 +269,15 @@ export function AuthScreen() {
                 </button>
               </p>
             </form>
+            </>
           )}
 
           {/* --- Sign up --------------------------------------------------- */}
           {mode === 'signup' && (
-            <form onSubmit={handleSignUp} className="space-y-4">
+            <>
+              <OAuthButtons onClick={handleOAuth} loading={oauthLoading} />
+              <Divider label="or sign up with email" />
+              <form onSubmit={handleSignUp} className="space-y-4">
               <EmailField value={email} onChange={setEmail} />
               <div>
                 <Label htmlFor="password" className="opacity-80 mb-1 block">
@@ -302,6 +322,7 @@ export function AuthScreen() {
                 </button>
               </p>
             </form>
+            </>
           )}
 
           {/* --- Forgot password ------------------------------------------ */}
@@ -416,5 +437,82 @@ function EmailField({ value, onChange }: { value: string; onChange: (v: string) 
         placeholder="you@example.com"
       />
     </div>
+  );
+}
+
+// Horizontal rule with a centered label.
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="my-5 flex items-center gap-3 text-xs opacity-60">
+      <span className="h-px flex-1 bg-current" />
+      <span>{label}</span>
+      <span className="h-px flex-1 bg-current" />
+    </div>
+  );
+}
+
+// Row of provider sign-in buttons.
+function OAuthButtons({
+  onClick,
+  loading,
+}: {
+  onClick: (provider: OAuthProvider) => void;
+  loading: OAuthProvider | null;
+}) {
+  const providers: { id: OAuthProvider; label: string; icon: React.ReactNode }[] = [
+    { id: 'google', label: 'Google', icon: <GoogleIcon /> },
+    { id: 'apple', label: 'Apple', icon: <AppleIcon /> },
+    { id: 'github', label: 'GitHub', icon: <GitHubIcon /> },
+  ];
+  return (
+    <div className="space-y-2">
+      {providers.map((p) => (
+        <Button
+          key={p.id}
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={loading !== null}
+          onClick={() => onClick(p.id)}
+        >
+          {loading === p.id ? (
+            <span className="inline-block size-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          ) : (
+            p.icon
+          )}
+          Continue with {p.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+// Brand glyphs kept inline so the auth screen has no extra dependency and
+// renders the same in every theme (currentColor respects dark mode).
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="size-4">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C33.9 6.1 29.2 4 24 4 13 4 4 13 4 24s9 20 20 20c11 0 20-9 20-20 0-1.2-.1-2.3-.4-3.5z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C33.9 6.1 29.2 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.4-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2C41.1 35.2 44 30 44 24c0-1.2-.1-2.3-.4-3.5z"/>
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4" fill="currentColor">
+      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+    </svg>
+  );
+}
+
+function GitHubIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4" fill="currentColor">
+      <path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.58v-2.17c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.23 1.83 1.23 1.07 1.83 2.81 1.3 3.5.99.1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.82 1.1.82 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .3"/>
+    </svg>
   );
 }
