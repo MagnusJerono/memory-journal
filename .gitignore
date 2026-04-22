@@ -34,3 +34,7 @@ pids
 .spark-workbench-id
 .vercel
 .env*.local
+
+# Supabase CLI local artifacts
+supabase/.temp/
+supabase/.branches/
