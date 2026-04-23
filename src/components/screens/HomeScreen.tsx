@@ -1,7 +1,7 @@
 import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, X } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
@@ -25,7 +25,6 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { t } = useLanguage();
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
-  const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>('tightly-has-seen-welcome', false);
   const [lastOTDToastDate, setLastOTDToastDate] = useLocalStorage<string>('tightly-last-otd-toast-date', '');
   
   const draft = getDraftEntry(entries);
@@ -139,16 +138,16 @@ export function HomeScreen({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10">
-        <CloudHeader isDarkMode={isDarkMode} className="mx-auto max-w-3xl px-4 pt-3">
-          <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-10 w-full px-4 pt-3">
+        <CloudHeader isDarkMode={isDarkMode} className="w-full max-w-5xl mx-auto">
+          <div className="mx-auto max-w-3xl flex items-center justify-between">
             <BrandHeader isDarkMode={isDarkMode} />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:hidden">
               <div className="hidden sm:block">
-                <NavigationMenu 
-                  onNavigate={onNavigate} 
-                  currentTab="home" 
-                  isDarkMode={isDarkMode} 
+                <NavigationMenu
+                  onNavigate={onNavigate}
+                  currentTab="home"
+                  isDarkMode={isDarkMode}
                 />
               </div>
               <SettingsPanel
@@ -163,148 +162,93 @@ export function HomeScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Welcome Card - Show on first visit */}
-        {!hasSeenWelcome && !hasEntries && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/10 border border-primary/30 relative"
-          >
-            <button
-              onClick={() => setHasSeenWelcome(true)}
-              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-background/50 transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <div className="mb-4">
-              <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
-                Welcome to Tightly ✨
-              </h2>
-              <p className="text-muted-foreground">
-                Your memories deserve to be more than forgotten moments. Let's create your first memory together.
-              </p>
-            </div>
-            <Button 
-              onClick={() => onNavigate({ type: 'prompts-new' })}
-              className="w-full sm:w-auto"
-            >
-              <Sparkle className="mr-2 w-4 h-4" weight="fill" />
-              Create My First Memory
-            </Button>
-          </motion.div>
-        )}
-
-        {/* Writing Streak Tracker */}
-        {hasEntries && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-4 rounded-2xl border ${
-              writingStreak > 0
-                ? 'bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-amber-500/20'
-                : 'bg-accent/10 border-accent/20'
-            }`}
-          >
-            <div className="flex items-center gap-3">
+        {/* Unified hero: streak chip + primary + secondary action */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 border border-primary/20"
+        >
+          {hasEntries && (
+            <div className="flex items-center gap-2 mb-4 text-sm">
               {writingStreak > 0 ? (
-                <>
-                  <div className="text-2xl">🔥</div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {writingStreak} {writingStreak === 1 ? 'day' : 'days'} streak
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Keep it going! Write today to continue your streak.
-                    </p>
-                  </div>
-                </>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+                  <span>🔥</span>
+                  <span className="font-medium">
+                    {writingStreak} {writingStreak === 1 ? 'day' : 'days'}
+                  </span>
+                </span>
               ) : (
-                <>
-                  <div className="text-2xl">✨</div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Start your streak today
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Write consistently to build a writing habit.
-                    </p>
-                  </div>
-                </>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/40 border border-border/30 text-muted-foreground">
+                  <span>✨</span>
+                  <span className="text-xs">Start a streak today</span>
+                </span>
               )}
             </div>
-          </motion.div>
-        )}
+          )}
 
-        {draft && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5 rounded-2xl bg-primary/10 border border-primary/20"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-xl bg-primary/20">
-                <PencilSimple weight="duotone" className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground mb-1">{t.home.continueWriting}</p>
-                <h3 className="font-serif text-lg font-semibold text-foreground truncate">
-                  {getEntryTitle(draft)}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t.home.draft} · {t.home.lastEdited} {formatTimeAgo(draft.updated_at)}
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={() => onNavigate({ type: 'entry-edit', entryId: draft.id })}
-              className="w-full mt-4 shadow-md"
-            >
-              {t.home.continueWriting}
-            </Button>
-          </motion.div>
-        )}
-
-        {!draft && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-3"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <motion.button
-                onClick={() => onNavigate({ type: 'prompts-new' })}
-                className="p-4 rounded-2xl bg-gradient-to-br from-accent/15 via-primary/5 to-accent/10 border border-accent/25 hover:border-accent/40 transition-all text-left group"
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="p-2.5 rounded-xl bg-accent/20 w-fit mb-3">
-                  <NotePencil weight="duotone" className="w-5 h-5 text-accent" />
+          {draft ? (
+            <>
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-xl bg-primary/20 flex-shrink-0">
+                  <PencilSimple weight="duotone" className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-medium text-foreground group-hover:text-accent transition-colors text-sm">
-                  {t.home.customMemory}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t.home.customMemoryDesc}
-                </p>
-              </motion.button>
-
-              <motion.button
-                onClick={() => onNavigate({ type: 'prompts' })}
-                className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/5 to-primary/10 border border-primary/20 hover:border-primary/40 transition-all text-left group"
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="p-2.5 rounded-xl bg-primary/20 w-fit mb-3">
-                  <Sparkle weight="duotone" className="w-5 h-5 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{t.home.continueWriting}</p>
+                  <h3 className="font-serif text-lg font-semibold text-foreground truncate">
+                    {getEntryTitle(draft)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.home.draft} · {t.home.lastEdited} {formatTimeAgo(draft.updated_at)}
+                  </p>
                 </div>
-                <h3 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm">
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={() => onNavigate({ type: 'entry-edit', entryId: draft.id })}
+                  className="flex-1 shadow-md"
+                >
+                  {t.home.continueWriting}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onNavigate({ type: 'prompts' })}
+                  className="flex-1"
+                >
+                  <Sparkle className="mr-2 w-4 h-4" weight="fill" />
                   {t.home.usePrompt}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t.home.usePromptDesc}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <h2 className="font-serif text-xl sm:text-2xl font-semibold text-foreground mb-1">
+                  {hasEntries ? t.home.newMemory : 'Welcome to Tightly ✨'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {hasEntries ? t.home.customMemoryDesc : "Your memories deserve more than to be forgotten. Let's capture your first one."}
                 </p>
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={() => onNavigate({ type: 'prompts-new' })}
+                  className="flex-1 shadow-md"
+                >
+                  <NotePencil className="mr-2 w-4 h-4" weight="duotone" />
+                  {hasEntries ? t.home.customMemory : 'Create my first memory'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onNavigate({ type: 'prompts' })}
+                  className="flex-1"
+                >
+                  <Sparkle className="mr-2 w-4 h-4" weight="fill" />
+                  {t.home.usePrompt}
+                </Button>
+              </div>
+            </>
+          )}
+        </motion.section>
 
         {activeChapters.length > 0 && (
           <motion.section

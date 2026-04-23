@@ -22,14 +22,11 @@ import { OnboardingTour, useOnboardingCompleted } from './components/onboarding/
 const PromptsScreen = lazy(() =>
   import('./components/screens/PromptsScreen').then((m) => ({ default: m.PromptsScreen })),
 );
-const ChaptersScreen = lazy(() =>
-  import('./components/screens/ChaptersScreen').then((m) => ({ default: m.ChaptersScreen })),
-);
 const ChapterDetailScreen = lazy(() =>
   import('./components/screens/ChapterDetailScreen').then((m) => ({ default: m.ChapterDetailScreen })),
 );
-const TimelineScreen = lazy(() =>
-  import('./components/screens/TimelineScreen').then((m) => ({ default: m.TimelineScreen })),
+const LibraryScreen = lazy(() =>
+  import('./components/screens/LibraryScreen').then((m) => ({ default: m.LibraryScreen })),
 );
 const SearchScreen = lazy(() =>
   import('./components/screens/SearchScreen').then((m) => ({ default: m.SearchScreen })),
@@ -89,6 +86,8 @@ function AppContent() {
         return `prompts-new-${view.promptId || 'default'}`;
       case 'print-builder':
         return `print-builder-${view.bookId || 'new'}-${view.step}`;
+      case 'library':
+        return `library-${view.tab || 'chapters'}`;
       default:
         return view.type;
     }
@@ -103,11 +102,11 @@ function AppContent() {
         return 'prompts';
       case 'chapters':
       case 'chapter-detail':
-        return 'chapters';
       case 'timeline':
-        return 'timeline';
+      case 'library':
+        return 'library';
       case 'search':
-        return 'search';
+        return 'home';
       case 'print':
       case 'print-builder':
         return 'print';
@@ -127,14 +126,8 @@ function AppContent() {
       case 'prompts':
         navigate({ type: 'prompts' });
         break;
-      case 'chapters':
-        navigate({ type: 'chapters' });
-        break;
-      case 'timeline':
-        navigate({ type: 'timeline' });
-        break;
-      case 'search':
-        navigate({ type: 'search' });
+      case 'library':
+        navigate({ type: 'library' });
         break;
       case 'print':
         navigate({ type: 'print' });
@@ -158,6 +151,13 @@ function AppContent() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault();
         navigate({ type: 'prompts-new' });
+        return;
+      }
+
+      // Ctrl/Cmd + K for search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        navigate({ type: 'search' });
         return;
       }
       
@@ -213,21 +213,31 @@ function AppContent() {
           />
         );
 
+      case 'library':
       case 'chapters':
+      case 'timeline': {
+        const libraryTab: 'chapters' | 'timeline' =
+          currentView.type === 'timeline'
+            ? 'timeline'
+            : currentView.type === 'library'
+              ? currentView.tab || 'chapters'
+              : 'chapters';
         return (
-          <ChaptersScreen
+          <LibraryScreen
             chapters={chapters}
             entries={entries}
+            defaultTab={libraryTab}
             onNavigate={navigate}
             onSaveChapter={saveChapter}
             onDeleteChapter={deleteChapter}
           />
         );
+      }
 
       case 'chapter-detail':
         const chapter = chapters.find(c => c.id === currentView.chapterId);
         if (!chapter) {
-          navigate({ type: 'chapters' });
+          navigate({ type: 'library' });
           return null;
         }
         return (
@@ -238,15 +248,6 @@ function AppContent() {
             onSaveChapter={saveChapter}
             onDeleteChapter={deleteChapter}
             onToggleStar={toggleStar}
-          />
-        );
-
-      case 'timeline':
-        return (
-          <TimelineScreen
-            entries={entries}
-            chapters={chapters}
-            onNavigate={navigate}
           />
         );
 
@@ -365,6 +366,7 @@ function AppContent() {
           currentTab={getCurrentTab()}
           onTabChange={handleTabChange}
           onSettingsClick={() => setSettingsPanelOpen(true)}
+          onSearchClick={() => navigate({ type: 'search' })}
           isDarkMode={isDarkMode}
         />
       )}

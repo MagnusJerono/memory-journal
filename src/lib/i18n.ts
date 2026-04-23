@@ -25,7 +25,7 @@ export function detectBrowserLanguage(): AppLanguage {
 }
 
 type TranslationKeys = {
-  nav: { home: string; prompts: string; chapters: string; timeline: string; search: string; print: string };
+  nav: { home: string; prompts: string; chapters: string; timeline: string; search: string; print: string; library: string };
   settings: { 
     title: string; description: string; language: string; languageDesc: string; autoDetect: string; autoDetectDesc: string;
     account: string; privacy: string; privacyDesc: string; exportData: string; exportDataDesc: string; 
@@ -78,7 +78,7 @@ type TranslationKeys = {
 
 const translations: Record<AppLanguage, TranslationKeys> = {
   en: {
-    nav: { home: 'Home', prompts: 'Prompts', chapters: 'Chapters', timeline: 'Timeline', search: 'Search', print: 'Print' },
+    nav: { home: 'Home', prompts: 'Prompts', chapters: 'Chapters', timeline: 'Timeline', search: 'Search', print: 'Print', library: 'Library' },
     settings: { 
       title: 'Profile & Settings', description: 'Manage your Tightly experience', 
       language: 'Language', languageDesc: 'App display language', autoDetect: 'Auto-detect', autoDetectDesc: 'Use browser/device language',
@@ -144,7 +144,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'just now', minutesAgo: 'm ago', hoursAgo: 'h ago', daysAgo: 'd ago' }
   },
   de: {
-    nav: { home: 'Start', prompts: 'Impulse', chapters: 'Kapitel', timeline: 'Zeitachse', search: 'Suche', print: 'Drucken' },
+    nav: { home: 'Start', prompts: 'Impulse', chapters: 'Kapitel', timeline: 'Zeitachse', search: 'Suche', print: 'Drucken', library: 'Bibliothek' },
     settings: { 
       title: 'Profil & Einstellungen', description: 'Verwalte dein Tightly-Erlebnis', 
       language: 'Sprache', languageDesc: 'App-Anzeigesprache', autoDetect: 'Automatisch erkennen', autoDetectDesc: 'Browser-/Gerätesprache verwenden',
@@ -210,7 +210,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'gerade eben', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'T' }
   },
   es: {
-    nav: { home: 'Inicio', prompts: 'Sugerencias', chapters: 'Capítulos', timeline: 'Cronología', search: 'Buscar', print: 'Imprimir' },
+    nav: { home: 'Inicio', prompts: 'Sugerencias', chapters: 'Capítulos', timeline: 'Cronología', search: 'Buscar', print: 'Imprimir', library: 'Biblioteca' },
     settings: { 
       title: 'Perfil y Ajustes', description: 'Gestiona tu experiencia Tightly', 
       language: 'Idioma', languageDesc: 'Idioma de la aplicación', autoDetect: 'Auto-detectar', autoDetectDesc: 'Usar idioma del navegador/dispositivo',
@@ -276,7 +276,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'ahora mismo', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'd' }
   },
   fr: {
-    nav: { home: 'Accueil', prompts: 'Inspirations', chapters: 'Chapitres', timeline: 'Chronologie', search: 'Rechercher', print: 'Imprimer' },
+    nav: { home: 'Accueil', prompts: 'Inspirations', chapters: 'Chapitres', timeline: 'Chronologie', search: 'Rechercher', print: 'Imprimer', library: 'Bibliothèque' },
     settings: { 
       title: 'Profil & Paramètres', description: 'Gérez votre expérience Tightly', 
       language: 'Langue', languageDesc: "Langue d'affichage", autoDetect: 'Auto-détecter', autoDetectDesc: 'Utiliser la langue du navigateur/appareil',
@@ -342,7 +342,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'à l\'instant', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'j' }
   },
   pt: {
-    nav: { home: 'Início', prompts: 'Sugestões', chapters: 'Capítulos', timeline: 'Linha do Tempo', search: 'Buscar', print: 'Imprimir' },
+    nav: { home: 'Início', prompts: 'Sugestões', chapters: 'Capítulos', timeline: 'Linha do Tempo', search: 'Buscar', print: 'Imprimir', library: 'Biblioteca' },
     settings: { 
       title: 'Perfil e Configurações', description: 'Gerencie sua experiência Tightly', 
       language: 'Idioma', languageDesc: 'Idioma do aplicativo', autoDetect: 'Auto-detectar', autoDetectDesc: 'Usar idioma do navegador/dispositivo',
@@ -408,7 +408,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: 'agora mesmo', minutesAgo: 'min', hoursAgo: 'h', daysAgo: 'd' }
   },
   zh: {
-    nav: { home: '首页', prompts: '提示', chapters: '章节', timeline: '时间线', search: '搜索', print: '打印' },
+    nav: { home: '首页', prompts: '提示', chapters: '章节', timeline: '时间线', search: '搜索', print: '打印', library: '书库' },
     settings: { 
       title: '个人资料与设置', description: '管理您的Tightly体验', 
       language: '语言', languageDesc: '应用显示语言', autoDetect: '自动检测', autoDetectDesc: '使用浏览器/设备语言',
@@ -474,7 +474,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     time: { justNow: '刚刚', minutesAgo: '分钟前', hoursAgo: '小时前', daysAgo: '天前' }
   },
   ja: {
-    nav: { home: 'ホーム', prompts: 'プロンプト', chapters: 'チャプター', timeline: 'タイムライン', search: '検索', print: '印刷' },
+    nav: { home: 'ホーム', prompts: 'プロンプト', chapters: 'チャプター', timeline: 'タイムライン', search: '検索', print: '印刷', library: 'ライブラリ' },
     settings: { 
       title: 'プロフィールと設定', description: 'Tightly体験を管理', 
       language: '言語', languageDesc: 'アプリの表示言語', autoDetect: '自動検出', autoDetectDesc: 'ブラウザ/デバイスの言語を使用',

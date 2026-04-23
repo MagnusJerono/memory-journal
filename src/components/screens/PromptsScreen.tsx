@@ -46,19 +46,21 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
             <h1 className="font-serif text-lg sm:text-xl font-semibold text-foreground">{t.home.newMemory}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden sm:block">
+            <div className="hidden sm:block md:hidden">
               <NavigationMenu 
                 onNavigate={onNavigate} 
                 currentTab="prompts" 
                 isDarkMode={isDarkMode} 
               />
             </div>
-            <SettingsPanel
-              themeMode={themeMode}
-              onThemeModeChange={setThemeMode}
-              isDarkMode={isDarkMode}
-              isNightTime={isNightTime}
-            />
+            <div className="md:hidden">
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={setThemeMode}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            </div>
           </div>
         </div>
       </header>

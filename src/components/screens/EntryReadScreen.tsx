@@ -145,19 +145,21 @@ export function EntryReadScreen({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="hidden sm:block">
+            <div className="hidden sm:block md:hidden">
               <NavigationMenu 
                 onNavigate={onNavigate} 
                 currentTab="home" 
                 isDarkMode={isDarkMode} 
               />
             </div>
-            <SettingsPanel
-              themeMode={themeMode}
-              onThemeModeChange={setThemeMode}
-              isDarkMode={isDarkMode}
-              isNightTime={isNightTime}
-            />
+            <div className="md:hidden">
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={setThemeMode}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            </div>
           </div>
         </div>
       </header>

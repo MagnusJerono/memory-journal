@@ -3,11 +3,10 @@ import {
   House, 
   Sparkle, 
   Books, 
-  Clock,
-  MagnifyingGlass, 
   Printer,
   Gear,
-  SignOut
+  SignOut,
+  MagnifyingGlass
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/hooks/use-language.tsx';
@@ -19,19 +18,18 @@ interface DesktopSidebarProps {
   currentTab: NavigationTab;
   onTabChange: (tab: NavigationTab) => void;
   onSettingsClick: () => void;
+  onSearchClick: () => void;
   isDarkMode: boolean;
 }
 
-export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, isDarkMode }: DesktopSidebarProps) {
+export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, onSearchClick, isDarkMode }: DesktopSidebarProps) {
   const { t } = useLanguage();
   const { signOut, user } = useAuth();
   
   const tabs: { id: NavigationTab; labelKey: keyof typeof t.nav; Icon: typeof House }[] = [
     { id: 'home', labelKey: 'home', Icon: House },
     { id: 'prompts', labelKey: 'prompts', Icon: Sparkle },
-    { id: 'chapters', labelKey: 'chapters', Icon: Books },
-    { id: 'timeline', labelKey: 'timeline', Icon: Clock },
-    { id: 'search', labelKey: 'search', Icon: MagnifyingGlass },
+    { id: 'library', labelKey: 'library', Icon: Books },
     { id: 'print', labelKey: 'print', Icon: Printer },
   ];
 
@@ -64,6 +62,21 @@ export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, isDar
         >
           Hold them tight
         </p>
+      </div>
+
+      {/* Search shortcut */}
+      <div className="px-3 pb-2">
+        <button
+          onClick={onSearchClick}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border/30 text-left text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={t.search.title}
+        >
+          <MagnifyingGlass weight="bold" className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm flex-1">{t.search.title}</span>
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/40 text-[10px] font-mono">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* Navigation Tabs */}

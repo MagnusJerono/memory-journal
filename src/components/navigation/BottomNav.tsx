@@ -1,5 +1,5 @@
 import { NavigationTab } from '@/lib/types';
-import { House, Sparkle, Books, Clock, MagnifyingGlass, Book } from '@phosphor-icons/react';
+import { House, Sparkle, Books, Book } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/hooks/use-language.tsx';
 
@@ -15,9 +15,7 @@ export function BottomNav({ currentTab, onTabChange, isDarkMode }: BottomNavProp
   const tabs: { id: NavigationTab; labelKey: keyof typeof t.nav; Icon: typeof House }[] = [
     { id: 'home', labelKey: 'home', Icon: House },
     { id: 'prompts', labelKey: 'prompts', Icon: Sparkle },
-    { id: 'chapters', labelKey: 'chapters', Icon: Books },
-    { id: 'timeline', labelKey: 'timeline', Icon: Clock },
-    { id: 'search', labelKey: 'search', Icon: MagnifyingGlass },
+    { id: 'library', labelKey: 'library', Icon: Books },
     { id: 'print', labelKey: 'print', Icon: Book },
   ];
 
