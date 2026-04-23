@@ -3,9 +3,57 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    # Group updates so you get a few big PRs instead of dozens of small ones.
+    groups:
+      # Patches for prod + dev deps — safe to auto-merge once CI passes.
+      safe-patches:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+      # Minor bumps for dev-only deps — usually safe, but reviewed.
+      dev-minors:
+        applies-to: version-updates
+        dependency-type: "development"
+        update-types:
+          - "minor"
+      # Radix UI ships frequent minors with consistent API — group them.
+      radix:
+        patterns:
+          - "@radix-ui/*"
+    # Major bumps arrive as individual PRs and are NEVER auto-merged.
+    # Pin the majors that have bitten us before — bump manually when ready.
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tailwindcss/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "three"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
 
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    labels:
+      - "dependencies"
