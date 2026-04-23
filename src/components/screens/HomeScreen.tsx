@@ -1,7 +1,7 @@
-import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon, DEFAULT_PROMPTS } from '@/lib/types';
+import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, BookOpen, Quotes, ArrowClockwise } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
@@ -114,32 +114,6 @@ export function HomeScreen({
   };
 
   const writingStreak = calculateStreak();
-
-  // Stats strip — totals across non-draft entries
-  const nonDraftEntries = entries.filter(e => !e.is_draft);
-  const totalMemories = nonDraftEntries.length;
-  const totalChapters = chapters.filter(c => !c.is_archived).length;
-  const totalWords = nonDraftEntries.reduce((sum, e) => {
-    const text = (e.story_ai || e.transcript || '').trim();
-    if (!text) return sum;
-    return sum + text.split(/\s+/).length;
-  }, 0);
-  const formatCount = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-
-  // Prompt of the day — same daily rotation used in PromptsScreen
-  const todaysPrompt = DEFAULT_PROMPTS[Math.floor(Date.now() / 86400000) % DEFAULT_PROMPTS.length];
-
-  // Throwback — a random older memory, stable within each week
-  const MILLISECONDS_PER_DAY = 86400000;
-  const thirtyDaysAgo = Date.now() - 30 * MILLISECONDS_PER_DAY;
-  const throwbackCandidates = nonDraftEntries.filter(e => {
-    const t = new Date(e.date).getTime();
-    return !Number.isNaN(t) && t < thirtyDaysAgo;
-  });
-  const weekSeed = Math.floor(Date.now() / (7 * MILLISECONDS_PER_DAY));
-  const throwback = throwbackCandidates.length > 0
-    ? throwbackCandidates[weekSeed % throwbackCandidates.length]
-    : null;
 
   const getIconEmoji = (icon: ChapterIcon) => 
     CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
@@ -275,47 +249,6 @@ export function HomeScreen({
             </>
           )}
         </motion.section>
-
-        {/* Stats strip */}
-        {hasEntries && (
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.03 }}
-            className="flex flex-wrap gap-2"
-            aria-label={t.home.glanceLabel}
-          >
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/60 backdrop-blur-sm border border-border/30 text-sm">
-              <BookOpen weight="duotone" className="w-4 h-4 text-primary" />
-              <span className="font-medium text-foreground">{formatCount(totalMemories)}</span>
-              <span className="text-muted-foreground text-xs">{totalMemories === 1 ? t.home.memory : t.home.memories}</span>
-            </div>
-            {writingStreak > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-400">
-                <span>🔥</span>
-                <span className="font-medium">{writingStreak}</span>
-                <span className="text-xs opacity-80">{t.home.dayStreak}</span>
-              </div>
-            )}
-            {totalChapters > 0 && (
-              <button
-                onClick={() => onNavigate({ type: 'chapters' })}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/60 backdrop-blur-sm border border-border/30 text-sm hover:border-border/60 hover:bg-card/80 transition-colors"
-              >
-                <Books weight="duotone" className="w-4 h-4 text-primary" />
-                <span className="font-medium text-foreground">{totalChapters}</span>
-                <span className="text-muted-foreground text-xs">{totalChapters === 1 ? t.home.chapter : t.home.chapters.toLowerCase()}</span>
-              </button>
-            )}
-            {totalWords > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/60 backdrop-blur-sm border border-border/30 text-sm">
-                <PencilSimple weight="duotone" className="w-4 h-4 text-primary" />
-                <span className="font-medium text-foreground">{formatCount(totalWords)}</span>
-                <span className="text-muted-foreground text-xs">{totalWords === 1 ? t.home.word : t.home.words}</span>
-              </div>
-            )}
-          </motion.section>
-        )}
 
         {activeChapters.length > 0 && (
           <motion.section
@@ -474,89 +407,6 @@ export function HomeScreen({
             )}
           </motion.section>
         )}
-
-        {/* Throwback — random older memory, shown when no On This Day is available */}
-        {onThisDayEntries.length === 0 && throwback && (
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-            className="p-5 rounded-2xl bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-violet-500/10 border border-violet-500/20"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <ArrowClockwise weight="duotone" className="w-5 h-5 text-violet-500" />
-                <h2 className="font-serif text-lg font-semibold text-foreground">{t.home.throwback}</h2>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {formatShortDate(throwback.date)}
-              </span>
-            </div>
-            <motion.button
-              onClick={() => onNavigate({ type: 'entry-read', entryId: throwback.id })}
-              className="w-full p-3 rounded-xl bg-card/80 backdrop-blur-sm border border-border/40 hover:border-violet-500/40 hover:bg-card/90 transition-all text-left group"
-            >
-              <div className="flex items-start gap-3">
-                {throwback.photos[0] ? (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                    <img
-                      src={throwback.photos[0].storage_url}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-lg bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-                    <Camera weight="duotone" className="w-6 h-6 text-violet-500" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                    {getEntryTitle(throwback)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                    {throwback.story_ai || throwback.transcript || 'A memory worth revisiting.'}
-                  </p>
-                </div>
-                <CaretRight weight="bold" className="w-5 h-5 text-muted-foreground/50 group-hover:text-violet-500 transition-colors flex-shrink-0" />
-              </div>
-            </motion.button>
-          </motion.section>
-        )}
-
-        {/* Prompt of the day */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="p-5 rounded-2xl bg-gradient-to-br from-accent/10 via-primary/5 to-accent/10 border border-accent/20"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Quotes weight="fill" className="w-5 h-5 text-accent-foreground/70" />
-            <h2 className="font-serif text-lg font-semibold text-foreground">{t.home.promptOfDay}</h2>
-          </div>
-          <p className="font-serif text-lg sm:text-xl text-foreground/90 leading-snug mb-4">
-            "{todaysPrompt.text}"
-          </p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              onClick={() => onNavigate({ type: 'prompts-new', promptId: todaysPrompt.id })}
-              className="flex-1 shadow-md"
-            >
-              <NotePencil className="mr-2 w-4 h-4" weight="duotone" />
-              {t.home.writeThisOne}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onNavigate({ type: 'prompts' })}
-              className="flex-1"
-            >
-              <Sparkle className="mr-2 w-4 h-4" weight="fill" />
-              {t.home.browseMorePrompts}
-            </Button>
-          </div>
-        </motion.section>
 
         {hasEntries && (
           <section>
