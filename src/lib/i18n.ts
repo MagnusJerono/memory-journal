@@ -40,6 +40,8 @@ type TranslationKeys = {
     customMemory: string; customMemoryDesc: string; usePrompt: string; usePromptDesc: string;
     chapters: string; viewAll: string; memories: string; continueWriting: string; draft: string; lastEdited: string;
     journalAwaits: string; journalAwaitsDesc: string; createChapters: string;
+    memory: string; chapter: string; word: string; words: string; dayStreak: string;
+    throwback: string; promptOfDay: string; writeThisOne: string; browseMorePrompts: string; glanceLabel: string;
   };
   prompts: {
     title: string; description: string; categories: string; allPrompts: string; useThis: string;
@@ -102,7 +104,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'Chapters', viewAll: 'View all', memories: 'memories',
       continueWriting: 'Continue Writing', draft: 'Draft', lastEdited: 'Last edited',
       journalAwaits: 'Your journal awaits', journalAwaitsDesc: 'Start capturing moments with guided prompts or write your own custom memories.',
-      createChapters: 'Create chapters to organize your memories'
+      createChapters: 'Create chapters to organize your memories',
+      memory: 'memory', chapter: 'chapter', word: 'word', words: 'words', dayStreak: 'day streak',
+      throwback: 'Throwback', promptOfDay: 'Prompt of the day', writeThisOne: 'Write this one',
+      browseMorePrompts: 'Browse more prompts', glanceLabel: 'Your journal at a glance'
     },
     prompts: {
       title: 'Prompts', description: 'Get inspired to write', categories: 'Categories', allPrompts: 'All Prompts',
@@ -168,7 +173,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'Kapitel', viewAll: 'Alle anzeigen', memories: 'Erinnerungen',
       continueWriting: 'Weiterschreiben', draft: 'Entwurf', lastEdited: 'Zuletzt bearbeitet',
       journalAwaits: 'Dein Tagebuch wartet', journalAwaitsDesc: 'Halte Momente mit geführten Impulsen fest oder schreibe eigene Erinnerungen.',
-      createChapters: 'Erstelle Kapitel um deine Erinnerungen zu organisieren'
+      createChapters: 'Erstelle Kapitel um deine Erinnerungen zu organisieren',
+      memory: 'Erinnerung', chapter: 'Kapitel', word: 'Wort', words: 'Wörter', dayStreak: 'Tage Serie',
+      throwback: 'Rückblick', promptOfDay: 'Impuls des Tages', writeThisOne: 'Diesen schreiben',
+      browseMorePrompts: 'Mehr Impulse', glanceLabel: 'Dein Tagebuch im Überblick'
     },
     prompts: {
       title: 'Impulse', description: 'Lass dich inspirieren', categories: 'Kategorien', allPrompts: 'Alle Impulse',
@@ -234,7 +242,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'Capítulos', viewAll: 'Ver todo', memories: 'recuerdos',
       continueWriting: 'Continuar Escribiendo', draft: 'Borrador', lastEdited: 'Última edición',
       journalAwaits: 'Tu diario espera', journalAwaitsDesc: 'Captura momentos con sugerencias guiadas o escribe tus propios recuerdos.',
-      createChapters: 'Crea capítulos para organizar tus recuerdos'
+      createChapters: 'Crea capítulos para organizar tus recuerdos',
+      memory: 'recuerdo', chapter: 'capítulo', word: 'palabra', words: 'palabras', dayStreak: 'días seguidos',
+      throwback: 'Recuerdo pasado', promptOfDay: 'Sugerencia del día', writeThisOne: 'Escribir esta',
+      browseMorePrompts: 'Ver más sugerencias', glanceLabel: 'Tu diario de un vistazo'
     },
     prompts: {
       title: 'Sugerencias', description: 'Inspírate para escribir', categories: 'Categorías', allPrompts: 'Todas las Sugerencias',
@@ -300,7 +311,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'Chapitres', viewAll: 'Voir tout', memories: 'souvenirs',
       continueWriting: 'Continuer à Écrire', draft: 'Brouillon', lastEdited: 'Dernière modification',
       journalAwaits: 'Votre journal vous attend', journalAwaitsDesc: 'Capturez des moments avec des inspirations guidées ou écrivez vos propres souvenirs.',
-      createChapters: 'Créez des chapitres pour organiser vos souvenirs'
+      createChapters: 'Créez des chapitres pour organiser vos souvenirs',
+      memory: 'souvenir', chapter: 'chapitre', word: 'mot', words: 'mots', dayStreak: 'jours de suite',
+      throwback: 'Souvenir d\'avant', promptOfDay: 'Inspiration du jour', writeThisOne: 'Écrire celle-ci',
+      browseMorePrompts: 'Plus d\'inspirations', glanceLabel: 'Votre journal en un coup d\'œil'
     },
     prompts: {
       title: 'Inspirations', description: 'Laissez-vous inspirer', categories: 'Catégories', allPrompts: 'Toutes les Inspirations',
@@ -366,7 +380,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'Capítulos', viewAll: 'Ver tudo', memories: 'memórias',
       continueWriting: 'Continuar Escrevendo', draft: 'Rascunho', lastEdited: 'Última edição',
       journalAwaits: 'Seu diário espera', journalAwaitsDesc: 'Capture momentos com sugestões guiadas ou escreva suas próprias memórias.',
-      createChapters: 'Crie capítulos para organizar suas memórias'
+      createChapters: 'Crie capítulos para organizar suas memórias',
+      memory: 'memória', chapter: 'capítulo', word: 'palavra', words: 'palavras', dayStreak: 'dias seguidos',
+      throwback: 'Recordação', promptOfDay: 'Sugestão do dia', writeThisOne: 'Escrever esta',
+      browseMorePrompts: 'Mais sugestões', glanceLabel: 'Seu diário em um relance'
     },
     prompts: {
       title: 'Sugestões', description: 'Inspire-se para escrever', categories: 'Categorias', allPrompts: 'Todas as Sugestões',
@@ -432,7 +449,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: '章节', viewAll: '查看全部', memories: '条回忆',
       continueWriting: '继续写作', draft: '草稿', lastEdited: '上次编辑',
       journalAwaits: '您的日记在等待', journalAwaitsDesc: '使用引导提示捕捉瞬间，或写下您自己的回忆。',
-      createChapters: '创建章节来组织您的回忆'
+      createChapters: '创建章节来组织您的回忆',
+      memory: '条回忆', chapter: '章节', word: '字', words: '字', dayStreak: '天连续',
+      throwback: '往日回忆', promptOfDay: '每日提示', writeThisOne: '写这个',
+      browseMorePrompts: '浏览更多提示', glanceLabel: '您的日记概览'
     },
     prompts: {
       title: '提示', description: '获取写作灵感', categories: '分类', allPrompts: '所有提示',
@@ -498,7 +518,10 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       chapters: 'チャプター', viewAll: 'すべて見る', memories: 'の思い出',
       continueWriting: '続きを書く', draft: '下書き', lastEdited: '最終編集',
       journalAwaits: 'あなたの日記が待っています', journalAwaitsDesc: 'ガイド付きプロンプトで瞬間を捉えるか、独自の思い出を書きましょう。',
-      createChapters: 'チャプターを作成して思い出を整理しましょう'
+      createChapters: 'チャプターを作成して思い出を整理しましょう',
+      memory: 'の思い出', chapter: 'チャプター', word: '語', words: '語', dayStreak: '日連続',
+      throwback: '懐かしの思い出', promptOfDay: '今日のプロンプト', writeThisOne: 'これを書く',
+      browseMorePrompts: 'もっと見る', glanceLabel: 'あなたの日記の概要'
     },
     prompts: {
       title: 'プロンプト', description: 'インスピレーションを得る', categories: 'カテゴリー', allPrompts: 'すべてのプロンプト',
