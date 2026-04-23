@@ -127,19 +127,21 @@ export function PrintScreen({
                 Print a Book
               </Button>
             )}
-            <div className="hidden sm:block">
+            <div className="hidden sm:block md:hidden">
               <NavigationMenu 
                 onNavigate={onNavigate} 
                 currentTab="print" 
                 isDarkMode={isDarkMode} 
               />
             </div>
-            <SettingsPanel
-              themeMode={themeMode}
-              onThemeModeChange={setThemeMode}
-              isDarkMode={isDarkMode}
-              isNightTime={isNightTime}
-            />
+            <div className="md:hidden">
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={setThemeMode}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            </div>
           </div>
         </div>
       </header>

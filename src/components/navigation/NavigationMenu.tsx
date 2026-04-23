@@ -14,7 +14,6 @@ import {
   House,
   MagnifyingGlass,
   Sparkle,
-  Clock,
   CaretRight
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
@@ -46,25 +45,18 @@ export function NavigationMenu({ onNavigate, currentTab, isDarkMode }: Navigatio
       descriptionKey: 'prompts' as const
     },
     { 
-      id: 'chapters' as NavigationTab, 
-      labelKey: 'chapters' as const, 
+      id: 'library' as NavigationTab, 
+      labelKey: 'library' as const, 
       icon: Books, 
-      view: { type: 'chapters' } as AppView,
-      descriptionKey: 'chapters' as const
+      view: { type: 'library' } as AppView,
+      descriptionKey: 'library' as const
     },
-    { 
-      id: 'timeline' as NavigationTab, 
-      labelKey: 'timeline' as const, 
-      icon: Clock, 
-      view: { type: 'timeline' } as AppView,
-      descriptionKey: 'timeline' as const
-    },
-    { 
-      id: 'search' as NavigationTab, 
-      labelKey: 'search' as const, 
-      icon: MagnifyingGlass, 
+    {
+      id: 'home' as NavigationTab,
+      labelKey: 'search' as const,
+      icon: MagnifyingGlass,
       view: { type: 'search' } as AppView,
-      descriptionKey: 'search' as const
+      descriptionKey: 'search' as const,
     },
     { 
       id: 'print' as NavigationTab, 
@@ -79,8 +71,7 @@ export function NavigationMenu({ onNavigate, currentTab, isDarkMode }: Navigatio
     switch (key) {
       case 'home': return t.home.recentMemories;
       case 'prompts': return t.prompts.description;
-      case 'chapters': return t.chapters.description;
-      case 'timeline': return t.timeline.title;
+      case 'library': return t.chapters.description;
       case 'search': return t.search.title;
       case 'print': return t.print.description;
       default: return '';

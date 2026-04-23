@@ -169,7 +169,7 @@ export const DEFAULT_PROMPTS: Prompt[] = [
   { id: '16', text: 'What makes you feel most alive?', category: 'reflection' },
 ];
 
-export type NavigationTab = 'home' | 'prompts' | 'chapters' | 'timeline' | 'search' | 'print';
+export type NavigationTab = 'home' | 'prompts' | 'library' | 'print';
 
 export type AppView = 
   | { type: 'home' }
@@ -178,6 +178,7 @@ export type AppView =
   | { type: 'chapters' }
   | { type: 'chapter-detail'; chapterId: string }
   | { type: 'timeline' }
+  | { type: 'library'; tab?: 'chapters' | 'timeline' }
   | { type: 'entry-read'; entryId: string; returnTo?: AppView }
   | { type: 'entry-edit'; entryId: string; returnTo?: AppView }
   | { type: 'search' }

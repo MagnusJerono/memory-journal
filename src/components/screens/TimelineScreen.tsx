@@ -105,7 +105,9 @@ export function TimelineScreen({ entries, chapters, onNavigate }: TimelineScreen
               {t.timeline.title}
             </h1>
           </div>
-          <SettingsPanel />
+          <div className="md:hidden">
+            <SettingsPanel />
+          </div>
         </div>
       </div>
 

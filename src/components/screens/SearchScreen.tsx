@@ -50,19 +50,21 @@ export function SearchScreen({
               size="sm"
             />
             <div className="flex-1" />
-            <div className="hidden sm:block">
+            <div className="hidden sm:block md:hidden">
               <NavigationMenu 
                 onNavigate={onNavigate} 
-                currentTab="search" 
+                currentTab="home" 
                 isDarkMode={isDarkMode} 
               />
             </div>
-            <SettingsPanel
-              themeMode={themeMode}
-              onThemeModeChange={setThemeMode}
-              isDarkMode={isDarkMode}
-              isNightTime={isNightTime}
-            />
+            <div className="md:hidden">
+              <SettingsPanel
+                themeMode={themeMode}
+                onThemeModeChange={setThemeMode}
+                isDarkMode={isDarkMode}
+                isNightTime={isNightTime}
+              />
+            </div>
           </div>
           <div className="relative">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" weight="bold" />
