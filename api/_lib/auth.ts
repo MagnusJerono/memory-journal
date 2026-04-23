@@ -57,7 +57,15 @@ export async function extractUser(req: any): Promise<AuthenticatedUser | null> {
         }
       }
 
-      // No Supabase credentials — accept the token opaquely as the user identity.
+      // No Supabase credentials configured.
+      //
+      // In production we refuse to trust an unverified Bearer token — otherwise
+      // any attacker could send `Authorization: Bearer anything` and be treated
+      // as an authenticated user. In development we accept the token opaquely
+      // so local demos without Supabase keep working.
+      if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+        return null;
+      }
       return { id: normalizeIdentity(token) };
     }
   }

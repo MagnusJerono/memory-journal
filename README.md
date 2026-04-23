@@ -1,199 +1,168 @@
-# Memory Journal — "Hold them tight"
+# Memory Journal — _"Hold them tight"_
 
-An AI-powered personal memory journal built with React 19, TypeScript, and Vite. Users can record memories via text or speech-to-text, attach photos, and have AI transform their notes into polished stories with highlights, tags, and location suggestions.
+A personal, AI-assisted memory journal. Record memories in your own voice,
+attach photos, and let a large language model turn raw notes into polished
+stories — tagged, titled, and ready to print into a book.
 
-## ✨ Key Features
+Built with React 19, TypeScript, Vite, Supabase, and OpenAI. Deployed on
+Vercel.
 
-- 🎙️ **Speech-to-text in 12 languages** — Record memories using your voice with support for English (US/UK), German, Spanish, French, Italian, Portuguese, Dutch, Polish, Japanese, Korean, and Chinese
-- ✨ **AI story generation with 7 tone options** — Transform your notes into polished stories with natural, casual, poetic, nostalgic, journalistic, humorous, or custom tones
-- 📸 **Photo attachments** — Add up to 10 photos per entry with intuitive drag-and-drop support
-- 📚 **Chapters for organizing memories** — Organize your journal with customizable chapters featuring icons, colors, and pin/archive capabilities
-- ⏰ **Timeline view** — Chronological view of all memories organized by year and month for easy browsing through time
-- 🔍 **Full-text search** — Quickly find any memory across all your entries
-- 📖 **Book/print builder** — Create beautiful printed memories with 5 themes: classic, modern, vintage, minimal, and romantic
-- 🌍 **Location tagging** — Add location context via search or GPS coordinates
-- 🌙 **Smart theming** — Auto/light/dark theme with automatic night-time detection
-- 🖥️ **Responsive design** — Desktop sidebar and mobile bottom navigation for seamless experience across devices
-- 🌐 **Internationalized UI** — Use the app in 7 languages: EN, DE, ES, FR, PT, ZH, JA
-- 💾 **Auto-save drafts** — Never lose your work with automatic draft saving
-- 🔥 **Writing streak tracking** — Stay motivated with visual streak tracking
-- 📝 **Journaling prompts** — Get inspired with prompts across 6 categories
+> **Heads-up:** this is a personal project. I publish the source so that
+> anyone can audit it, but I do not invite commercial reuse. See
+> [License](#-license) below.
 
-## 🛠️ Tech Stack
+---
 
-- **React 19** — Latest React with modern features
-- **TypeScript 5** — Full type safety throughout the application
-- **Vite 7** — Fast build tooling and development server
-- **Tailwind CSS 4** — Utility-first CSS framework for styling
-- **Radix UI** — Accessible component primitives
-- **Framer Motion** — Smooth animations and transitions
-- **Phosphor Icons** — Beautiful icon library
-- **OpenAI** — AI-powered story generation (`gpt-4o-mini` by default)
-- **GitHub Spark** — Uses `@github/spark/hooks` for data persistence (optional)
+## ✨ Features
 
-## 📋 Prerequisites
+- 🎙️ Speech-to-text in 12 languages
+- ✨ AI story generation (7 tone presets; GPT-4o-mini by default)
+- 📸 Photo attachments with drag-and-drop
+- 📚 Chapters, timeline, full-text search
+- 📖 Book/print builder with 5 themes
+- 🌍 Location tagging (search + GPS)
+- 🌙 Auto/light/dark theme
+- 🌐 UI in 7 languages (en, de, es, fr, pt, zh, ja)
 
-- **Node.js 20+** (see `engines` field in `package.json`)
-- **npm** (or yarn/pnpm)
-- An **OpenAI API key** for AI features
+## 🛠️ Stack
 
-## 🚀 Setup Instructions
+| Layer    | Tech |
+| -------- | ---- |
+| Frontend | React 19, TypeScript 5, Vite 7, Tailwind 4, Radix UI, Framer Motion |
+| Backend  | Vercel serverless functions (`api/`) |
+| Data     | Supabase (Postgres + Auth + Storage) with row-level security |
+| AI       | OpenAI Chat Completions proxied through `api/llm/complete` |
+
+## 🚀 Setup
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/MagnusJerono/memory-journal.git
 cd memory-journal
-
-# 2. Install dependencies
 npm install
-
-# 3. Configure environment variables
-cp .env.example .env
-# Edit .env and fill in your values (see Environment Variables section below)
-
-# 4. Start the development server
-npm run dev
+cp .env.example .env         # fill in secrets
+npm run dev                  # http://localhost:5173
 ```
 
-The app will be available at `http://localhost:5173`.
-
-## 🧑‍💻 Local Development
-
-```bash
-npm run dev      # Start Vite dev server with HMR
-npm run build    # TypeScript check + production build
-npm run preview  # Preview the production build locally
-npm run lint     # Run ESLint
-```
-
-## 📦 Building for Production
-
-```bash
-npm run build
-```
-
-This runs `tsc -b && vite build`. The output goes to `dist/`.
+Requires Node 20+.
 
 ## 🌍 Environment Variables
 
-Copy `.env.example` to `.env` and fill in the required values:
+See [`.env.example`](.env.example) for the full list. The minimum set for a
+production deployment:
 
-| Variable | Required | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | ✅ Yes | Your OpenAI API key for AI story generation |
-| `SUPABASE_URL` *or* `NEXT_PUBLIC_SUPABASE_URL` | When using Supabase auth | Supabase project URL (server-side) |
-| `SUPABASE_SERVICE_ROLE_KEY` *or* `SUPABASE_SECRET_KEY` | When using Supabase auth | Server-side key for JWT validation |
-| `VITE_SUPABASE_URL` *or* `NEXT_PUBLIC_SUPABASE_URL` | When using Supabase auth | Supabase URL (exposed to browser) |
-| `VITE_SUPABASE_ANON_KEY` *or* `NEXT_PUBLIC_SUPABASE_ANON_KEY` | When using Supabase auth | Supabase anon key (exposed to browser) |
-| `FREE_AI_LIMIT_10M` | No | Free-tier max requests per 10 min (default: 10) |
-| `FREE_AI_LIMIT_DAY` | No | Free-tier max requests per day (default: 50) |
-| `PREMIUM_AI_LIMIT_10M` | No | Premium max requests per 10 min (default: 60) |
-| `PREMIUM_AI_LIMIT_DAY` | No | Premium max requests per day (default: 500) |
-| `PREMIUM_USER_IDS` | No | Comma-separated user IDs with premium limits |
-| `MAX_LLM_PROMPT_CHARS` | No | Max prompt size in characters (default: 12000) |
-| `REQUIRE_AUTH_FOR_LLM` | No | Reject unauthenticated AI requests (`true`/`false`) |
-| `REQUIRE_AUTH_FOR_PREFERENCES` | No | Reject unauthenticated preference requests |
-| `VITE_LLM_API_ENDPOINT` | No | Override AI endpoint URL (default: `/api/llm/complete`) |
-| `VITE_AUTH_USER_ENDPOINT` | No | Override auth endpoint URL (default: `/api/auth/me`) |
-| `VITE_PREFERENCES_API_ENDPOINT` | No | Override preferences endpoint URL |
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Server-side OpenAI key (never shipped to the browser). |
+| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL. |
+| `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SECRET_KEY` | Server-side key used to verify JWTs. **Must never be exposed to the browser.** |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Public client keys (safe to ship). |
+| `REQUIRE_AUTH_FOR_LLM=true` | Reject unauthenticated AI requests. **Set this in production.** |
+| `REQUIRE_AUTH_FOR_PREFERENCES=true` | Same for the preferences API. |
+| `MONTHLY_OPENAI_BUDGET_USD` | Hard cap on OpenAI spend per calendar month. |
+| `FREE_AI_LIMIT_10M`, `FREE_AI_LIMIT_DAY`, `PREMIUM_AI_LIMIT_10M`, `PREMIUM_AI_LIMIT_DAY` | Per-user rate limits. |
 
-## 🚢 Deployment Guide (Vercel)
+## 🚢 Deployment (Vercel)
 
-1. **Push to GitHub** — Vercel auto-deploys on push to `main`.
-2. **Connect your repo** in the [Vercel dashboard](https://vercel.com/new).
-3. **Set environment variables** in *Project → Settings → Environment Variables*:
-   - `OPENAI_API_KEY` — required for AI features
-   - Supabase: either install the **Vercel ↔ Supabase marketplace integration** (auto-injects `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`, etc.) *or* set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` manually. The app reads either naming convention.
-   - Rate-limit variables as needed
-4. **Deploy** — Vercel uses `vercel.json` for build config (`tsc -b && vite build`).
+1. Push to `main`; Vercel auto-builds from `vercel.json`.
+2. Set the env vars above in **Project → Settings → Environment Variables**.
+3. Install the **Vercel ↔ Supabase marketplace integration** if you want
+   Supabase secrets auto-injected.
+4. Run the migration in `supabase/migrations/` on your Supabase project.
 
-The `api/` directory is automatically deployed as Vercel Serverless Functions.
+The `api/` directory is deployed as Vercel serverless functions. The
+security headers in `vercel.json` (CSP, HSTS, COOP, referrer policy) ship
+automatically — review them for your own deploy.
 
-## 📁 Project Structure
+## 🔐 Security & Privacy
+
+**Data model.** All user content (entries, photos, chapters, books,
+preferences) is stored in Supabase. Every table has row-level security
+scoped to `auth.uid()`; every storage object in the `journal-photos`
+bucket is path-scoped to the uploading user. A user cannot read or modify
+another user's data, even if they forge requests directly against the
+Supabase API.
+
+**Authentication.** Requests to `/api/*` endpoints must carry a valid
+Supabase JWT in `Authorization: Bearer <token>`. The server verifies
+tokens with Supabase's `/auth/v1/user` endpoint using the service-role
+key. An unverified Bearer token is rejected in production — no fallback.
+
+**AI abuse.** `POST /api/llm/complete` enforces per-user rate limits
+(10/10 min, 50/day free; 60/10 min, 500/day premium) plus a global
+monthly USD budget. Prompt size is capped. Request bodies over 8 KB are
+rejected.
+
+**Transport & browser posture.** `vercel.json` sets:
+
+- `Strict-Transport-Security` (HSTS, 2-year max-age, preload)
+- `Content-Security-Policy` (`default-src 'self'`, script allow-list,
+  `connect-src` limited to `*.supabase.co` + `api.openai.com`,
+  `frame-ancestors 'none'`)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` disabling camera + cross-site cohorts; allowing
+  microphone + geolocation to `self`
+
+**Reporting vulnerabilities.** See [`SECURITY.md`](SECURITY.md).
+
+**Dependencies.** `npm audit` is run in CI. Dependabot + CodeQL are
+enabled via GitHub Advanced Security on the public repository.
+
+## ✅ Production Checklist
+
+- [ ] `OPENAI_API_KEY` set, `SUPABASE_SERVICE_ROLE_KEY` **never** prefixed with `VITE_` / `NEXT_PUBLIC_`
+- [ ] `REQUIRE_AUTH_FOR_LLM=true` and `REQUIRE_AUTH_FOR_PREFERENCES=true`
+- [ ] `MONTHLY_OPENAI_BUDGET_USD` set to your comfort limit
+- [ ] Supabase migration applied; RLS confirmed on every table
+- [ ] GitHub Advanced Security features enabled (Dependabot, secret scanning, CodeQL)
+- [ ] `npm audit --omit=dev` has no high/critical issues
+- [ ] Security headers verified at [securityheaders.com](https://securityheaders.com)
+
+## 📁 Project Layout
 
 ```
-├── api/                          # Vercel serverless functions
-│   ├── _lib/
-│   │   ├── auth.ts              # Shared JWT / identity auth helper
-│   │   ├── rate-limit.ts        # Per-user rate limiting (free/premium tiers)
-│   │   └── usage-log.ts         # Usage tracking and cost estimation
-│   ├── auth/
-│   │   └── me.ts                # GET /api/auth/me — current user identity
-│   ├── llm/
-│   │   └── complete.ts          # POST /api/llm/complete — OpenAI proxy
-│   └── preferences.ts           # GET/PUT /api/preferences — user preferences
-└── src/
-    ├── components/
-    │   ├── screens/             # Main app screens
-    │   ├── entry/               # Entry-related components
-    │   ├── navigation/          # Navigation components
-    │   ├── timeline/            # Timeline components
-    │   └── ui/                  # Radix UI / shadcn primitives
-    ├── contexts/                # React context providers
-    ├── hooks/                   # Custom React hooks
-    └── lib/                     # Core utilities and logic
-        ├── types.ts             # TypeScript type definitions
-        ├── entries.ts           # Entry logic and AI generation
-        ├── auth-client.ts       # Client-side auth helper
-        ├── ai-client.ts         # OpenAI API client with Spark fallback
-        ├── preferences-client.ts# Preferences API client
-        ├── generate-book-pdf.tsx# PDF/print generation (XSS-safe)
-        └── utils.ts             # Shared utilities
+api/                          Vercel serverless functions
+├── _lib/auth.ts              JWT verification (Supabase-backed)
+├── _lib/rate-limit.ts        Persistent rate limiter
+├── _lib/usage-log.ts         Usage + cost tracking
+├── auth/me.ts                GET current user
+├── llm/complete.ts           OpenAI proxy
+├── account/delete.ts         Hard-delete account + data
+└── preferences.ts            GET/PUT user preferences
+src/
+├── components/               screens/, navigation/, ui/, entry/, timeline/
+├── contexts/                 AuthContext, etc.
+├── hooks/                    useJournalData, useLanguage, ...
+└── lib/                      types, entries, auth-client, ai-client, ...
+supabase/migrations/          Initial schema + RLS policies
 ```
 
-## 🔐 Security Notes
+## 📜 License
 
-### Authentication
-- All API endpoints support **Authorization: Bearer \<token\>** and fall back to the `x-user-id` header (used by the GitHub Spark runtime).
-- When `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, Bearer tokens are verified against Supabase's auth API — invalid JWTs are rejected with a 401.
-- Set `REQUIRE_AUTH_FOR_LLM=true` and `REQUIRE_AUTH_FOR_PREFERENCES=true` to reject any request that cannot be identified.
+Copyright © 2026 Magnus Jerono.
 
-### Rate Limiting
-- `POST /api/llm/complete` enforces per-user rate limits to prevent OpenAI cost abuse.
-- Free tier defaults: **10 requests / 10 min**, **50 requests / day**.
-- Premium tier defaults: **60 requests / 10 min**, **500 requests / day**.
-- Exceeded limits return `429` with a `Retry-After` header.
+Memory Journal is free software: you can redistribute it and/or modify it
+under the terms of the **GNU Affero General Public License v3.0** as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-### XSS Protection
-- All user-controlled content (book titles, chapter names, entry text, locations) is HTML-escaped before being written into the PDF generation window.
+This program is distributed in the hope that it will be useful, but
+**WITHOUT ANY WARRANTY**; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU AGPL
+for more details.
 
-## ✅ Production Deployment Checklist
+You should have received a copy of the GNU AGPL along with this
+program. If not, see <https://www.gnu.org/licenses/agpl-3.0.html>.
 
-- [ ] `OPENAI_API_KEY` set in Vercel environment variables
-- [ ] `REQUIRE_AUTH_FOR_LLM=true` once Supabase auth is wired up
-- [ ] `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` configured for JWT validation
-- [ ] Review rate limits (`FREE_AI_LIMIT_*`, `PREMIUM_AI_LIMIT_*`) for your usage tier
-- [ ] Confirm `PREMIUM_USER_IDS` is set for any users who need higher quotas
-- [ ] Ensure `.env` is not committed (it is in `.gitignore`)
-- [ ] Verify `vercel.json` build command matches `package.json` build script
+**What AGPL-3.0 means in practice**
 
-## 🔌 API Reference
+- You may use, modify, and self-host the software for free, including
+  inside a company.
+- If you run a modified version as a **network service** (e.g., host it
+  for other people to use), you must publish your modifications under
+  the same AGPL-3.0 license and offer the source code to your users.
+- You must keep the copyright notice and license text intact.
 
-### `POST /api/llm/complete`
-Proxies a prompt to OpenAI with rate limiting.
-
-**Headers:**
-- `Authorization: Bearer <token>` or `x-user-id: <userId>` — user identity
-- `x-user-tier: premium` — opt-in to premium rate limits
-- `Content-Type: application/json`
-
-**Body:**
-```json
-{ "prompt": "string", "model": "gpt-4o-mini", "jsonMode": false }
-```
-
-**Response:**
-```json
-{ "text": "...", "usage": { "estimatedCostUsd": 0.0001 } }
-```
-
-### `GET /api/auth/me`
-Returns the authenticated user identity from request headers.
-
-### `GET /PUT /api/preferences`
-Retrieves or updates per-user preferences and personal writing voice sample.
-
-## 📄 License
-
-See [LICENSE](LICENSE) for details.
-
+If you want to use Memory Journal under different terms (e.g., in a
+closed-source product), contact the author for a commercial license.
