@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
+import { RateLimitError, formatRetryAfter } from '@/lib/ai-quota';
 import { searchLocations, getCurrentLocation, GeocodingResult, GeocodingServiceError } from '@/lib/geocoding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -466,18 +467,20 @@ export function EntryEditScreen({
         toast.success('Your memory came to life ✨');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (message.includes('rate') || message.includes('429')) {
+      if (err instanceof RateLimitError) {
         toast.error('AI limit reached', {
-          description: 'You have hit the usage limit. Please wait a few minutes and try again.',
-        });
-      } else if (message.includes('No AI provider') || message.includes('LLM API')) {
-        toast.error('AI is currently unavailable', {
-          description: 'Could not reach the AI service. Check your connection and try again.',
-          action: { label: 'Retry', onClick: () => void handleGenerate() },
+          description: `Try again in ${formatRetryAfter(err.retryAfterSeconds)}. Daily remaining: ${err.remainingDay ?? '—'}.`,
         });
       } else {
-        toast.error('Something went wrong — try again');
+        const message = err instanceof Error ? err.message : '';
+        if (message.includes('No AI provider') || message.includes('LLM API')) {
+          toast.error('AI is currently unavailable', {
+            description: 'Could not reach the AI service. Check your connection and try again.',
+            action: { label: 'Retry', onClick: () => void handleGenerate() },
+          });
+        } else {
+          toast.error('Something went wrong — try again');
+        }
       }
     } finally {
       setIsGenerating(false);

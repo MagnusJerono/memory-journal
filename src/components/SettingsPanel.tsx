@@ -44,6 +44,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getCurrentUser, type AppUser } from '@/lib/auth-client';
 import { useSettingsPreferences } from '@/hooks/use-settings-preferences';
+import { useAIQuota } from '@/hooks/use-ai-quota';
 import { useAuth } from '@/contexts/AuthContext';
 import * as db from '@/lib/db';
 import {
@@ -86,6 +87,9 @@ export function SettingsPanel({
   const [user, setUser] = useState<AppUser | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const {
@@ -105,6 +109,7 @@ export function SettingsPanel({
   });
   
   const { language, setLanguage, autoDetect, setAutoDetect, t } = useLanguage();
+  const quota = useAIQuota();
 
   useEffect(() => {
     getCurrentUser().then((currentUser) => {
@@ -540,6 +545,22 @@ export function SettingsPanel({
                   </Button>
                 }
               />
+              {quota.updatedAt > 0 && (
+                <SettingRow
+                  icon={<Info weight="duotone" className="w-4 h-4" />}
+                  label="AI usage"
+                  description={
+                    quota.tier === 'premium'
+                      ? 'Premium tier'
+                      : 'Free tier — resets each day'
+                  }
+                  action={
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {quota.remainingDay ?? '—'} / day
+                    </span>
+                  }
+                />
+              )}
               <SettingRow 
                 icon={<Download weight="duotone" className="w-4 h-4" />}
                 label={t.settings.exportData}
@@ -589,6 +610,41 @@ export function SettingsPanel({
                   <span className="text-sm text-muted-foreground">1.0.0</span>
                 }
               />
+              <SettingRow
+                icon={<Envelope weight="duotone" className="w-4 h-4" />}
+                label="Send feedback"
+                description="Tell us what worked, broke, or could be better"
+                action={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setFeedbackOpen(true)}
+                  >
+                    Write
+                  </Button>
+                }
+              />
+              <SettingRow
+                icon={<Shield weight="duotone" className="w-4 h-4" />}
+                label="Privacy Policy"
+                description="How we handle your data"
+                action={
+                  <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer">Open</a>
+                  </Button>
+                }
+              />
+              <SettingRow
+                icon={<Info weight="duotone" className="w-4 h-4" />}
+                label="Terms of Service"
+                description="The rules of using Memory Journal"
+                action={
+                  <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
+                    <a href="/terms" target="_blank" rel="noopener noreferrer">Open</a>
+                  </Button>
+                }
+              />
 
               <div className="text-xs text-muted-foreground text-center space-y-1 pt-4">
                 <p className="font-serif text-sm">Tightly</p>
@@ -633,6 +689,70 @@ export function SettingsPanel({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting…' : 'Delete forever'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={feedbackOpen} onOpenChange={(o) => !isSendingFeedback && setFeedbackOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send feedback</AlertDialogTitle>
+            <AlertDialogDescription>
+              What's working, what's broken, what's missing? Your note goes straight to the maker.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="Tell us anything…"
+            className="min-h-[120px] resize-none"
+            disabled={isSendingFeedback}
+            maxLength={4000}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSendingFeedback}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const body = feedbackText.trim();
+                if (!body) return;
+                setIsSendingFeedback(true);
+                try {
+                  const token = await getToken?.();
+                  const res = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({
+                      message: body,
+                      context: {
+                        path: typeof window !== 'undefined' ? window.location.pathname : '',
+                        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                        language,
+                      },
+                    }),
+                  });
+                  if (!res.ok) throw new Error(`feedback failed (${res.status})`);
+                  toast.success('Thanks — feedback sent');
+                  setFeedbackText('');
+                  setFeedbackOpen(false);
+                } catch (err) {
+                  console.error('Feedback submit failed', err);
+                  // Fallback: open the user's mail client so nothing is lost.
+                  if (typeof window !== 'undefined') {
+                    const mail = `mailto:holdthemtightly@gmail.com?subject=${encodeURIComponent('Memory Journal feedback')}&body=${encodeURIComponent(body)}`;
+                    window.location.href = mail;
+                  }
+                  toast.error('Could not send — opened your mail app instead');
+                } finally {
+                  setIsSendingFeedback(false);
+                }
+              }}
+              disabled={isSendingFeedback || feedbackText.trim().length === 0}
+            >
+              {isSendingFeedback ? 'Sending…' : 'Send'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
