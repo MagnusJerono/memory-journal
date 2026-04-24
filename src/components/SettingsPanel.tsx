@@ -742,7 +742,7 @@ export function SettingsPanel({
                   console.error('Feedback submit failed', err);
                   // Fallback: open the user's mail client so nothing is lost.
                   if (typeof window !== 'undefined') {
-                    const mail = `mailto:hello@memoryjournal.app?subject=${encodeURIComponent('Memory Journal feedback')}&body=${encodeURIComponent(body)}`;
+                    const mail = `mailto:holdthemtightly@gmail.com?subject=${encodeURIComponent('Memory Journal feedback')}&body=${encodeURIComponent(body)}`;
                     window.location.href = mail;
                   }
                   toast.error('Could not send — opened your mail app instead');
