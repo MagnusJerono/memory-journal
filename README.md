@@ -18,6 +18,7 @@ Vercel.
 - 🎙️ Speech-to-text in 12 languages
 - ✨ AI story generation (7 tone presets; GPT-4o-mini by default)
 - 📸 Photo attachments with drag-and-drop
+- 🖼️ Photo-library "moments" — on-device clustering of recent photos into journaling prompts (iOS / Android / web)
 - 📚 Chapters, timeline, full-text search
 - 📖 Book/print builder with 5 themes
 - 🌍 Location tagging (search + GPS)
@@ -91,6 +92,16 @@ key. An unverified Bearer token is rejected in production — no fallback.
 (10/10 min, 50/day free; 60/10 min, 500/day premium) plus a global
 monthly USD budget. Prompt size is capped. Request bodies over 8 KB are
 rejected.
+
+**Photo library access (native apps).** The "moments" feature requires
+read access to the device photo library. iOS prompts via
+`NSPhotoLibraryUsageDescription` and supports the iOS 14+ "limited"
+selection mode; Android requests `READ_MEDIA_IMAGES` (API 33+) or
+`READ_EXTERNAL_STORAGE` (API ≤32). Photo bytes never leave the device
+unless the user explicitly imports a moment into an entry — the LLM
+prompt is generated from metadata only (timestamp, approximate place,
+photo count). The feature is opt-in via Settings → Data & Privacy →
+Photo suggestions.
 
 **Transport & browser posture.** `vercel.json` sets:
 

@@ -35,7 +35,8 @@ import {
   Envelope,
   Detective,
   Pen,
-  Palette
+  Palette,
+  Images
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -46,6 +47,8 @@ import { getCurrentUser, type AppUser } from '@/lib/auth-client';
 import { useSettingsPreferences } from '@/hooks/use-settings-preferences';
 import { useAIQuota } from '@/hooks/use-ai-quota';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { clearMomentsCache } from '@/lib/moments-prompt';
 import * as db from '@/lib/db';
 import {
   AlertDialog,
@@ -92,6 +95,7 @@ export function SettingsPanel({
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [momentsEnabled, setMomentsEnabled] = useLocalStorage<boolean>('moments:enabled:v1', false);
   const {
     preferences,
     personalVoiceSample,
@@ -543,6 +547,23 @@ export function SettingsPanel({
                   <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setPrivacyOpen(true)}>
                     {t.settings.view}
                   </Button>
+                }
+              />
+              <SettingRow
+                icon={<Images weight="duotone" className="w-4 h-4" />}
+                label="Photo suggestions"
+                description="Scan your photo library on-device to suggest moments to write about. Photo metadata never leaves your device."
+                action={
+                  <Switch
+                    checked={!!momentsEnabled}
+                    onCheckedChange={(v) => {
+                      setMomentsEnabled(v);
+                      if (!v) {
+                        clearMomentsCache();
+                        toast.success('Photo suggestions disabled');
+                      }
+                    }}
+                  />
                 }
               />
               {quota.updatedAt > 0 && (

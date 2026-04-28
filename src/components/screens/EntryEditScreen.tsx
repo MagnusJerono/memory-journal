@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView } from '@/lib/types';
+import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView, Prompt } from '@/lib/types';
 import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
 import { RateLimitError, formatRetryAfter } from '@/lib/ai-quota';
 import { searchLocations, getCurrentLocation, GeocodingResult, GeocodingServiceError } from '@/lib/geocoding';
@@ -51,6 +51,7 @@ import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadEntryPhoto, getSignedPhotoUrl } from '@/lib/photos';
+import { getAssetAsFile } from '@/lib/photo-library';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -83,6 +84,10 @@ interface EntryEditScreenProps {
   entry: Entry | null;
   chapters: Chapter[];
   promptId?: string;
+  /** When launching from a photo "moment" suggestion. */
+  momentAssetIds?: string[];
+  momentTitle?: string;
+  momentPrompt?: string;
   onSave: (entry: Entry) => void;
   onBack: () => void;
   onDelete?: () => void;
@@ -94,6 +99,9 @@ export function EntryEditScreen({
   entry, 
   chapters, 
   promptId, 
+  momentAssetIds,
+  momentTitle,
+  momentPrompt,
   onSave, 
   onBack, 
   onDelete,
@@ -105,7 +113,11 @@ export function EntryEditScreen({
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const isNewEntry = !entry;
-  const prompt = promptId ? DEFAULT_PROMPTS.find(p => p.id === promptId) : null;
+  const prompt = promptId
+    ? DEFAULT_PROMPTS.find(p => p.id === promptId) ?? null
+    : momentPrompt
+      ? ({ id: 'moment', text: momentPrompt, category: 'reflection' } as Prompt)
+      : null;
 
   // Stable id for this editing session — used as the storage path segment for
   // any photos uploaded before the entry row is saved.
@@ -384,6 +396,32 @@ export function EntryEditScreen({
       if (uploaded.length) setPhotos(prev => [...prev, ...uploaded]);
     });
   }, [photos.length, user]);
+
+  // When opened from a "moment" suggestion, prefill the title and auto-import
+  // the selected gallery assets through the regular upload pipeline. Runs once.
+  const momentImportedRef = useRef(false);
+  useEffect(() => {
+    if (momentImportedRef.current) return;
+    if (momentTitle && !title) {
+      setTitle(momentTitle);
+    }
+    if (!momentAssetIds || momentAssetIds.length === 0) return;
+    if (!user) return;
+    momentImportedRef.current = true;
+    void (async () => {
+      const files: File[] = [];
+      for (const id of momentAssetIds.slice(0, 10)) {
+        try {
+          files.push(await getAssetAsFile(id, `moment-${id.slice(-8)}.jpg`));
+        } catch (err) {
+          console.warn('[EntryEdit] failed to load moment asset', id, err);
+        }
+      }
+      if (files.length > 0) processImageFiles(files);
+    })();
+    // We intentionally exclude `title` from deps — we only want to prefill on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [momentAssetIds, momentTitle, user, processImageFiles]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();

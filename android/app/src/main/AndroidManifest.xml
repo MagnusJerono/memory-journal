@@ -45,4 +45,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Photo library access for the moments / foto-prompts feature.
+         READ_MEDIA_IMAGES is required on API 33+; READ_EXTERNAL_STORAGE is the
+         legacy fallback and is scoped to <= API 32 via maxSdkVersion. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 </manifest>

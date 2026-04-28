@@ -47,6 +47,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Memory Journal needs access to your photos to suggest moments to write about.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Memory Journal can save photos you generate or edit back to your library.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
