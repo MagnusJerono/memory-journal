@@ -1,5 +1,16 @@
 import { supabase } from './supabase';
-import { Entry, Chapter, Book, Photo, LocationSuggestion, ChapterIcon, BookTheme } from './types';
+import {
+  Entry,
+  Chapter,
+  Book,
+  Photo,
+  LocationSuggestion,
+  ChapterIcon,
+  BookTheme,
+  EntryAccessRole,
+  EntryCollaborator,
+  EntryCollaboratorRole,
+} from './types';
 import { getSignedPhotoUrls, deletePhotos } from './photos';
 
 /*
@@ -38,6 +49,18 @@ interface EntryRow {
   updated_at: string;
 }
 
+interface EntryCollaboratorRow {
+  id: string;
+  entry_id: string;
+  owner_id: string;
+  collaborator_user_id: string | null;
+  invitee_email: string;
+  role: EntryCollaboratorRole;
+  status: EntryCollaborator['status'];
+  created_at: string;
+  updated_at: string;
+}
+
 interface PhotoRow {
   id: string;
   entry_id: string;
@@ -49,9 +72,30 @@ interface PhotoRow {
   created_at: string;
 }
 
-function rowToEntry(row: EntryRow, photos: Photo[]): Entry {
+function rowToCollaborator(row: EntryCollaboratorRow): EntryCollaborator {
   return {
     id: row.id,
+    entry_id: row.entry_id,
+    owner_id: row.owner_id,
+    collaborator_user_id: row.collaborator_user_id,
+    invitee_email: row.invitee_email,
+    role: row.role,
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function getAccessRole(row: EntryRow, userId: string, collaborators: EntryCollaborator[]): EntryAccessRole {
+  if (row.user_id === userId) return 'owner';
+  const match = collaborators.find(c => c.collaborator_user_id === userId);
+  return match?.role ?? 'viewer';
+}
+
+function rowToEntry(row: EntryRow, photos: Photo[], collaborators: EntryCollaborator[], userId: string): Entry {
+  return {
+    id: row.id,
+    user_id: row.user_id,
     date: row.memory_date ?? row.created_at.slice(0, 10),
     title_user: row.title_user,
     title_ai: row.title_ai,
@@ -68,6 +112,8 @@ function rowToEntry(row: EntryRow, photos: Photo[]): Entry {
     is_draft: row.is_draft,
     chapter_id: row.chapter_id,
     photos,
+    collaborators,
+    collaboration_role: getAccessRole(row, userId, collaborators),
     prompt_used: row.prompt_used,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -77,7 +123,7 @@ function rowToEntry(row: EntryRow, photos: Photo[]): Entry {
 function entryToRow(userId: string, entry: Entry) {
   return {
     id: entry.id,
-    user_id: userId,
+    user_id: entry.user_id ?? userId,
     chapter_id: entry.chapter_id,
     memory_date: entry.date ? entry.date.slice(0, 10) : null,
     title_user: entry.title_user,
@@ -101,17 +147,33 @@ function entryToRow(userId: string, entry: Entry) {
 // Entries
 // ---------------------------------------------------------------------------
 
-export async function fetchEntries(userId: string): Promise<Entry[]> {
+export async function fetchEntries(userId: string, userEmail?: string | null): Promise<Entry[]> {
   const sb = assertSupabase();
-  const [entriesRes, photosRes] = await Promise.all([
-    sb.from('entries').select('*').eq('user_id', userId).order('memory_date', { ascending: false, nullsFirst: false }),
-    sb.from('entry_photos').select('*').eq('user_id', userId).order('position', { ascending: true }),
-  ]);
+  if (userEmail) {
+    const { error } = await sb.rpc('claim_entry_collaborator_invites', { p_email: userEmail });
+    if (error) throw error;
+  }
+
+  const entriesRes = await sb
+    .from('entries')
+    .select('*')
+    .order('memory_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
   if (entriesRes.error) throw entriesRes.error;
+
+  const entryIds = ((entriesRes.data ?? []) as EntryRow[]).map(row => row.id);
+  if (entryIds.length === 0) return [];
+
+  const [photosRes, collaboratorsRes] = await Promise.all([
+    sb.from('entry_photos').select('*').in('entry_id', entryIds).order('position', { ascending: true }),
+    sb.from('entry_collaborators').select('*').in('entry_id', entryIds).order('created_at', { ascending: true }),
+  ]);
   if (photosRes.error) throw photosRes.error;
+  if (collaboratorsRes.error) throw collaboratorsRes.error;
 
   const photoRows = (photosRes.data ?? []) as PhotoRow[];
   const signed = await getSignedPhotoUrls(photoRows.map(p => p.storage_path));
+  const collaboratorRows = (collaboratorsRes.data ?? []) as EntryCollaboratorRow[];
 
   const photosByEntry = new Map<string, Photo[]>();
   for (const row of photoRows) {
@@ -129,8 +191,15 @@ export async function fetchEntries(userId: string): Promise<Entry[]> {
     photosByEntry.set(row.entry_id, list);
   }
 
+  const collaboratorsByEntry = new Map<string, EntryCollaborator[]>();
+  for (const row of collaboratorRows) {
+    const list = collaboratorsByEntry.get(row.entry_id) ?? [];
+    list.push(rowToCollaborator(row));
+    collaboratorsByEntry.set(row.entry_id, list);
+  }
+
   return (entriesRes.data as EntryRow[]).map(row =>
-    rowToEntry(row, photosByEntry.get(row.id) ?? [])
+    rowToEntry(row, photosByEntry.get(row.id) ?? [], collaboratorsByEntry.get(row.id) ?? [], userId)
   );
 }
 
@@ -201,6 +270,42 @@ export async function setEntryStar(entryId: string, starred: boolean): Promise<v
 export async function setEntryChapter(entryId: string, chapterId: string | null): Promise<void> {
   const sb = assertSupabase();
   const { error } = await sb.from('entries').update({ chapter_id: chapterId }).eq('id', entryId);
+  if (error) throw error;
+}
+
+export async function inviteEntryCollaborator(
+  ownerId: string,
+  entryId: string,
+  inviteeEmail: string,
+  role: EntryCollaboratorRole
+): Promise<EntryCollaborator> {
+  const sb = assertSupabase();
+  const { data, error } = await sb
+    .from('entry_collaborators')
+    .insert({
+      entry_id: entryId,
+      owner_id: ownerId,
+      invitee_email: inviteeEmail.trim().toLowerCase(),
+      role,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return rowToCollaborator(data as EntryCollaboratorRow);
+}
+
+export async function updateEntryCollaboratorRole(
+  collaboratorId: string,
+  role: EntryCollaboratorRole
+): Promise<void> {
+  const sb = assertSupabase();
+  const { error } = await sb.from('entry_collaborators').update({ role }).eq('id', collaboratorId);
+  if (error) throw error;
+}
+
+export async function removeEntryCollaborator(collaboratorId: string): Promise<void> {
+  const sb = assertSupabase();
+  const { error } = await sb.from('entry_collaborators').delete().eq('id', collaboratorId);
   if (error) throw error;
 }
 

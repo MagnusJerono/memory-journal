@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Entry, Photo, Chapter, StoryTone, STORY_TONES, STORY_LANGUAGES, DEFAULT_PROMPTS, CHAPTER_ICONS, CHAPTER_COLORS, ChapterIcon, AppView, Prompt } from '@/lib/types';
-import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle } from '@/lib/entries';
+import { createEmptyEntry, generateAIContent, formatDate, getEntryTitle, canManageEntryPhotos, isEntryOwner } from '@/lib/entries';
 import { RateLimitError, formatRetryAfter } from '@/lib/ai-quota';
 import { searchLocations, getCurrentLocation, GeocodingResult, GeocodingServiceError } from '@/lib/geocoding';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,7 @@ import {
   House,
   Trash,
   Plus,
-  ArrowsClockwise,
   CircleNotch,
-  Check,
   CaretDown,
   CaretUp,
   PencilSimple
@@ -48,7 +46,6 @@ import { AudioWaveform } from '@/components/entry/AudioWaveform';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
-import { useLanguage } from '@/hooks/use-language.tsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadEntryPhoto, getSignedPhotoUrl } from '@/lib/photos';
 import { getAssetAsFile } from '@/lib/photo-library';
@@ -93,6 +90,7 @@ interface EntryEditScreenProps {
   onDelete?: () => void;
   onNavigate?: (view: AppView) => void;
   onSaveChapter?: (chapter: Chapter) => void;
+  currentUserId?: string;
 }
 
 export function EntryEditScreen({ 
@@ -106,13 +104,15 @@ export function EntryEditScreen({
   onBack, 
   onDelete,
   onNavigate,
-  onSaveChapter
+  onSaveChapter,
+  currentUserId
 }: EntryEditScreenProps) {
   const { isDarkMode } = useTheme();
-  const { t, language } = useLanguage();
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const isNewEntry = !entry;
+  const canManagePhotos = !entry || canManageEntryPhotos(entry, currentUserId);
+  const editingAsCollaborator = !!entry && !isEntryOwner(entry, currentUserId);
   const prompt = promptId
     ? DEFAULT_PROMPTS.find(p => p.id === promptId) ?? null
     : momentPrompt
@@ -160,11 +160,11 @@ export function EntryEditScreen({
   const [isDragging, setIsDragging] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
-  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [, setIsSearchingLocation] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
+  const [, setLastAutoSaveTime] = useState<Date | null>(null);
   const [showSavedIndicator, setShowSavedIndicator] = useState(false);
   const [isUnsavedChangesDialogOpen, setIsUnsavedChangesDialogOpen] = useState(false);
   
@@ -356,6 +356,10 @@ export function EntryEditScreen({
   };
 
   const processImageFiles = useCallback((files: File[]) => {
+    if (!canManagePhotos) {
+      toast.error('Only the owner can manage photos for now.');
+      return;
+    }
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
     if (!user) {
@@ -395,7 +399,7 @@ export function EntryEditScreen({
       const uploaded = results.filter((p): p is Photo => p !== null);
       if (uploaded.length) setPhotos(prev => [...prev, ...uploaded]);
     });
-  }, [photos.length, user]);
+  }, [canManagePhotos, photos.length, user]);
 
   // When opened from a "moment" suggestion, prefill the title and auto-import
   // the selected gallery assets through the regular upload pipeline. Runs once.
@@ -425,8 +429,8 @@ export function EntryEditScreen({
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (photos.length < 10) setIsDragging(true);
-  }, [photos.length]);
+    if (canManagePhotos && photos.length < 10) setIsDragging(true);
+  }, [canManagePhotos, photos.length]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -438,9 +442,9 @@ export function EntryEditScreen({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (photos.length >= 10) return;
+    if (!canManagePhotos || photos.length >= 10) return;
     processImageFiles(Array.from(e.dataTransfer.files));
-  }, [photos.length, processImageFiles]);
+  }, [canManagePhotos, photos.length, processImageFiles]);
 
   // Helper functions to get selected items
   const getSelectedHighlights = (): string[] => {
@@ -686,6 +690,16 @@ export function EntryEditScreen({
           </div>
           <div className="flex items-center gap-2">
             <AnimatePresence>
+              {editingAsCollaborator && (
+                <motion.div
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  className="hidden sm:flex text-xs text-muted-foreground items-center rounded-full bg-muted/60 px-2 py-1"
+                >
+                  Editing as collaborator
+                </motion.div>
+              )}
               {showSavedIndicator && (
                 <motion.div
                   initial={{ opacity: 0, x: -8 }}
@@ -781,7 +795,7 @@ export function EntryEditScreen({
             <label className="text-xs font-medium text-muted-foreground">
               📷 {photos.length} of 10 photos
             </label>
-            {photos.length < 10 && (
+            {canManagePhotos && photos.length < 10 && (
               <span className="text-xs text-muted-foreground">
                 {10 - photos.length} remaining
               </span>
@@ -796,9 +810,9 @@ export function EntryEditScreen({
               if (e.target.files) {
                 const fileCount = Array.from(e.target.files).length;
                 processImageFiles(Array.from(e.target.files));
-                if (fileCount > 0) {
-                  toast.success(`Added ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'} ✨`);
-                }
+                  if (canManagePhotos && fileCount > 0) {
+                    toast.success(`Added ${fileCount} ${fileCount === 1 ? 'photo' : 'photos'} ✨`);
+                  }
               }
             }}
             className="hidden"
@@ -815,18 +829,20 @@ export function EntryEditScreen({
                   className="relative aspect-square group rounded-xl overflow-hidden"
                 >
                   <img src={photo.storage_url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => setPhotos(prev => prev.filter(p => p.id !== photo.id))}
-                    className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
+                  {canManagePhotos && (
+                    <button
+                      onClick={() => setPhotos(prev => prev.filter(p => p.id !== photo.id))}
+                      className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  )}
                 </motion.div>
               ))}
             </div>
           )}
 
-          {photos.length < 10 && (
+          {canManagePhotos && photos.length < 10 && (
             <div className="flex gap-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -841,6 +857,11 @@ export function EntryEditScreen({
                 </p>
               </button>
             </div>
+          )}
+          {!canManagePhotos && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Only the owner can manage photos for now.
+            </p>
           )}
         </div>
 
