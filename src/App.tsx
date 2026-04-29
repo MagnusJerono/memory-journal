@@ -87,7 +87,7 @@ function AppContent() {
       case 'chapter-detail':
         return `chapter-detail-${view.chapterId}`;
       case 'prompts-new':
-        return `prompts-new-${view.promptId || 'default'}`;
+        return `prompts-new-${view.promptId || (view.momentAssetIds ? `moment-${view.momentAssetIds.join('|').slice(0, 64)}` : 'default')}`;
       case 'print-builder':
         return `print-builder-${view.bookId || 'new'}-${view.step}`;
       case 'library':
@@ -205,6 +205,9 @@ function AppContent() {
             entry={null}
             chapters={chapters}
             promptId={currentView.promptId}
+            momentAssetIds={currentView.momentAssetIds}
+            momentTitle={currentView.momentTitle}
+            momentPrompt={currentView.momentPrompt}
             onSave={(entry) => {
               saveEntry(entry);
               if (!entry.is_draft) {

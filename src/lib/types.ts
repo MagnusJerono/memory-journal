@@ -193,7 +193,7 @@ export type NavigationTab = 'home' | 'prompts' | 'library' | 'print';
 export type AppView = 
   | { type: 'home' }
   | { type: 'prompts' }
-  | { type: 'prompts-new'; promptId?: string; returnTo?: AppView }
+  | { type: 'prompts-new'; promptId?: string; momentAssetIds?: string[]; momentTitle?: string; momentPrompt?: string; returnTo?: AppView }
   | { type: 'chapters' }
   | { type: 'chapter-detail'; chapterId: string }
   | { type: 'timeline' }

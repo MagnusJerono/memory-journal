@@ -8,6 +8,8 @@ import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
+import { MomentsSection } from '@/components/prompts/MomentsSection';
+import type { MomentSuggestion } from '@/hooks/use-moments';
 
 interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
@@ -30,6 +32,15 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
 
   const handleCustomMemory = () => {
     onNavigate({ type: 'prompts-new' });
+  };
+
+  const handleSelectMoment = (suggestion: MomentSuggestion) => {
+    onNavigate({
+      type: 'prompts-new',
+      momentAssetIds: suggestion.cluster.assetIds,
+      momentTitle: suggestion.prompt.title,
+      momentPrompt: suggestion.prompt.prompt,
+    });
   };
 
   return (
@@ -66,6 +77,8 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-5 sm:space-y-8">
+        <MomentsSection onSelectMoment={handleSelectMoment} />
+
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
