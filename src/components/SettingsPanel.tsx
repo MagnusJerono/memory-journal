@@ -61,6 +61,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { BrandMark } from '@/components/BrandMark';
 
 interface SettingsPanelProps {
   themeMode?: ThemeMode;
@@ -724,6 +725,7 @@ export function SettingsPanel({
               />
 
               <div className="text-xs text-muted-foreground text-center space-y-1 pt-4">
+                <BrandMark size="sm" className="mx-auto mb-2" />
                 <p className="font-serif text-sm">Tightly</p>
                 <p className="tracking-wide">Hold them tight</p>
               </div>

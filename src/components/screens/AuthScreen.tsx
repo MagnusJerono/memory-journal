@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { friendlyAuthError } from '../../lib/auth-errors';
 import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
+import { BrandMark } from '../BrandMark';
 
 type AuthMode =
   | 'signin'
@@ -181,6 +182,7 @@ export function AuthScreen() {
       <DreamyBackground isDarkMode={isDarkMode} />
       <div className="relative z-10 w-full max-w-sm px-6">
         <div className="mb-8 text-center">
+          <BrandMark size="lg" className="mx-auto mb-3" />
           <h1 className="text-3xl font-bold tracking-tight">Memory Journal</h1>
           <p className="mt-1 text-sm opacity-60">Hold them tight</p>
         </div>
