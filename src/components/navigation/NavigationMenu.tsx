@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import { AppView, NavigationTab } from '@/lib/types';
 import { useLanguage } from '@/hooks/use-language.tsx';
+import { BrandMark } from '@/components/BrandMark';
 
 interface NavigationMenuProps {
   onNavigate: (view: AppView) => void;
@@ -145,6 +146,7 @@ export function NavigationMenu({ onNavigate, currentTab, isDarkMode }: Navigatio
         <Separator className="my-6 bg-border/50" />
 
         <div className="text-xs text-muted-foreground text-center space-y-1">
+          <BrandMark size="sm" className="mx-auto mb-2" />
           <p 
             className="text-lg"
             style={{

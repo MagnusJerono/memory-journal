@@ -13,18 +13,20 @@ export function isNative(): boolean {
   return Capacitor.isNativePlatform();
 }
 
-export async function initCapacitor(): Promise<void> {
+export async function setNativeStatusBarTheme(isDarkMode: boolean): Promise<void> {
   if (!isNative()) return;
 
-  // Match status bar to the current system theme. StatusBar APIs are no-ops on
-  // web; calling them without guards is fine but we guard anyway for clarity.
   try {
-    const prefersDark = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    await StatusBar.setStyle({ style: prefersDark ? Style.Dark : Style.Light });
+    await StatusBar.setStyle({ style: isDarkMode ? Style.Dark : Style.Light });
   } catch {
     // Status bar styling is best-effort; ignore failures.
   }
+}
+
+export async function initCapacitor(): Promise<void> {
+  if (!isNative()) return;
+
+  await setNativeStatusBarTheme(false);
 
   // Hide the native splash quickly once React has painted.
   try {
