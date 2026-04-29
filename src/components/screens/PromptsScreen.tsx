@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppView, Prompt, PromptCategory, DEFAULT_PROMPTS, PROMPT_CATEGORIES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Sparkle, ArrowRight, NotePencil } from '@phosphor-icons/react';
+import { Sparkle, ArrowRight, NotePencil, ArrowsClockwise } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
@@ -15,16 +15,38 @@ interface PromptsScreenProps {
   onNavigate: (view: AppView) => void;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function getLocalDayNumber(date = new Date()): number {
+  return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / MS_PER_DAY);
+}
+
+function getMsUntilTomorrow(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
+}
+
 export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
   const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<PromptCategory | null>(null);
+  const [dailyPromptDay, setDailyPromptDay] = useState(getLocalDayNumber);
+  const [dailyPromptOffset, setDailyPromptOffset] = useState(0);
   
-  const todaysPrompt = DEFAULT_PROMPTS[Math.floor(Date.now() / 86400000) % DEFAULT_PROMPTS.length];
+  const todaysPrompt = DEFAULT_PROMPTS[(dailyPromptDay + dailyPromptOffset) % DEFAULT_PROMPTS.length];
   
   const filteredPrompts = selectedCategory
     ? DEFAULT_PROMPTS.filter(p => p.category === selectedCategory)
     : DEFAULT_PROMPTS;
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDailyPromptDay(getLocalDayNumber());
+      setDailyPromptOffset(0);
+    }, getMsUntilTomorrow());
+
+    return () => window.clearTimeout(timeout);
+  }, [dailyPromptDay]);
 
   const handleSelectPrompt = (prompt: Prompt) => {
     onNavigate({ type: 'prompts-new', promptId: prompt.id });
@@ -32,6 +54,10 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
 
   const handleCustomMemory = () => {
     onNavigate({ type: 'prompts-new' });
+  };
+
+  const handleRefreshDailyPrompt = () => {
+    setDailyPromptOffset(offset => (offset + 1) % DEFAULT_PROMPTS.length);
   };
 
   const handleSelectMoment = (suggestion: MomentSuggestion) => {
@@ -113,7 +139,18 @@ export function PromptsScreen({ onNavigate }: PromptsScreenProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
-          <p className="text-sm font-medium text-muted-foreground mb-3">{t.prompts.daily}</p>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">{t.prompts.daily}</p>
+            <button
+              type="button"
+              onClick={handleRefreshDailyPrompt}
+              className="flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-foreground"
+              aria-label={t.prompts.refresh}
+            >
+              <ArrowsClockwise weight="bold" className="h-3.5 w-3.5" />
+              {t.prompts.refresh}
+            </button>
+          </div>
           <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 border border-primary/20">
             <div className="flex items-start gap-4 mb-5">
               <div className="p-2 sm:p-3 rounded-xl bg-primary/20">

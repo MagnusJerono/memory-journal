@@ -24,6 +24,7 @@ import {
   Sun, 
   Moon, 
   CircleHalf, 
+  Desktop,
   User, 
   Bell, 
   Globe, 
@@ -311,6 +312,32 @@ export function SettingsPanel({
               onValueChange={(v) => resolvedOnThemeModeChange(v as ThemeMode)}
               className="space-y-2"
             >
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  resolvedThemeMode === 'system' 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border/50 hover:border-border'
+                }`}
+              >
+                <RadioGroupItem value="system" id="system" className="sr-only" />
+                <div className={`p-2.5 rounded-lg ${resolvedThemeMode === 'system' ? 'bg-primary/20' : 'bg-muted/50'}`}>
+                  <Desktop weight="duotone" className={`w-5 h-5 ${resolvedThemeMode === 'system' ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{t.settings.system}</p>
+                  <p className="text-xs text-muted-foreground">{t.settings.systemDesc}</p>
+                </div>
+                {resolvedThemeMode === 'system' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-2 h-2 rounded-full bg-primary"
+                  />
+                )}
+              </motion.label>
+
               <motion.label 
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
