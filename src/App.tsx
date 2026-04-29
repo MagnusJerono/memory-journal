@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useIsMobile } from './hooks/use-mobile';
 import { LanguageProvider } from './hooks/use-language.tsx';
 import { useJournalData } from './hooks/use-journal-data';
+import { canEditEntry } from './lib/entries';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 
@@ -42,7 +43,7 @@ const EntryEditScreen = lazy(() =>
 );
 
 function AppContent() {
-  const { session, loading: authLoading, isPasswordRecovery } = useAuth();
+  const { session, user, loading: authLoading, isPasswordRecovery } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
@@ -57,6 +58,9 @@ function AppContent() {
     saveChapter,
     deleteChapter,
     assignChapter,
+    inviteCollaborator,
+    updateCollaboratorRole,
+    removeCollaborator,
     saveBook,
     deleteBook,
   } = useJournalData();
@@ -234,7 +238,7 @@ function AppContent() {
         );
       }
 
-      case 'chapter-detail':
+      case 'chapter-detail': {
         const chapter = chapters.find(c => c.id === currentView.chapterId);
         if (!chapter) {
           navigate({ type: 'library' });
@@ -250,8 +254,9 @@ function AppContent() {
             onToggleStar={toggleStar}
           />
         );
+      }
 
-      case 'entry-read':
+      case 'entry-read': {
         const readEntry = entries.find(e => e.id === currentView.entryId);
         if (!readEntry) {
           navigate({ type: 'home' });
@@ -262,26 +267,37 @@ function AppContent() {
             entry={readEntry}
             chapter={chapters.find(c => c.id === readEntry.chapter_id) || null}
             onNavigate={navigate}
+            currentUserId={user?.id}
+            currentUserEmail={user?.email}
             onToggleStar={() => toggleStar(readEntry.id)}
             onDelete={() => {
               deleteEntry(readEntry.id);
               navigate({ type: 'home' });
             }}
             onAssignChapter={(chapterId) => assignChapter(readEntry.id, chapterId)}
+            onInviteCollaborator={(email, role) => inviteCollaborator(readEntry.id, email, role)}
+            onUpdateCollaboratorRole={updateCollaboratorRole}
+            onRemoveCollaborator={removeCollaborator}
             chapters={chapters}
           />
         );
+      }
 
-      case 'entry-edit':
+      case 'entry-edit': {
         const editEntry = entries.find(e => e.id === currentView.entryId);
         if (!editEntry) {
           navigate({ type: 'home' });
+          return null;
+        }
+        if (!canEditEntry(editEntry, user?.id)) {
+          navigate({ type: 'entry-read', entryId: editEntry.id });
           return null;
         }
         return (
           <EntryEditScreen
             entry={editEntry}
             chapters={chapters}
+            currentUserId={user?.id}
             onSave={(entry) => {
               saveEntry(entry);
               if (!entry.is_draft) {
@@ -297,6 +313,7 @@ function AppContent() {
             onSaveChapter={saveChapter}
           />
         );
+      }
 
       case 'search':
         return (

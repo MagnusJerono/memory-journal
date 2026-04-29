@@ -1,7 +1,7 @@
 import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
-import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil } from '@phosphor-icons/react';
+import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, Users } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { BrandHeader, CloudHeader } from '@/components/BrandHeader';
@@ -445,6 +445,9 @@ export function HomeScreen({
                         </h3>
                         {entry.is_starred && (
                           <Star weight="fill" className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                        )}
+                        {((entry.collaborators?.length ?? 0) > 0 || (!!entry.collaboration_role && entry.collaboration_role !== 'owner')) && (
+                          <Users weight="duotone" className="w-4 h-4 text-primary/70 flex-shrink-0" />
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
