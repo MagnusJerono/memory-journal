@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { BrandMark } from '@/components/BrandMark';
 
 function FluffyCloudShape({ className, isDark = false }: { className?: string; isDark?: boolean }) {
   const baseColor = isDark 
@@ -207,22 +208,24 @@ export function CloudHeader({ children, isDarkMode = false, className = '' }: Cl
 
 export function BrandHeaderCompact({ isDarkMode = false, showTagline = true }: BrandHeaderProps) {
   return (
-    <div className="flex flex-col">
-      <h1 
-        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight select-none whitespace-nowrap"
-        style={{
-          fontFamily: "'Dancing Script', cursive",
-          fontWeight: 700,
-          color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
-          letterSpacing: '-0.01em',
-          textShadow: isDarkMode
-            ? '0 2px 15px rgba(180, 140, 220, 0.3)'
-            : '0 2px 15px rgba(91, 75, 168, 0.2)',
-        }}
-      >
-        tightly
-      </h1>
-      {showTagline && (
+    <div className="flex items-center gap-3">
+      <BrandMark size="md" className="flex-shrink-0" />
+      <div className="flex flex-col">
+        <h1 
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight select-none whitespace-nowrap"
+          style={{
+            fontFamily: "'Dancing Script', cursive",
+            fontWeight: 700,
+            color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
+            letterSpacing: '-0.01em',
+            textShadow: isDarkMode
+              ? '0 2px 15px rgba(180, 140, 220, 0.3)'
+              : '0 2px 15px rgba(91, 75, 168, 0.2)',
+          }}
+        >
+          tightly
+        </h1>
+        {showTagline && (
         <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
           <span 
             className="h-px w-4 sm:w-6"
@@ -242,7 +245,8 @@ export function BrandHeaderCompact({ isDarkMode = false, showTagline = true }: B
             style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
           />
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

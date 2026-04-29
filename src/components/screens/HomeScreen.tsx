@@ -1,5 +1,6 @@
 import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
 import { getRecentEntries, getDraftEntry, getEntryTitle, formatShortDate } from '@/lib/entries';
+import { calculateWritingStreak, getOnThisDayEntries, getSmartEngagementAction } from '@/lib/engagement';
 import { Button } from '@/components/ui/button';
 import { PencilSimple, Sparkle, Camera, Star, CaretRight, Books, NotePencil, Users } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
@@ -9,8 +10,9 @@ import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useSettingsPreferences } from '@/hooks/use-settings-preferences';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface HomeScreenProps {
   entries: Entry[];
@@ -25,95 +27,59 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { t } = useLanguage();
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
-  const [lastOTDToastDate, setLastOTDToastDate] = useLocalStorage<string>('tightly-last-otd-toast-date', '');
+  const [lastEngagementReminderId, setLastEngagementReminderId] = useLocalStorage<string>('tightly-last-engagement-reminder-id', '');
+  const { preferences } = useSettingsPreferences();
   
   const draft = getDraftEntry(entries);
   const recentEntries = getRecentEntries(entries, 5);
   const hasEntries = entries.filter(e => !e.is_draft).length > 0;
   const activeChapters = chapters.filter(c => !c.is_archived).slice(0, 4);
+  const onThisDayEntries = useMemo(() => getOnThisDayEntries(entries), [entries]);
+  const smartAction = useMemo(() => getSmartEngagementAction({ entries, chapters }), [entries, chapters]);
 
-  // "On This Day" - Find entries from same date in previous years
-  const getOnThisDayEntries = () => {
-    const today = new Date();
-    const todayMonth = today.getMonth();
-    const todayDay = today.getDate();
-    const thisYear = today.getFullYear();
-
-    return entries.filter(entry => {
-      if (entry.is_draft) return false;
-      const entryDate = new Date(entry.date);
-      const entryYear = entryDate.getFullYear();
-      return (
-        entryDate.getMonth() === todayMonth &&
-        entryDate.getDate() === todayDay &&
-        entryYear !== thisYear
-      );
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
-
-  const onThisDayEntries = getOnThisDayEntries();
-
-  // Show toast once per day if there are "On This Day" memories
   useEffect(() => {
+    if (!preferences.notifications || !smartAction.reminderEligible) {
+      return;
+    }
+
     const today = new Date().toISOString().split('T')[0];
-    if (onThisDayEntries.length > 0 && lastOTDToastDate !== today) {
-      const firstEntry = onThisDayEntries[0];
-      const entryDate = new Date(firstEntry.date);
-      const yearsAgo = new Date().getFullYear() - entryDate.getFullYear();
-      
-      // Only show toast for memories from previous years
-      if (yearsAgo > 0) {
-        toast('You have a memory from this day!', {
-          description: `From ${yearsAgo} ${yearsAgo === 1 ? 'year' : 'years'} ago`,
-          action: {
-            label: 'View',
-            onClick: () => onNavigate({ type: 'entry-read', entryId: firstEntry.id }),
-          },
-        });
-      }
-      
-      setLastOTDToastDate(today);
-    }
-  }, [onThisDayEntries, lastOTDToastDate, onNavigate, setLastOTDToastDate]);
-
-  // Writing Streak - Calculate consecutive days with entries
-  const calculateStreak = () => {
-    const MILLISECONDS_PER_DAY = 86400000;
-    const nonDraftEntries = entries.filter(e => !e.is_draft);
-    if (nonDraftEntries.length === 0) return 0;
-
-    // Get unique dates with entries
-    const datesWithEntries = [...new Set(
-      nonDraftEntries.map(e => new Date(e.date).toDateString())
-    )].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
-    if (datesWithEntries.length === 0) return 0;
-
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - MILLISECONDS_PER_DAY).toDateString();
-
-    // Check if there's an entry today or yesterday
-    if (datesWithEntries[0] !== today && datesWithEntries[0] !== yesterday) {
-      return 0; // Streak broken
+    const reminderId = `${today}:${smartAction.id}`;
+    if (lastEngagementReminderId === reminderId) {
+      return;
     }
 
-    let streak = 0;
-    let currentDate = new Date();
-    
-    for (const dateStr of datesWithEntries) {
-      const expectedDate = new Date(currentDate).toDateString();
-      if (dateStr === expectedDate) {
-        streak++;
-        currentDate = new Date(currentDate.getTime() - MILLISECONDS_PER_DAY); // Go back one day
-      } else {
-        break;
-      }
+    toast(smartAction.title, {
+      description: smartAction.description,
+      action: {
+        label: smartAction.ctaLabel,
+        onClick: () => onNavigate(smartAction.targetView),
+      },
+    });
+
+    if ('Notification' in window && window.Notification.permission === 'granted') {
+      const notification = new window.Notification(smartAction.title, {
+        body: smartAction.description,
+        tag: smartAction.id,
+      });
+      notification.onclick = () => {
+        window.focus();
+        onNavigate(smartAction.targetView);
+        notification.close();
+      };
     }
 
-    return streak;
-  };
+    setLastEngagementReminderId(reminderId);
+  }, [lastEngagementReminderId, onNavigate, preferences.notifications, setLastEngagementReminderId, smartAction]);
 
-  const writingStreak = calculateStreak();
+  const writingStreak = calculateWritingStreak(entries);
+
+  const SmartActionIcon = smartAction.kind === 'continue-draft'
+    ? PencilSimple
+    : smartAction.kind === 'on-this-day'
+      ? Camera
+      : smartAction.kind === 'empty-chapter'
+        ? Books
+        : Sparkle;
 
   const getIconEmoji = (icon: ChapterIcon) => 
     CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
@@ -162,6 +128,36 @@ export function HomeScreen({
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 sm:p-5 rounded-2xl bg-card/75 backdrop-blur-sm border border-border/30 shadow-sm"
+        >
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-primary/15 flex-shrink-0">
+              <SmartActionIcon weight="duotone" className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+                {smartAction.eyebrow}
+              </p>
+              <h2 className="font-serif text-lg sm:text-xl font-semibold text-foreground">
+                {smartAction.title}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {smartAction.description}
+              </p>
+              <Button
+                onClick={() => onNavigate(smartAction.targetView)}
+                className="mt-4 shadow-md"
+              >
+                {smartAction.ctaLabel}
+                <CaretRight weight="bold" className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Unified hero: streak chip + primary + secondary action */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}

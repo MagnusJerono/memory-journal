@@ -13,6 +13,7 @@ import { useLanguage } from '@/hooks/use-language.tsx';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { BrandMark } from '@/components/BrandMark';
 
 interface DesktopSidebarProps {
   currentTab: NavigationTab;
@@ -43,25 +44,30 @@ export function DesktopSidebar({ currentTab, onTabChange, onSettingsClick, onSea
     >
       {/* Logo Section */}
       <div className="p-6 pb-4">
-        <h1 
-          className="text-2xl mb-0.5"
-          style={{
-            fontFamily: "'Dancing Script', cursive",
-            fontWeight: 700,
-            color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
-          }}
-        >
-          tightly
-        </h1>
-        <p 
-          className="text-xs tracking-wider italic"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            color: isDarkMode ? '#c8b8e8' : '#5f4f98',
-          }}
-        >
-          Hold them tight
-        </p>
+        <div className="flex items-center gap-3">
+          <BrandMark size="md" />
+          <div>
+            <h1 
+              className="text-2xl mb-0.5"
+              style={{
+                fontFamily: "'Dancing Script', cursive",
+                fontWeight: 700,
+                color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
+              }}
+            >
+              tightly
+            </h1>
+            <p 
+              className="text-xs tracking-wider italic"
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+              }}
+            >
+              Hold them tight
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Search shortcut */}
