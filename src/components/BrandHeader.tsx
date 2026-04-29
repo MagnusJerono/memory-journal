@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { BrandMark } from '@/components/BrandMark';
 
 function FluffyCloudShape({ className, isDark = false }: { className?: string; isDark?: boolean }) {
   const baseColor = isDark 
@@ -84,9 +85,10 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
   const gradientId = isDarkMode ? 'brand-gradient-dark' : 'brand-gradient-light';
   
   return (
-    <div className="flex flex-col items-start w-full">
+    <div className="flex items-center gap-4 sm:gap-5 w-full">
+      <BrandMark size="hero" className="flex-shrink-0" />
       <motion.div 
-        className="relative w-full"
+        className="relative min-w-0"
         whileHover={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
@@ -204,39 +206,42 @@ export function CloudHeader({ children, isDarkMode = false, className = '' }: Cl
 
 export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
   return (
-    <div className="flex flex-col">
-      <h1 
-        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight select-none whitespace-nowrap"
-        style={{
-          fontFamily: "'Dancing Script', cursive",
-          fontWeight: 700,
-          color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
-          letterSpacing: '-0.01em',
-          textShadow: isDarkMode
-            ? '0 2px 15px rgba(180, 140, 220, 0.3)'
-            : '0 2px 15px rgba(91, 75, 168, 0.2)',
-        }}
-      >
-        tightly
-      </h1>
-      <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
-        <span 
-          className="h-px w-4 sm:w-6"
-          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
-        />
-        <p 
-          className="text-[10px] sm:text-xs font-medium tracking-[0.1em] italic"
+    <div className="flex items-center gap-3">
+      <BrandMark size="md" className="flex-shrink-0" />
+      <div className="flex flex-col">
+        <h1 
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight select-none whitespace-nowrap"
           style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+            fontFamily: "'Dancing Script', cursive",
+            fontWeight: 700,
+            color: isDarkMode ? '#e0d4f7' : '#5b4ba8',
+            letterSpacing: '-0.01em',
+            textShadow: isDarkMode
+              ? '0 2px 15px rgba(180, 140, 220, 0.3)'
+              : '0 2px 15px rgba(91, 75, 168, 0.2)',
           }}
         >
-          Hold them tight
-        </p>
-        <span 
-          className="h-px w-4 sm:w-6"
-          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
-        />
+          tightly
+        </h1>
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+          <span 
+            className="h-px w-4 sm:w-6"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+          <p 
+            className="text-[10px] sm:text-xs font-medium tracking-[0.1em] italic"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+            }}
+          >
+            Hold them tight
+          </p>
+          <span 
+            className="h-px w-4 sm:w-6"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+        </div>
       </div>
     </div>
   );

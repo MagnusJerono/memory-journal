@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BrandMark } from '@/components/BrandMark';
 
 interface LogoHomeButtonProps {
   isDarkMode?: boolean;
@@ -103,6 +104,11 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
     md: 'text-2xl sm:text-3xl',
     lg: 'text-3xl sm:text-4xl'
   };
+  const markSizes = {
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
+  } as const;
 
   const generateSparkles = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -168,7 +174,7 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg px-1 -ml-1 overflow-visible"
+      className="relative flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xl px-1 -ml-1 overflow-visible"
       animate={{
         y: [0, -4, 0, -2, 0],
       }}
@@ -202,6 +208,13 @@ export function LogoHomeButton({ isDarkMode = false, onClick, size = 'md' }: Log
           <SparkleParticle key={sparkle.id} sparkle={sparkle} isDarkMode={isDarkMode} />
         ))}
       </AnimatePresence>
+
+      <motion.span
+        animate={{ rotate: isHovered ? [0, -4, 4, 0] : 0 }}
+        transition={{ duration: 1.2, repeat: isHovered ? Infinity : 0, ease: "easeInOut" }}
+      >
+        <BrandMark size={markSizes[size]} className="shadow-primary/25" />
+      </motion.span>
 
       <motion.h1 
         className={`${sizeClasses[size]} tracking-tight select-none relative`}
