@@ -71,14 +71,7 @@ export function LandingScreen({ onSignIn, onSignUp }: LandingScreenProps) {
     <main className="relative z-10 min-h-screen overflow-hidden px-4 py-4 text-foreground sm:px-6">
       <header className="sticky top-0 z-20 mx-auto w-full max-w-5xl">
         <CloudHeader isDarkMode={false}>
-          <div className="flex items-center justify-between gap-4">
-            <button type="button" onClick={onSignUp} aria-label="Start tightly" className="flex items-center">
-              <img
-                src="/brand/logo.png"
-                alt="Tightly"
-                className="h-12 w-auto object-contain"
-              />
-            </button>
+          <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
             <nav className="hidden items-center gap-1 text-sm text-[#5f4f98] lg:flex">
               {navLinks.map((link) => (
                 <a key={link.href} href={link.href} className="rounded-full px-3 py-2 hover:bg-white/50">
@@ -86,7 +79,10 @@ export function LandingScreen({ onSignIn, onSignUp }: LandingScreenProps) {
                 </a>
               ))}
             </nav>
-            <nav className="flex items-center gap-2">
+            <button type="button" onClick={onSignUp} aria-label="Start tightly" className="justify-self-start lg:justify-self-center">
+              <BrandHeaderCompact isDarkMode={false} showTagline={false} />
+            </button>
+            <nav className="flex items-center justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onSignIn} className="rounded-full text-[#5f4f98]">
                 Sign in
               </Button>
