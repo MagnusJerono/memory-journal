@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon } from '@/lib/types';
-import { getEntryTitle, formatDate } from '@/lib/entries';
+import { Entry, Chapter, AppView, CHAPTER_ICONS, ChapterIcon, EntryCollaboratorRole } from '@/lib/types';
+import { getEntryTitle, formatDate, canEditEntry, canManageEntryCollaborators } from '@/lib/entries';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -20,15 +20,16 @@ import {
   Trash,
   FolderSimple,
   MapPin,
-  Tag
+  Tag,
+  Users
 } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { LogoHomeButton } from '@/components/LogoHomeButton';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
-import { useLanguage } from '@/hooks/use-language.tsx';
 import { useTheme } from '@/contexts/ThemeContext';
+import { CollaboratorsDialog } from '@/components/entry/CollaboratorsDialog';
 
 interface EntryReadScreenProps {
   entry: Entry;
@@ -38,6 +39,11 @@ interface EntryReadScreenProps {
   onToggleStar: () => void;
   onDelete: () => void;
   onAssignChapter: (chapterId: string | null) => void;
+  currentUserId?: string;
+  currentUserEmail?: string | null;
+  onInviteCollaborator: (email: string, role: EntryCollaboratorRole) => void;
+  onUpdateCollaboratorRole: (collaboratorId: string, role: EntryCollaboratorRole) => void;
+  onRemoveCollaborator: (collaboratorId: string) => void;
 }
 
 export function EntryReadScreen({
@@ -47,15 +53,24 @@ export function EntryReadScreen({
   onNavigate,
   onToggleStar,
   onDelete,
-  onAssignChapter
+  onAssignChapter,
+  currentUserId,
+  currentUserEmail,
+  onInviteCollaborator,
+  onUpdateCollaboratorRole,
+  onRemoveCollaborator
 }: EntryReadScreenProps) {
   const { themeMode, setThemeMode, isDarkMode, isNightTime } = useTheme();
-  const { t } = useLanguage();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isCollaboratorsDialogOpen, setIsCollaboratorsDialogOpen] = useState(false);
 
   const title = getEntryTitle(entry);
   const location = entry.tags_ai?.places?.[0] || entry.manual_locations?.[0];
+  const editable = canEditEntry(entry, currentUserId);
+  const canManageCollaborators = canManageEntryCollaborators(entry, currentUserId);
+  const collaborators = entry.collaborators ?? [];
+  const isShared = collaborators.length > 0 || (!!entry.collaboration_role && entry.collaboration_role !== 'owner');
 
   const getIconEmoji = (icon: ChapterIcon) => 
     CHAPTER_ICONS.find(i => i.value === icon)?.emoji || '📁';
@@ -108,13 +123,19 @@ export function EntryReadScreen({
           </div>
           
           <div className="flex items-center gap-1">
-            <Button 
-              onClick={() => onNavigate({ type: 'entry-edit', entryId: entry.id })}
-              size="sm"
-            >
-              <PencilSimple className="mr-1.5 w-4 h-4" weight="bold" />
-              Edit
-            </Button>
+            {editable ? (
+              <Button 
+                onClick={() => onNavigate({ type: 'entry-edit', entryId: entry.id })}
+                size="sm"
+              >
+                <PencilSimple className="mr-1.5 w-4 h-4" weight="bold" />
+                Edit
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                View only
+              </Button>
+            )}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -123,26 +144,38 @@ export function EntryReadScreen({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={onToggleStar}>
-                  <Star className="mr-2 w-4 h-4" weight={entry.is_starred ? 'fill' : 'regular'} />
-                  {entry.is_starred ? 'Remove star' : 'Star'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsMoveDialogOpen(true)}>
-                  <FolderSimple className="mr-2 w-4 h-4" />
-                  Move to chapter
+                {editable && (
+                  <>
+                    <DropdownMenuItem onClick={onToggleStar}>
+                      <Star className="mr-2 w-4 h-4" weight={entry.is_starred ? 'fill' : 'regular'} />
+                      {entry.is_starred ? 'Remove star' : 'Star'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsMoveDialogOpen(true)}>
+                      <FolderSimple className="mr-2 w-4 h-4" />
+                      Move to chapter
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuItem onClick={() => setIsCollaboratorsDialogOpen(true)}>
+                  <Users className="mr-2 w-4 h-4" />
+                  {canManageCollaborators ? 'Invite collaborators' : 'View collaborators'}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleShare}>
                   <ShareNetwork className="mr-2 w-4 h-4" />
-                  Share
+                  Share text
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash className="mr-2 w-4 h-4" />
-                  Delete
-                </DropdownMenuItem>
+                {canManageCollaborators && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash className="mr-2 w-4 h-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             <div className="hidden sm:block md:hidden">
@@ -227,6 +260,16 @@ export function EntryReadScreen({
               {chapter && (
                 <span className="text-sm text-muted-foreground flex items-center gap-1">
                   {getIconEmoji(chapter.icon)} {chapter.name}
+                </span>
+              )}
+              {isShared && (
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Users weight="duotone" className="w-4 h-4" />
+                  {entry.collaboration_role === 'owner'
+                    ? `Shared with ${collaborators.length}`
+                    : entry.collaboration_role === 'editor'
+                      ? 'Can edit'
+                      : 'View only'}
                 </span>
               )}
               {entry.is_starred && (
@@ -344,6 +387,16 @@ export function EntryReadScreen({
           </div>
         </DialogContent>
       </Dialog>
+
+      <CollaboratorsDialog
+        entry={entry}
+        open={isCollaboratorsDialogOpen}
+        currentUserEmail={currentUserEmail}
+        onOpenChange={setIsCollaboratorsDialogOpen}
+        onInvite={onInviteCollaborator}
+        onUpdateRole={onUpdateCollaboratorRole}
+        onRemove={onRemoveCollaborator}
+      />
     </div>
   );
 }

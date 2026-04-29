@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Entry, Chapter, Book } from '@/lib/types';
+import { Entry, Chapter, Book, EntryCollaboratorRole } from '@/lib/types';
 import * as db from '@/lib/db';
 
 /*
@@ -29,7 +29,7 @@ export function useJournalData() {
 
   const entriesQuery = useQuery({
     queryKey: entriesKey,
-    queryFn: () => db.fetchEntries(userId!),
+    queryFn: () => db.fetchEntries(userId!, user?.email),
     enabled,
     staleTime: STALE_TIME,
   });
@@ -126,6 +126,40 @@ export function useJournalData() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(entriesKey, ctx.prev);
       toast.error('Failed to assign chapter. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
+
+  const inviteCollaboratorMutation = useMutation({
+    mutationFn: async ({ entryId, email, role }: { entryId: string; email: string; role: EntryCollaboratorRole }) => {
+      if (!userId) throw new Error('Not signed in');
+      await db.inviteEntryCollaborator(userId, entryId, email, role);
+    },
+    onSuccess: () => {
+      toast.success('Collaborator invited');
+    },
+    onError: () => {
+      toast.error('Failed to invite collaborator. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
+
+  const updateCollaboratorRoleMutation = useMutation({
+    mutationFn: ({ collaboratorId, role }: { collaboratorId: string; role: EntryCollaboratorRole }) =>
+      db.updateEntryCollaboratorRole(collaboratorId, role),
+    onError: () => {
+      toast.error('Failed to update collaborator role. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
+  });
+
+  const removeCollaboratorMutation = useMutation({
+    mutationFn: (collaboratorId: string) => db.removeEntryCollaborator(collaboratorId),
+    onSuccess: () => {
+      toast.success('Collaborator removed');
+    },
+    onError: () => {
+      toast.error('Failed to remove collaborator. Please try again.');
     },
     onSettled: () => qc.invalidateQueries({ queryKey: entriesKey }),
   });
@@ -250,6 +284,11 @@ export function useJournalData() {
     reorderChapters,
     assignChapter: (entryId: string, chapterId: string | null) =>
       assignChapterMutation.mutate({ entryId, chapterId }),
+    inviteCollaborator: (entryId: string, email: string, role: EntryCollaboratorRole) =>
+      inviteCollaboratorMutation.mutate({ entryId, email, role }),
+    updateCollaboratorRole: (collaboratorId: string, role: EntryCollaboratorRole) =>
+      updateCollaboratorRoleMutation.mutate({ collaboratorId, role }),
+    removeCollaborator: (collaboratorId: string) => removeCollaboratorMutation.mutate(collaboratorId),
     saveBook: (book: Book) => saveBookMutation.mutate(book),
     deleteBook: (bookId: string) => deleteBookMutation.mutate(bookId),
   };
