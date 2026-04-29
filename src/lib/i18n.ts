@@ -31,7 +31,7 @@ type TranslationKeys = {
     account: string; privacy: string; privacyDesc: string; exportData: string; exportDataDesc: string; 
     notifications: string; pushNotifications: string; pushNotificationsDesc: string; emailUpdates: string; emailUpdatesDesc: string; 
     preferences: string; autoSave: string; autoSaveDesc: string; 
-    appearance: string; currentMode: string; night: string; day: string; automatic: string; automaticDesc: string; 
+    appearance: string; currentMode: string; night: string; day: string; system: string; systemDesc: string; automatic: string; automaticDesc: string; 
     alwaysLight: string; alwaysLightDesc: string; alwaysNight: string; alwaysNightDesc: string; 
     about: string; version: string; versionDesc: string; signOut: string; deleteAccount: string; view: string; export: string 
   };
@@ -88,6 +88,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'Email Updates', emailUpdatesDesc: 'Weekly memory digest', 
       preferences: 'Preferences', autoSave: 'Auto-save', autoSaveDesc: 'Save entries automatically', 
       appearance: 'Appearance', currentMode: 'Current mode', night: 'Night', day: 'Day', 
+      system: 'System', systemDesc: 'Follow device appearance when selected',
       automatic: 'Automatic', automaticDesc: 'Switches at sunset & sunrise', 
       alwaysLight: 'Always Light', alwaysLightDesc: 'Bright & airy daytime sky', 
       alwaysNight: 'Always Night', alwaysNightDesc: 'Stars & aurora at all times', 
@@ -154,6 +155,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'E-Mail-Updates', emailUpdatesDesc: 'Wöchentliche Zusammenfassung', 
       preferences: 'Einstellungen', autoSave: 'Auto-Speichern', autoSaveDesc: 'Einträge automatisch speichern', 
       appearance: 'Erscheinungsbild', currentMode: 'Aktueller Modus', night: 'Nacht', day: 'Tag', 
+      system: 'System', systemDesc: 'Folgt nur bei Auswahl dem Geräte-Design',
       automatic: 'Automatisch', automaticDesc: 'Wechselt bei Sonnenuntergang & -aufgang', 
       alwaysLight: 'Immer Hell', alwaysLightDesc: 'Heller Tageshimmel', 
       alwaysNight: 'Immer Dunkel', alwaysNightDesc: 'Sterne & Aurora jederzeit', 
@@ -220,6 +222,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'Actualizaciones por Email', emailUpdatesDesc: 'Resumen semanal', 
       preferences: 'Preferencias', autoSave: 'Auto-guardar', autoSaveDesc: 'Guardar entradas automáticamente', 
       appearance: 'Apariencia', currentMode: 'Modo actual', night: 'Noche', day: 'Día', 
+      system: 'Sistema', systemDesc: 'Sigue la apariencia del dispositivo al seleccionarlo',
       automatic: 'Automático', automaticDesc: 'Cambia al atardecer y amanecer', 
       alwaysLight: 'Siempre Claro', alwaysLightDesc: 'Cielo diurno brillante', 
       alwaysNight: 'Siempre Oscuro', alwaysNightDesc: 'Estrellas y aurora siempre', 
@@ -286,6 +289,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'Mises à jour par Email', emailUpdatesDesc: 'Résumé hebdomadaire', 
       preferences: 'Préférences', autoSave: 'Sauvegarde auto', autoSaveDesc: 'Sauvegarder automatiquement', 
       appearance: 'Apparence', currentMode: 'Mode actuel', night: 'Nuit', day: 'Jour', 
+      system: 'Système', systemDesc: "Suit l'apparence de l'appareil si sélectionné",
       automatic: 'Automatique', automaticDesc: 'Change au coucher/lever du soleil', 
       alwaysLight: 'Toujours Clair', alwaysLightDesc: 'Ciel de jour lumineux', 
       alwaysNight: 'Toujours Sombre', alwaysNightDesc: 'Étoiles et aurores toujours', 
@@ -352,6 +356,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'Atualizações por Email', emailUpdatesDesc: 'Resumo semanal', 
       preferences: 'Preferências', autoSave: 'Salvar automático', autoSaveDesc: 'Salvar entradas automaticamente', 
       appearance: 'Aparência', currentMode: 'Modo atual', night: 'Noite', day: 'Dia', 
+      system: 'Sistema', systemDesc: 'Segue a aparência do dispositivo quando selecionado',
       automatic: 'Automático', automaticDesc: 'Muda ao pôr/nascer do sol', 
       alwaysLight: 'Sempre Claro', alwaysLightDesc: 'Céu diurno brilhante', 
       alwaysNight: 'Sempre Escuro', alwaysNightDesc: 'Estrelas e aurora sempre', 
@@ -418,6 +423,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: '邮件更新', emailUpdatesDesc: '每周回忆摘要', 
       preferences: '偏好设置', autoSave: '自动保存', autoSaveDesc: '自动保存条目', 
       appearance: '外观', currentMode: '当前模式', night: '夜间', day: '日间', 
+      system: '系统', systemDesc: '仅在选择时跟随设备外观',
       automatic: '自动', automaticDesc: '日落日出自动切换', 
       alwaysLight: '始终明亮', alwaysLightDesc: '明亮的日间天空', 
       alwaysNight: '始终夜间', alwaysNightDesc: '永远星空极光', 
@@ -484,6 +490,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
       emailUpdates: 'メール更新', emailUpdatesDesc: '週間ダイジェスト', 
       preferences: '設定', autoSave: '自動保存', autoSaveDesc: 'エントリを自動保存', 
       appearance: '外観', currentMode: '現在のモード', night: '夜', day: '昼', 
+      system: 'システム', systemDesc: '選択時のみデバイスの外観に従う',
       automatic: '自動', automaticDesc: '日の出と日没で切り替え', 
       alwaysLight: '常にライト', alwaysLightDesc: '明るい昼間の空', 
       alwaysNight: '常にダーク', alwaysNightDesc: '常に星空とオーロラ', 
