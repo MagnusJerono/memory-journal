@@ -78,15 +78,18 @@ function FluffyCloudShape({ className, isDark = false }: { className?: string; i
 
 interface BrandHeaderProps {
   isDarkMode?: boolean;
+  align?: 'start' | 'center';
+  showTagline?: boolean;
 }
 
-export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
+export function BrandHeader({ isDarkMode = false, align = 'start' }: BrandHeaderProps) {
   const gradientId = isDarkMode ? 'brand-gradient-dark' : 'brand-gradient-light';
+  const isCentered = align === 'center';
   
   return (
-    <div className="flex flex-col items-start w-full">
+    <div className={`flex w-full flex-col ${isCentered ? 'items-center' : 'items-start'}`}>
       <motion.div 
-        className="relative w-full"
+        className={`relative w-full ${isCentered ? 'flex flex-col items-center' : ''}`}
         whileHover={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
@@ -129,7 +132,7 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
           tightly
         </h1>
         <motion.div
-          className="flex items-center gap-2 sm:gap-3 mt-2 md:mt-3"
+          className={`mt-2 flex items-center gap-2 sm:gap-3 md:mt-3 ${isCentered ? 'justify-center' : ''}`}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -202,7 +205,7 @@ export function CloudHeader({ children, isDarkMode = false, className = '' }: Cl
   );
 }
 
-export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
+export function BrandHeaderCompact({ isDarkMode = false, showTagline = true }: BrandHeaderProps) {
   return (
     <div className="flex flex-col">
       <h1 
@@ -219,25 +222,27 @@ export function BrandHeaderCompact({ isDarkMode = false }: BrandHeaderProps) {
       >
         tightly
       </h1>
-      <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
-        <span 
-          className="h-px w-4 sm:w-6"
-          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
-        />
-        <p 
-          className="text-[10px] sm:text-xs font-medium tracking-[0.1em] italic"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            color: isDarkMode ? '#c8b8e8' : '#5f4f98',
-          }}
-        >
-          Hold them tight
-        </p>
-        <span 
-          className="h-px w-4 sm:w-6"
-          style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
-        />
-      </div>
+      {showTagline && (
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+          <span 
+            className="h-px w-4 sm:w-6"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+          <p 
+            className="text-[10px] sm:text-xs font-medium tracking-[0.1em] italic"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              color: isDarkMode ? '#c8b8e8' : '#5f4f98',
+            }}
+          >
+            Hold them tight
+          </p>
+          <span 
+            className="h-px w-4 sm:w-6"
+            style={{ background: isDarkMode ? 'rgba(180, 164, 216, 0.5)' : 'rgba(107, 90, 160, 0.4)' }}
+          />
+        </div>
+      )}
     </div>
   );
 }
