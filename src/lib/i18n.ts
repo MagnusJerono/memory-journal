@@ -43,7 +43,7 @@ type TranslationKeys = {
   };
   prompts: {
     title: string; description: string; categories: string; allPrompts: string; useThis: string;
-    daily: string; reflection: string; gratitude: string; dreams: string; travel: string; relationships: string;
+    daily: string; refresh: string; reflection: string; gratitude: string; dreams: string; travel: string; relationships: string;
   };
   chapters: {
     title: string; description: string; newChapter: string; editChapter: string; deleteChapter: string;
@@ -106,7 +106,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'Prompts', description: 'Get inspired to write', categories: 'Categories', allPrompts: 'All Prompts',
-      useThis: 'Use this prompt', daily: 'Daily', reflection: 'Reflection', gratitude: 'Gratitude',
+      useThis: 'Use this prompt', daily: 'Daily', refresh: 'Refresh', reflection: 'Reflection', gratitude: 'Gratitude',
       dreams: 'Dreams', travel: 'Travel', relationships: 'Relationships'
     },
     chapters: {
@@ -172,7 +172,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'Impulse', description: 'Lass dich inspirieren', categories: 'Kategorien', allPrompts: 'Alle Impulse',
-      useThis: 'Diesen Impuls nutzen', daily: 'Täglich', reflection: 'Reflexion', gratitude: 'Dankbarkeit',
+      useThis: 'Diesen Impuls nutzen', daily: 'Täglich', refresh: 'Neu laden', reflection: 'Reflexion', gratitude: 'Dankbarkeit',
       dreams: 'Träume', travel: 'Reisen', relationships: 'Beziehungen'
     },
     chapters: {
@@ -238,7 +238,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'Sugerencias', description: 'Inspírate para escribir', categories: 'Categorías', allPrompts: 'Todas las Sugerencias',
-      useThis: 'Usar esta sugerencia', daily: 'Diario', reflection: 'Reflexión', gratitude: 'Gratitud',
+      useThis: 'Usar esta sugerencia', daily: 'Diario', refresh: 'Actualizar', reflection: 'Reflexión', gratitude: 'Gratitud',
       dreams: 'Sueños', travel: 'Viajes', relationships: 'Relaciones'
     },
     chapters: {
@@ -304,7 +304,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'Inspirations', description: 'Laissez-vous inspirer', categories: 'Catégories', allPrompts: 'Toutes les Inspirations',
-      useThis: 'Utiliser cette inspiration', daily: 'Quotidien', reflection: 'Réflexion', gratitude: 'Gratitude',
+      useThis: 'Utiliser cette inspiration', daily: 'Quotidien', refresh: 'Actualiser', reflection: 'Réflexion', gratitude: 'Gratitude',
       dreams: 'Rêves', travel: 'Voyages', relationships: 'Relations'
     },
     chapters: {
@@ -370,7 +370,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'Sugestões', description: 'Inspire-se para escrever', categories: 'Categorias', allPrompts: 'Todas as Sugestões',
-      useThis: 'Usar esta sugestão', daily: 'Diário', reflection: 'Reflexão', gratitude: 'Gratidão',
+      useThis: 'Usar esta sugestão', daily: 'Diário', refresh: 'Atualizar', reflection: 'Reflexão', gratitude: 'Gratidão',
       dreams: 'Sonhos', travel: 'Viagens', relationships: 'Relacionamentos'
     },
     chapters: {
@@ -436,7 +436,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: '提示', description: '获取写作灵感', categories: '分类', allPrompts: '所有提示',
-      useThis: '使用此提示', daily: '日常', reflection: '反思', gratitude: '感恩',
+      useThis: '使用此提示', daily: '日常', refresh: '刷新', reflection: '反思', gratitude: '感恩',
       dreams: '梦想', travel: '旅行', relationships: '关系'
     },
     chapters: {
@@ -502,7 +502,7 @@ const translations: Record<AppLanguage, TranslationKeys> = {
     },
     prompts: {
       title: 'プロンプト', description: 'インスピレーションを得る', categories: 'カテゴリー', allPrompts: 'すべてのプロンプト',
-      useThis: 'このプロンプトを使う', daily: '日常', reflection: '振り返り', gratitude: '感謝',
+      useThis: 'このプロンプトを使う', daily: '日常', refresh: '更新', reflection: '振り返り', gratitude: '感謝',
       dreams: '夢', travel: '旅行', relationships: '人間関係'
     },
     chapters: {
