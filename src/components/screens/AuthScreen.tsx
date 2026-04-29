@@ -7,7 +7,6 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { friendlyAuthError } from '../../lib/auth-errors';
 import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
-import { BrandMark } from '../BrandMark';
 
 type AuthMode =
   | 'signin'
@@ -189,11 +188,22 @@ export function AuthScreen({ initialMode = 'signin', onBackToLanding }: AuthScre
     <div className="min-h-screen relative flex items-center justify-center">
       <DreamyBackground isDarkMode={isDarkMode} />
       <div className="relative z-10 w-full max-w-sm px-6">
-        <div className="mb-8 text-center">
-          <BrandMark size="lg" className="mx-auto mb-3" />
-          <h1 className="text-3xl font-bold tracking-tight">Memory Journal</h1>
-          <p className="mt-1 text-sm opacity-60">Hold them tight</p>
-        </div>
+        {onBackToLanding ? (
+          <button
+            type="button"
+            onClick={onBackToLanding}
+            className="mx-auto mb-8 block text-center transition-opacity hover:opacity-80"
+            aria-label="Back to Tightly overview"
+          >
+            <h1 className="text-3xl font-bold tracking-tight">Tightly</h1>
+            <p className="mt-1 text-sm opacity-60">Hold them tight</p>
+          </button>
+        ) : (
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold tracking-tight">Tightly</h1>
+            <p className="mt-1 text-sm opacity-60">Hold them tight</p>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-8 shadow-xl">
           {onBackToLanding && !isPasswordRecovery && (mode === 'signin' || mode === 'signup') && (

@@ -20,6 +20,16 @@ import { AuthScreen } from './components/screens/AuthScreen';
 import { LandingScreen } from './components/screens/LandingScreen';
 import { OnboardingTour, useOnboardingCompleted } from './components/onboarding/OnboardingTour';
 
+type AuthMode = 'signin' | 'signup';
+
+function getAuthModeFromHistoryState(state: unknown): AuthMode | null {
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
+  const mode = (state as { tightlyAuthMode?: unknown }).tightlyAuthMode;
+  return mode === 'signin' || mode === 'signup' ? mode : null;
+}
+
 // Lazy-load heavier screens that are not needed on the initial render.
 const PromptsScreen = lazy(() =>
   import('./components/screens/PromptsScreen').then((m) => ({ default: m.PromptsScreen })),
@@ -46,7 +56,9 @@ const EntryEditScreen = lazy(() =>
 function AppContent() {
   const { session, user, loading: authLoading, isPasswordRecovery } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
-  const [authMode, setAuthMode] = useState<'signin' | 'signup' | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode | null>(() =>
+    getAuthModeFromHistoryState(window.history.state),
+  );
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
   const [onboardingCompleted] = useOnboardingCompleted();
@@ -78,6 +90,28 @@ function AppContent() {
 
   const navigate = useCallback((view: AppView) => {
     setCurrentView(view);
+  }, []);
+
+  const openAuth = useCallback((mode: AuthMode) => {
+    setAuthMode(mode);
+    window.history.pushState({ tightlyAuthMode: mode }, '', window.location.href);
+  }, []);
+
+  const closeAuth = useCallback(() => {
+    if (getAuthModeFromHistoryState(window.history.state)) {
+      window.history.back();
+      return;
+    }
+    setAuthMode(null);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      setAuthMode(getAuthModeFromHistoryState(event.state));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Helper to generate unique keys for AnimatePresence
@@ -377,13 +411,13 @@ function AppContent() {
   }
   if (!session) {
     return authMode ? (
-      <AuthScreen initialMode={authMode} onBackToLanding={() => setAuthMode(null)} />
+      <AuthScreen initialMode={authMode} onBackToLanding={closeAuth} />
     ) : (
       <div className="min-h-screen relative">
         <DreamyBackground isDarkMode={false} />
         <LandingScreen
-          onSignIn={() => setAuthMode('signin')}
-          onSignUp={() => setAuthMode('signup')}
+          onSignIn={() => openAuth('signin')}
+          onSignUp={() => openAuth('signup')}
         />
       </div>
     );
