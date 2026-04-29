@@ -367,10 +367,28 @@ export function createEmptyEntry(date: string, promptText?: string): Entry {
     is_draft: true,
     chapter_id: null,
     photos: [],
+    collaboration_role: 'owner',
     prompt_used: promptText || null,
     created_at: now,
     updated_at: now
   };
+}
+
+export function isEntryOwner(entry: Entry, userId?: string | null): boolean {
+  return !!userId && entry.user_id === userId;
+}
+
+export function canEditEntry(entry: Entry, userId?: string | null): boolean {
+  if (!entry.user_id) return true;
+  return isEntryOwner(entry, userId) || entry.collaboration_role === 'editor';
+}
+
+export function canManageEntryCollaborators(entry: Entry, userId?: string | null): boolean {
+  return isEntryOwner(entry, userId);
+}
+
+export function canManageEntryPhotos(entry: Entry, userId?: string | null): boolean {
+  return isEntryOwner(entry, userId) || !entry.user_id;
 }
 
 export function formatDate(dateStr: string): string {
@@ -400,7 +418,7 @@ export function getMonthFromDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'long' });
 }
 
-export function getAvailableYears(_entries: Entry[]): number[] {
+export function getAvailableYears(): number[] {
   const currentYear = new Date().getFullYear();
   const years: number[] = [];
   for (let year = currentYear; year >= currentYear - 100; year--) {

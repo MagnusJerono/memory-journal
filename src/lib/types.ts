@@ -46,6 +46,7 @@ export const CHAPTER_COLORS = [
 
 export interface Entry {
   id: string;
+  user_id?: string;
   date: string;
   title_user: string | null;
   title_ai: string | null;
@@ -67,7 +68,25 @@ export interface Entry {
   is_draft: boolean;
   chapter_id: string | null;
   photos: Photo[];
+  collaborators?: EntryCollaborator[];
+  collaboration_role?: EntryAccessRole;
   prompt_used: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EntryCollaboratorRole = 'editor' | 'viewer';
+export type EntryCollaboratorStatus = 'pending' | 'accepted';
+export type EntryAccessRole = 'owner' | EntryCollaboratorRole;
+
+export interface EntryCollaborator {
+  id: string;
+  entry_id: string;
+  owner_id: string;
+  collaborator_user_id: string | null;
+  invitee_email: string;
+  role: EntryCollaboratorRole;
+  status: EntryCollaboratorStatus;
   created_at: string;
   updated_at: string;
 }
