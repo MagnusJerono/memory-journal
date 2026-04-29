@@ -211,6 +211,35 @@ export function SettingsPanel({
     }
   };
 
+  const handleNotificationsChange = async (enabled: boolean) => {
+    updatePreference('notifications', enabled);
+
+    if (!enabled) {
+      return;
+    }
+
+    if (!('Notification' in window)) {
+      toast.info('In-app reminders are on. Browser notifications are not supported here.');
+      return;
+    }
+
+    if (window.Notification.permission === 'default') {
+      const permission = await window.Notification.requestPermission();
+      if (permission === 'granted') {
+        toast.success('Smart reminders enabled');
+      } else {
+        toast.info('In-app reminders are on. Browser notifications are blocked.');
+      }
+      return;
+    }
+
+    if (window.Notification.permission === 'denied') {
+      toast.info('In-app reminders are on. Browser notifications are blocked.');
+    } else {
+      toast.success('Smart reminders enabled');
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {showTrigger && (
@@ -502,7 +531,7 @@ export function SettingsPanel({
                 action={
                   <Switch 
                     checked={currentPreferences.notifications}
-                    onCheckedChange={(v) => updatePreference('notifications', v)}
+                    onCheckedChange={handleNotificationsChange}
                   />
                 }
               />
@@ -806,4 +835,3 @@ function SettingRow({
     </div>
   );
 }
-
