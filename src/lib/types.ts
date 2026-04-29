@@ -230,7 +230,7 @@ export const STORY_LANGUAGES = [
   { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark' | 'system' | 'auto';
 
 export interface UserSettings {
   themeMode: ThemeMode;
