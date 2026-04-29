@@ -24,7 +24,12 @@ interface Feedback {
   hint?: string;
 }
 
-export function AuthScreen() {
+interface AuthScreenProps {
+  initialMode?: Extract<AuthMode, 'signin' | 'signup'>;
+  onBackToLanding?: () => void;
+}
+
+export function AuthScreen({ initialMode = 'signin', onBackToLanding }: AuthScreenProps) {
   const {
     signIn,
     signUp,
@@ -36,7 +41,7 @@ export function AuthScreen() {
   } = useAuth();
   const { isDarkMode } = useTheme();
 
-  const [mode, setMode] = useState<AuthMode>('signin');
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -51,8 +56,11 @@ export function AuthScreen() {
     if (isPasswordRecovery) {
       setMode('reset');
       setError(null);
+      return;
     }
-  }, [isPasswordRecovery]);
+    setMode(initialMode);
+    setError(null);
+  }, [initialMode, isPasswordRecovery]);
 
   const resetFormState = () => {
     setError(null);
@@ -188,8 +196,19 @@ export function AuthScreen() {
         </div>
 
         <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-8 shadow-xl">
+          {onBackToLanding && !isPasswordRecovery && (mode === 'signin' || mode === 'signup') && (
+            <button
+              type="button"
+              onClick={onBackToLanding}
+              className="mb-4 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"
+            >
+              <ArrowLeft className="size-3.5" />
+              Back to overview
+            </button>
+          )}
+
           {/* Back arrow for sub-flows */}
-          {(mode === 'forgot' ||
+          {!isPasswordRecovery && (mode === 'forgot' ||
             mode === 'magic-link' ||
             mode === 'sent-verify' ||
             mode === 'sent-magic' ||

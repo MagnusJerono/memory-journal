@@ -12,12 +12,12 @@ import { LanguageProvider } from './hooks/use-language.tsx';
 import { useJournalData } from './hooks/use-journal-data';
 import { canEditEntry } from './lib/entries';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from './lib/supabase';
 import { setNativeStatusBarTheme } from './lib/capacitor';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { SettingsPanel } from './components/SettingsPanel';
 import { AuthScreen } from './components/screens/AuthScreen';
+import { LandingScreen } from './components/screens/LandingScreen';
 import { OnboardingTour, useOnboardingCompleted } from './components/onboarding/OnboardingTour';
 
 // Lazy-load heavier screens that are not needed on the initial render.
@@ -46,6 +46,7 @@ const EntryEditScreen = lazy(() =>
 function AppContent() {
   const { session, user, loading: authLoading, isPasswordRecovery } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>({ type: 'home' });
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | null>(null);
   const { isDarkMode, isNightTime, themeMode, setThemeMode } = useTheme();
   const isMobile = useIsMobile();
   const [onboardingCompleted] = useOnboardingCompleted();
@@ -364,18 +365,28 @@ function AppContent() {
 
   const showBottomNav = !['entry-edit', 'prompts-new', 'print-builder'].includes(currentView.type);
 
-  // When Supabase is configured, require authentication before showing the app.
-  if (supabase) {
-    if (authLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        </div>
-      );
-    }
-    if (!session || isPasswordRecovery) {
-      return <AuthScreen />;
-    }
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+  if (isPasswordRecovery) {
+    return <AuthScreen />;
+  }
+  if (!session) {
+    return authMode ? (
+      <AuthScreen initialMode={authMode} onBackToLanding={() => setAuthMode(null)} />
+    ) : (
+      <div className="min-h-screen relative">
+        <DreamyBackground isDarkMode={false} />
+        <LandingScreen
+          onSignIn={() => setAuthMode('signin')}
+          onSignUp={() => setAuthMode('signup')}
+        />
+      </div>
+    );
   }
 
   return (
