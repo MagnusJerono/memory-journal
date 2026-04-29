@@ -55,40 +55,11 @@ async function getUserFromApi(): Promise<AppUser | null> {
   return data.user ?? null;
 }
 
-function hasSparkUser(): boolean {
-  const spark = (window as Window & { spark?: { user?: unknown } }).spark;
-  return typeof spark?.user === 'function';
-}
-
-async function getUserFromSpark(): Promise<AppUser | null> {
-  const spark = (window as Window & {
-    spark?: { user?: () => Promise<{ login: string; avatarUrl: string; email?: string } | null> };
-  }).spark;
-  if (!spark?.user) {
-    return null;
-  }
-
-  const user = await spark.user();
-  if (!user) {
-    return null;
-  }
-
-  return {
-    login: user.login,
-    avatarUrl: user.avatarUrl,
-    email: user.email,
-  };
-}
-
 export async function getCurrentUser(): Promise<AppUser | null> {
-  // If Supabase is configured, use the session user directly — no round-trip.
   if (supabase) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       return {
-        // Use email as the login identifier; fall back to the internal UUID only
-        // when no email is present (e.g. OAuth providers). This value is used
-        // for the x-user-id header (API identity), not displayed in the UI.
         login: user.email ?? user.id,
         avatarUrl: '',
         email: user.email,
@@ -97,13 +68,9 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     return null;
   }
 
-  // Fallback: call the API endpoint (handles Spark / x-user-id environments).
   try {
     return await getUserFromApi();
   } catch {
-    if (hasSparkUser()) {
-      return getUserFromSpark();
-    }
     return null;
   }
 }

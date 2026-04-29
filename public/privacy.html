@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Memory Journal</title>
+  <meta name="description" content="Privacy Policy for Memory Journal (Tightly)." />
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+      line-height: 1.65;
+      color: #1a1a1a;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e0e10; color: #e8e8ea; }
+      a { color: #8ab4ff; }
+    }
+    h1 { font-size: 1.85rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.2rem; margin-top: 2.25rem; }
+    .updated { color: #888; font-size: 0.9rem; margin-top: 0; }
+    ul { padding-left: 1.25rem; }
+    code { background: rgba(127, 127, 127, 0.15); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.9em; }
+    .back { display: inline-block; margin-bottom: 1.5rem; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <a class="back" href="/">← Back to Memory Journal</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: 24 April 2026</p>
+
+  <p>Memory Journal (“Tightly”, “the app”, “we”) is a personal journaling app operated by Magnus Jerono. This policy explains what data we collect, why, and how you can control it.</p>
+
+  <h2>1. What we store</h2>
+  <ul>
+    <li><strong>Account:</strong> email address and a Supabase user ID.</li>
+    <li><strong>Journal content:</strong> entries you write, photos you attach, titles, tags, chapter assignments, timestamps, and optional location text.</li>
+    <li><strong>Preferences:</strong> language, theme, notification, and auto-save settings.</li>
+    <li><strong>Usage metadata:</strong> request counts and approximate OpenAI token usage per user, for rate limiting and cost control.</li>
+  </ul>
+  <p>We do <strong>not</strong> store payment data, precise device identifiers beyond what your browser/OS provides, or any advertising identifiers.</p>
+
+  <h2>2. Where it is stored</h2>
+  <p>All content is stored in Supabase (PostgreSQL + object storage) in the EU region. Access is enforced by row-level security: a given user can only read or write their own rows and storage objects. Transport is HTTPS-only.</p>
+
+  <h2>3. Third parties</h2>
+  <ul>
+    <li><strong>Supabase</strong> — database, authentication, and file storage.</li>
+    <li><strong>OpenAI</strong> — entry text and optional image thumbnails are sent to the OpenAI API to generate titles, highlights, and story drafts, and to transcribe voice recordings. OpenAI states that API data is not used to train their models.</li>
+    <li><strong>Vercel</strong> — hosting of the web app and serverless API endpoints.</li>
+    <li><strong>Sentry</strong> (if enabled) — anonymised error reports, no message body content.</li>
+  </ul>
+  <p>We do not sell or share your data with advertisers or data brokers.</p>
+
+  <h2>4. AI processing</h2>
+  <p>When you ask the app to generate a story, transcribe audio, or analyse a photo, the relevant raw input is transmitted to OpenAI over HTTPS. Responses are stored in your journal under your account. You may opt out of AI features by not using the “Generate story” action.</p>
+
+  <h2>5. Your rights and controls</h2>
+  <ul>
+    <li><strong>Access / export:</strong> Settings → Data & Privacy → Export downloads a JSON copy of everything.</li>
+    <li><strong>Deletion:</strong> Settings → Delete account removes your account, all journal rows, and all storage objects. Deletion is immediate and irreversible.</li>
+    <li><strong>Correction:</strong> edit or delete any individual entry at any time.</li>
+  </ul>
+  <p>If you are in the EU/UK, these align with your GDPR/UK-GDPR rights (access, rectification, erasure, portability, objection). Contact us below to exercise them outside the app.</p>
+
+  <h2>6. Retention</h2>
+  <p>Data is retained while your account exists. Usage logs older than 90 days are aggregated and anonymised. Backups are retained for up to 30 days.</p>
+
+  <h2>7. Children</h2>
+  <p>Memory Journal is not directed at children under 13 (16 in the EU). We do not knowingly collect data from children. If you believe a child has created an account, contact us and we will delete it.</p>
+
+  <h2>8. Security</h2>
+  <p>Passwords are handled by Supabase Auth (argon2 / bcrypt). API access requires a signed JWT verified server-side. Security headers (HSTS, CSP, X-Content-Type-Options, frame-ancestors none) are enforced at the edge.</p>
+
+  <h2>9. Changes</h2>
+  <p>When we change this policy materially, we will update the date above and notify active users by email or an in-app banner.</p>
+
+  <h2>10. Contact</h2>
+  <p>Questions, data requests, or privacy incidents: <a href="mailto:holdthemtightly@gmail.com">holdthemtightly@gmail.com</a>.</p>
+
+  <p><a href="/terms.html">Terms of Service</a></p>
+</body>
+</html>

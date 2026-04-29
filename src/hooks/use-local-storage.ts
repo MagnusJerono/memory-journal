@@ -1,12 +1,9 @@
 import { useState, useCallback } from 'react';
 
 /**
- * Drop-in replacement for @github/spark's useKV hook.
+ * Persists state to localStorage.
  *
- * Persists state to localStorage, making the app runnable outside the Spark
- * runtime while keeping the same [value, setValue, deleteValue] API.
- *
- * Signature intentionally mirrors useKV:
+ * Usage:
  *   const [value, setValue, deleteValue] = useLocalStorage('key', defaultValue);
  */
 export function useLocalStorage<T = string>(

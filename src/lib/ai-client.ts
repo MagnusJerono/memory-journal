@@ -1,6 +1,7 @@
 type LLMModel = 'gpt-4o' | 'gpt-4o-mini' | string;
 
-import { getCurrentUser, getAuthToken } from './auth-client';
+import { getAuthToken } from './auth-client';
+import { RateLimitError, recordQuotaFromHeaders } from './ai-quota';
 
 interface LLMRequest {
   prompt: string;
@@ -21,20 +22,9 @@ async function buildRequestHeaders(): Promise<Record<string, string>> {
     'Content-Type': 'application/json',
   };
 
-  // Prefer the Supabase JWT as a proper Bearer token (verified server-side).
   const token = await getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  } else {
-    // Fallback: send user login as x-user-id (Spark / anonymous environments).
-    try {
-      const user = await getCurrentUser();
-      if (user?.login) {
-        headers['x-user-id'] = user.login;
-      }
-    } catch {
-      // Keep anonymous behavior when auth is unavailable.
-    }
   }
 
   try {
@@ -62,6 +52,30 @@ async function requestViaApi(payload: LLMRequest): Promise<string> {
     body: JSON.stringify(payload),
   });
 
+  recordQuotaFromHeaders(response.headers);
+
+  if (response.status === 429) {
+    const body = await response.json().catch(() => ({} as Record<string, unknown>));
+    throw new RateLimitError('AI rate limit reached', {
+      retryAfterSeconds:
+        typeof (body as { retryAfterSeconds?: unknown }).retryAfterSeconds === 'number'
+          ? (body as { retryAfterSeconds: number }).retryAfterSeconds
+          : Number(response.headers.get('retry-after')) || null,
+      remaining10m:
+        typeof (body as { remaining10m?: unknown }).remaining10m === 'number'
+          ? (body as { remaining10m: number }).remaining10m
+          : null,
+      remainingDay:
+        typeof (body as { remainingDay?: unknown }).remainingDay === 'number'
+          ? (body as { remainingDay: number }).remainingDay
+          : null,
+      tier:
+        typeof (body as { tier?: unknown }).tier === 'string'
+          ? (body as { tier: string }).tier
+          : response.headers.get('x-ratelimit-tier') ?? 'free',
+    });
+  }
+
   if (!response.ok) {
     const details = await response.text().catch(() => '');
     throw new Error(`LLM API request failed (${response.status}): ${details}`);
@@ -76,29 +90,8 @@ async function requestViaApi(payload: LLMRequest): Promise<string> {
   return text;
 }
 
-function hasSparkLLM(): boolean {
-  const maybeSpark = (window as Window & { spark?: { llm?: unknown } }).spark;
-  return typeof maybeSpark?.llm === 'function';
-}
-
-async function requestViaSpark(payload: LLMRequest): Promise<string> {
-  const spark = (window as Window & { spark?: { llm?: (prompt: string, model: string, jsonMode?: boolean) => Promise<string> } }).spark;
-  if (!spark?.llm) {
-    throw new Error('Spark LLM is not available');
-  }
-  return spark.llm(payload.prompt, payload.model, payload.jsonMode ?? false);
-}
-
 export async function requestLLM(payload: LLMRequest): Promise<string> {
-  try {
-    return await requestViaApi(payload);
-  } catch (apiError) {
-    if (hasSparkLLM()) {
-      return requestViaSpark(payload);
-    }
-    const message = apiError instanceof Error ? apiError.message : 'Unknown LLM provider error';
-    throw new Error(`No AI provider configured. ${message}`);
-  }
+  return requestViaApi(payload);
 }
 
 export function parseAIJson<T>(raw: string, context: string): T {
