@@ -85,10 +85,9 @@ export function BrandHeader({ isDarkMode = false }: BrandHeaderProps) {
   const gradientId = isDarkMode ? 'brand-gradient-dark' : 'brand-gradient-light';
   
   return (
-    <div className="flex items-center gap-4 sm:gap-5 w-full">
-      <BrandMark size="hero" className="flex-shrink-0" />
+    <div className="flex flex-col items-start w-full">
       <motion.div 
-        className="relative min-w-0"
+        className="relative w-full"
         whileHover={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
