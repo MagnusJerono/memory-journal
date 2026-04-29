@@ -226,11 +226,15 @@ export function SettingsPanel({
     }
 
     if (window.Notification.permission === 'default') {
-      const permission = await window.Notification.requestPermission();
-      if (permission === 'granted') {
-        toast.success('Smart reminders enabled');
-      } else {
-        toast.info('In-app reminders are on. Browser notifications are blocked.');
+      try {
+        const permission = await window.Notification.requestPermission();
+        if (permission === 'granted') {
+          toast.success('Smart reminders enabled');
+        } else {
+          toast.info('In-app reminders are on. Browser notifications are blocked.');
+        }
+      } catch {
+        toast.info('In-app reminders are on. Browser notifications are not available.');
       }
       return;
     }

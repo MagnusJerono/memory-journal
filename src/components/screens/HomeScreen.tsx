@@ -57,15 +57,19 @@ export function HomeScreen({
     });
 
     if ('Notification' in window && window.Notification.permission === 'granted') {
-      const notification = new window.Notification(smartAction.title, {
-        body: smartAction.description,
-        tag: smartAction.id,
-      });
-      notification.onclick = () => {
-        window.focus();
-        onNavigate(smartAction.targetView);
-        notification.close();
-      };
+      try {
+        const notification = new window.Notification(smartAction.title, {
+          body: smartAction.description,
+          tag: smartAction.id,
+        });
+        notification.onclick = () => {
+          window.focus();
+          onNavigate(smartAction.targetView);
+          notification.close();
+        };
+      } catch {
+        // Notification constructor can throw if permissions are revoked between check and creation
+      }
     }
 
     setLastEngagementReminderId(reminderId);
