@@ -161,31 +161,31 @@ export interface Prompt {
 export type PromptCategory = 'gratitude' | 'reflection' | 'memory' | 'creative' | 'goals' | 'relationships';
 
 export const PROMPT_CATEGORIES: { value: PromptCategory; label: string; emoji: string }[] = [
-  { value: 'gratitude', label: 'Gratitude', emoji: '🙏' },
-  { value: 'reflection', label: 'Reflection', emoji: '🪞' },
-  { value: 'memory', label: 'Memory', emoji: '📸' },
-  { value: 'creative', label: 'Creative', emoji: '🎨' },
-  { value: 'goals', label: 'Goals', emoji: '🎯' },
-  { value: 'relationships', label: 'Relationships', emoji: '💕' },
+  { value: 'gratitude', label: 'Small details', emoji: '🔎' },
+  { value: 'reflection', label: 'Trips', emoji: '🧳' },
+  { value: 'memory', label: 'Places', emoji: '📍' },
+  { value: 'creative', label: 'Scenes', emoji: '🎞️' },
+  { value: 'goals', label: 'First times', emoji: '✨' },
+  { value: 'relationships', label: 'People', emoji: '👥' },
 ];
 
 export const DEFAULT_PROMPTS: Prompt[] = [
-  { id: '1', text: 'What made you smile today?', category: 'gratitude' },
-  { id: '2', text: 'Describe a place that feels like home.', category: 'memory' },
-  { id: '3', text: 'What would you tell your younger self?', category: 'reflection' },
-  { id: '4', text: 'Write about a person who changed your life.', category: 'relationships' },
-  { id: '5', text: 'What are you most proud of this week?', category: 'gratitude' },
-  { id: '6', text: 'Describe your perfect day from start to finish.', category: 'creative' },
-  { id: '7', text: 'What is a goal you are working towards?', category: 'goals' },
-  { id: '8', text: 'Write about a moment that took your breath away.', category: 'memory' },
-  { id: '9', text: 'What does success mean to you?', category: 'reflection' },
-  { id: '10', text: 'Describe someone you admire and why.', category: 'relationships' },
-  { id: '11', text: 'What are three things you are grateful for today?', category: 'gratitude' },
-  { id: '12', text: 'Write about a challenge you overcame.', category: 'reflection' },
-  { id: '13', text: 'Describe a dream you had recently.', category: 'creative' },
-  { id: '14', text: 'What adventure would you like to have?', category: 'goals' },
-  { id: '15', text: 'Write about a favorite childhood memory.', category: 'memory' },
-  { id: '16', text: 'What makes you feel most alive?', category: 'reflection' },
+  { id: '1', text: 'Write about a vacation morning you still remember clearly: where did you wake up, and what did the day sound like?', category: 'reflection' },
+  { id: '2', text: 'Describe a place from a trip that you can still picture when you close your eyes.', category: 'memory' },
+  { id: '3', text: 'Tell the story of a meal, snack, or drink from a trip that became part of the memory.', category: 'gratitude' },
+  { id: '4', text: 'Write about someone you travelled with and a small moment between you that stayed with you.', category: 'relationships' },
+  { id: '5', text: 'Remember a journey there or back: the train, car, airport, ferry, road, or waiting time.', category: 'reflection' },
+  { id: '6', text: 'Describe a photo you wish you had taken on a vacation, and what was happening around it.', category: 'creative' },
+  { id: '7', text: 'Write about the first time you arrived somewhere new on a trip.', category: 'goals' },
+  { id: '8', text: 'Capture a tiny detail from a holiday place: a smell, a sound, a color, or the weather.', category: 'gratitude' },
+  { id: '9', text: 'Tell the story of getting lost, taking a detour, or discovering something by accident while travelling.', category: 'reflection' },
+  { id: '10', text: 'Describe a vacation tradition your family, friends, or partner always seemed to repeat.', category: 'relationships' },
+  { id: '11', text: 'Write about the room, tent, apartment, or hotel where you stayed on a memorable trip.', category: 'memory' },
+  { id: '12', text: 'Remember a beach, mountain, city street, lake, forest, or view that felt important at the time.', category: 'memory' },
+  { id: '13', text: 'Tell the story behind a souvenir, ticket, postcard, shell, or object you kept from a trip.', category: 'creative' },
+  { id: '14', text: 'Write about a vacation moment that felt like a first: first swim, first flight, first big city, or first time away.', category: 'goals' },
+  { id: '15', text: 'Describe a childhood holiday memory as a scene: who was there, where were you, and what happened next?', category: 'memory' },
+  { id: '16', text: 'Write about the last evening of a trip and what you did before leaving.', category: 'reflection' },
 ];
 
 export type NavigationTab = 'home' | 'prompts' | 'library' | 'print';
@@ -230,7 +230,7 @@ export const STORY_LANGUAGES = [
   { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark' | 'system' | 'auto';
 
 export interface UserSettings {
   themeMode: ThemeMode;

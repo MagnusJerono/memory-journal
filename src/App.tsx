@@ -13,6 +13,7 @@ import { useJournalData } from './hooks/use-journal-data';
 import { canEditEntry } from './lib/entries';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
+import { setNativeStatusBarTheme } from './lib/capacitor';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -71,6 +72,7 @@ function AppContent() {
     } else {
       document.documentElement.classList.remove('dark-mode');
     }
+    void setNativeStatusBarTheme(isDarkMode);
   }, [isDarkMode]);
 
   const navigate = useCallback((view: AppView) => {
